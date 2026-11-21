@@ -1,19 +1,131 @@
-# fdmnes_util — FDMNES input/output analysis library
+# fdmnes_util
 
-This independent package organizes FDMNES input files, calculation logs, XAS spectra, and DOS output **by file format**. It defines distinct readers for the 2016 and 2020 log/DOS layouts. The 2022 layout must be verified against actual outputs before compatibility is claimed.
+[English documentation](https://ohara-lab-su.github.io/fdmnes_util/en/) · [日本語ドキュメント](https://ohara-lab-su.github.io/fdmnes_util/ja/)
+
+[Script guide and SAE comparison](docs/en/scripts.md)
+
+A Python class library for reading and analyzing FDMNES input and output files.
+
+FDMNES produces different types of files for calculation settings, calculation logs, XANES spectra, site- and orbital-resolved density of states (SD), and convolved spectra. This package groups file operations by format, including reading and writing where supported. Numerical analysis and plotting belong to separate classes.
 
 ## Development history
 
-This project grows out of the FDMNES-related routines of Structural Analysis Environment (SAE), developed from around 2015 in parallel with early pyFDMNES efforts. SAE became a large, multi-purpose environment, and development of these tools was subsequently interrupted. This project reconstructs a focused library around the functions of its `FD*` / `fd*` scripts rather than repackaging SAE. Source: https://github.com/ohara-lab-su/sae . Exact bibliographic references to the SPring-8 BL14B2 user reports remain under verification.
+The project originated in the FDMNES tools of [Structural Analysis Environment (SAE)](https://github.com/ohara-lab-su/sae). Development began around the same period as the early pyFDMNES project, initially as scripts written to support XANES calculations and data analysis. The scripts gradually became part of SAE, which grew into a broader structural-analysis environment. Development of the FDMNES tools was later interrupted.
 
-## Organization
+Rather than copying SAE into another package, this project reorganizes its FDMNES input/output functionality around individual file formats. Analysis and plotting logic originally embedded in `FD*` / `fd*` scripts is moved into reusable classes. Historical references to SAE in SPring-8 BL14B2 user reports will be cited after their exact bibliographic details have been verified. A research paper using FDMNES does not necessarily mention this auxiliary software.
 
-File-specific readers include `ReadFdmInp`, `ReadFdmBav2016`, `ReadFdmBav2020`, `ReadFdmSd2016`, `ReadFdmSd2020`, `ReadFdmTxt` and `ReadFdmConv`, each in its correspondingly named snake_case module. Analysis, plotting, and derived-file writers are separate classes. POSCAR parsing imports `vasp_util` as an external module; it is not copied.
+## Classes
 
-See `README.ja.md` for the Japanese source documentation and `COMMAND_AUDIT.md` for implementation status. This package is not yet feature-complete for all 28 original scripts.
+| File format | Class | Purpose |
+| --- | --- | --- |
+| `*.inp` | `FdmInp` | Calculation parameters and structural information |
+| `fdmfile.txt` | `Fdmfile` | Lists of calculation input files |
+| `*_bav.txt` | `FdmBav2016` / `FdmBav2020` | Calculation logs |
+| `*_sd*.txt` | `FdmSd2016` / `FdmSd2020` | Orbital- and site-resolved DOS |
+| `*.txt` | `FdmTxt` | XANES |
+| `*_conv.txt` | `FdmConv` | Convolved XANES |
 
-## Script coverage
+Python module names follow snake_case, so `FdmSd2016` is defined in `fdm_sd_2016.py`. The 2016 and 2020 file layouts have separate readers. The 2022 file layout has not yet been verified, and is not automatically treated as the 2020 format.
 
-`COMMAND_AUDIT.md` lists all 28 original commands. Eleven have partial new CLI implementations; none is certified functionally equivalent yet.
+`AnalyzeFdmXas` and `AnalyzeFdmLog` implement numerical processing. `PlotFdmXas` and `PlotFdmDos` handle visualization. The command scripts call these classes rather than duplicating their algorithms. VASP POSCAR handling is delegated to the separately installed `vasp_util` module rather than copied into this package.
 
-The separately maintained `vasp_util` package must be installed for VASP conversion. Its distribution name must be checked against its own `pyproject.toml`.
+## Class library API
+
+Use these references to call the public classes in `src/fdmnes_util` directly from Python.
+
+- [Handwritten API reference](docs/en/manual_reference.md) for imports, method inputs and return values, and Python examples.
+- [Sphinx-generated API](https://ohara-lab-su.github.io/fdmnes_util/en/api/) for source signatures and docstrings.
+
+## Example
+
+```python
+from fdmnes_util.fdm_sd_2020 import FdmSd2020
+
+sd = FdmSd2020("Fe_sd0.txt")
+energy = sd.get_eng()
+d_dos = sd.get_ldos("d")
+```
+
+## Rebuilding the original scripts
+
+The full scope consists of all 28 `FD*` / `fd*` commands from SAE. The goal is to reproduce their functionality using the file readers, analysis classes, and plotting classes, not merely to preserve command names. Current coverage and unverified command options are recorded in [COMMAND_AUDIT.md](.PROGRESS/COMMAND_AUDIT.md). Full equivalence has not yet been achieved.
+
+The newly added `FDplot_XASs` plots convolved spectra for explicitly selected absorbing sites. The observed-spectrum overlay and Fermi-referenced axis have been added, but equivalence with every original command-line option is not yet established.
+
+## References
+
+- [SAE (Structural Analysis Environment)](https://github.com/ohara-lab-su/sae)
+- [Ohara Lab public software](https://ohara-lab-su.github.io/)
+
+## Coding conventions
+
+Python modules include shebangs and docstrings. Class and public-method documentation follows Google style. Readability takes precedence over one-line expressions and compressed control flow.
+
+## Plotting package
+
+Plotting classes live in `fdmnes_util.plot`, separately from command-line entry points. `FDplot_XAS_LDOS` produces a stacked XAS and site-resolved LDOS figure. Select the verified SD layout explicitly with `--year 2016` or `--year 2020`.
+
+## Rebuilding `fdLDOS0_specified`
+
+The command retains the original `--emin`, `--emax`, and `--dmax` options and plots the p-orbital LDOS. It reads the calculation prefix from `Filout` in the input file rather than using the old hard-coded research directory. The 2016 and 2020 SD readers remain separate, and `PlotFdmDos` handles the figure.
+
+```console
+python fdLDOS0_specified.py -i read_pdb.inp --year 2020 --emin -10 --emax 20 --dmax 3
+```
+
+The command writes EPS, PDF, and PNG figures; unlike the old script, it does not open an interactive plot window. The 2022 layout is not treated as identical to the 2020 layout without supporting output files.
+
+## Installing editable example scripts
+
+The scripts in this project are editable examples of how to use the class library. Install the Python package, change to the directory where you want to work, and run:
+
+```console
+fdmnes_util install script
+```
+
+This copies the packaged Python scripts into your current directory. You can modify them for your own experiments. Existing files are left untouched; use `--force` only if you intentionally want to overwrite them. Use `--directory` to specify another destination.
+
+```console
+fdmnes_util install script --directory ./analysis
+fdmnes_util install script --force
+```
+
+The single source of the example scripts is the repository's top-level `scripts/` directory. Scripts are bundled into the installed package at build time. The class library owns file-format parsing, numerical analysis, and plotting; the examples demonstrate those classes in readable Python code. The package ships editable examples for all 28 SAE scripts. See the command audit for option and output coverage.
+
+The package build and editable sample installation are configured in `pyproject.toml`; no `setup.py` is used.
+
+
+The editable `fdXAS_specified.py` example now uses a separate analysis method for Fermi-relative energy and a plotting class for rendering.
+
+## VASP integration
+
+POSCAR parsing is delegated to the separately installed `vasp_util` package. The editable `FDvasp2fdm.py` example uses `VaspPoscarFile` and `FdmStructure` to produce the FDMNES structure section. `FDfdm2vasp.py` uses ASE to write POSCAR from an FDMNES `Crystal` or `Molecule` section. Set the molecule padding on each side with `--vacuum` (default 10 Å).
+
+`FDvasp2fdm.py` creates both the structural file and the calculation input `read_pdb.inp`. `FdmInp` writes the calculation input; `FdmStructure` writes the structural section.
+
+
+## File-based classes
+
+Modules and classes are organized by FDMNES file format, rather than by read/write operations. For example, `FdmInp` in `fdm_inp.py` and `Fdmfile` in `fdmfile.py` handle operations for their respective formats. BAV and SD retain separate 2016 and 2020 classes for their differing formats.
+
+## CIF conversion example
+
+Added `FDcif2fdm.py`. The original SAE script reads CIF but only prints `bug version`; the conversion here is a new extension, not a faithful reconstruction of a working original. It uses ASE through `Cif` and `FdmStructure`.
+
+### Selecting an SD format
+
+Select the verified SD layout explicitly with `FdmSd(..., format_year=2016).select_reader()` or `format_year=2020`. Unverified years are not automatically treated as the 2020 layout.
+
+### Averaging PDOS across calculations (v28)
+
+The editable `fdPDOS_XAS_av.py` example averages orbital PDOS across SD files after validating matching energy grids. The original SAE options for XAS overlay and energy-reference switching remain to be ported.
+
+Added the editable `fdMulti_3.py` example for comparing LDOS from three independent calculations aligned to their respective Fermi levels.
+
+### v37: Averaged XAS overlay
+
+In `fdPDOS_XAS_av.py`, use `--xas-files` for convolved XAS and `--raw-xas-files` for unbroadened XAS to overlay both averaged spectra. Each family is averaged on its own energy grid. SAE energy-reference conversion is not yet reproduced.
+
+### v40: averaged PDOS/XAS energy reference
+
+The editable `fdPDOS_XAS_av.py` example accepts `--input` and `--raw-xas-files` to determine the energy reference from the FDMNES input mode and the raw XAS edge/Fermi metadata. Use `--fermi` for a Fermi-relative axis. `--energy-offset` remains an additional correction.
