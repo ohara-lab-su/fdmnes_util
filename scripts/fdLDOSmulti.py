@@ -16,7 +16,7 @@ without modifying the installed library.
 import argparse
 from pathlib import Path
 
-from fdmnes_util.fdm_sd import fdm_sd
+from fdmnes_util.fdm_sd import FdmSd
 from fdmnes_util.fdm_txt import FdmTxt
 from fdmnes_util.plot.plot_fdm_dos import PlotFdmDos
 
@@ -52,7 +52,7 @@ def main(argv=None):
 
     for site_index in range(3):
         filename = f"{prefix}_sd{site_index}.txt"
-        reader = fdm_sd(filename, format_year=options.year)
+        reader = FdmSd(filename, format_year=options.year).select_reader()
         readers.append(reader)
         labels.append(f"sd{site_index}, {options.orbital}")
 

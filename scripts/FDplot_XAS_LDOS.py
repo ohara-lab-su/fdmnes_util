@@ -8,7 +8,7 @@ from fdmnes_util.analyze_fdm_xas import AnalyzeFdmXas
 from fdmnes_util.plot.plot_fdm_xas_ldos import PlotFdmXasLdos
 from fdmnes_util.fdm_conv import FdmConv
 from fdmnes_util.fdm_inp import FdmInp
-from fdmnes_util.fdm_sd import fdm_sd
+from fdmnes_util.fdm_sd import FdmSd
 from fdmnes_util.fdm_txt import FdmTxt
 
 
@@ -43,11 +43,11 @@ def main(argv=None):
     prefix = inp_path.parent / filout
     raw_xas = FdmTxt(Path(f"{prefix}.txt"))
     conv = FdmConv(Path(f"{prefix}_conv.txt"))
-    sd = fdm_sd(
+    sd = FdmSd(
         Path(f"{prefix}_sd{options.atom}.txt"),
         format_year=options.year,
         ispin=inp.get_ispin(),
-    )
+    ).select_reader()
 
     xas_energy = AnalyzeFdmXas.energy_reference(
         conv.get_eng(),

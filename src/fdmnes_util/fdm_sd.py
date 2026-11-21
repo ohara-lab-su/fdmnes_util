@@ -81,26 +81,65 @@
 #   print "NAME",name
 # Copyright Kengo NAKADA; SAE class library.
 # ---- End of SAE original header ----
-"""Explicit SD format dispatch: does not merge version-specific readers."""
+"""Select the FDMNES SD parser for an explicitly specified format year.
+
+The 2016 and 2020 layouts are separate formats. A numerical year is not
+sufficient evidence that another FDMNES release uses the same layout.
+"""
+
 from pathlib import Path
+
 from .fdm_sd_2016 import FdmSd2016
 from .fdm_sd_2020 import FdmSd2020
 
-def fdm_sd(filename, *, format_year, ispin=1, weight=None):
-    """read_fdm_sdの処理を実行する。
-    
-    Args:
-        filename: filenameを指定する。
-        format_year: format_yearを指定する。
-        ispin: ispinを指定する。
-        weight: weightを指定する。
-    
-    Returns:
-        処理結果。
-    
+
+class FdmSd:
+    """Select the format-specific parser for a site-resolved DOS file.
+
+    This class is responsible for SD format selection. The actual file
+    parsing remains the responsibility of the year-specific classes.
+
+    Attributes:
+        path: Path to the SD output file.
+        format_year: Explicitly selected, supported file format year.
+        ispin: Spin channel used for the 2016 layout.
+        weight: Optional site-averaging weight.
     """
-    if format_year==2016:
-        return FdmSd2016(filename,ispin=ispin,weight=weight)
-    if format_year==2020:
-        return FdmSd2020(filename,weight=weight)
-    raise ValueError(f'Unverified SD layout for year {format_year}; explicitly choose tested format')
+
+    def __init__(self, filename, *, format_year, ispin=1, weight=None):
+        """Store the requested file and validate the SD format.
+
+        Args:
+            filename: Path to the FDMNES site-resolved DOS file.
+            format_year: Supported SD layout year (2016 or 2020).
+            ispin: Spin channel for the 2016 layout.
+            weight: Optional weighting factor passed to the parser.
+
+        Raises:
+            ValueError: If the requested SD format is not verified.
+        """
+        if format_year not in (2016, 2020):
+            raise ValueError(
+                f"Unverified SD layout for year {format_year}; "
+                "explicitly choose a tested format"
+            )
+
+        self.path = Path(filename)
+        self.format_year = format_year
+        self.ispin = ispin
+        self.weight = weight
+
+    def select_reader(self):
+        """Construct the parser corresponding to the requested layout.
+
+        Returns:
+            FdmSd2016 | FdmSd2020: Parser for the selected SD format.
+        """
+        if self.format_year == 2016:
+            return FdmSd2016(
+                self.path,
+                ispin=self.ispin,
+                weight=self.weight,
+            )
+
+        return FdmSd2020(self.path, weight=self.weight)

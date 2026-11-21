@@ -4,7 +4,7 @@
 import argparse
 
 from fdmnes_util.plot.plot_fdm_dos import PlotFdmDos
-from fdmnes_util.fdm_sd import fdm_sd
+from fdmnes_util.fdm_sd import FdmSd
 
 
 def main(argv=None):
@@ -28,7 +28,7 @@ def main(argv=None):
     else:
         sd_path = f"{options.input}_sd0.txt"
 
-    reader = fdm_sd(sd_path, format_year=options.year)
+    reader = FdmSd(sd_path, format_year=options.year).select_reader()
     plotter = PlotFdmDos()
     return plotter.plot(
         reader,

@@ -255,6 +255,95 @@ class FdmInp:
 
         return None
 
+    def get_crystal_atoms(self):
+        """Build an ASE atomic structure from a FDMNES Crystal section.
+
+        The first six values after ``Crystal`` define the cell lengths and
+        angles. Subsequent rows contain an atomic number and three fractional
+        coordinates. A new FDMNES keyword ends the structure section.
+
+        Returns:
+            ase.Atoms: Periodic atomic structure with fractional positions.
+
+        Raises:
+            ValueError: If the Crystal section is absent or malformed.
+            ImportError: If ASE is not installed.
+        """
+        from ase import Atoms
+        from ase.cell import Cell
+
+        crystal_lines = self._get_crystal_lines()
+        if not crystal_lines:
+            raise ValueError("No Crystal section was found")
+
+        cell_values = self.get_cellparam()
+        if cell_values is None:
+            raise ValueError("Crystal cell parameters are missing")
+
+        atomic_numbers = []
+        scaled_positions = []
+        for line in crystal_lines[1:]:
+            fields = line.split()
+            if len(fields) < 4:
+                continue
+
+            try:
+                atomic_number = int(fields[0])
+                coordinates = [float(value) for value in fields[1:4]]
+            except ValueError:
+                continue
+
+            if atomic_number < 1 or atomic_number > 118:
+                raise ValueError("Invalid atomic number in Crystal section")
+
+            atomic_numbers.append(atomic_number)
+            scaled_positions.append(coordinates)
+
+        if not atomic_numbers:
+            raise ValueError("No atoms were found in the Crystal section")
+
+        cell = Cell.fromcellpar(cell_values)
+        return Atoms(
+            numbers=atomic_numbers,
+            scaled_positions=scaled_positions,
+            cell=cell,
+            pbc=True,
+        )
+
+    def _get_crystal_lines(self) -> list[str]:
+        """Collect the structural records following the Crystal keyword.
+
+        Returns:
+            list[str]: Cell and atomic-coordinate records.
+        """
+        lines = []
+        in_crystal = False
+        for original_line in self.lines:
+            line = original_line.split("!", 1)[0]
+            line = line.split("#", 1)[0]
+            line = line.strip()
+            if not line:
+                continue
+
+            fields = line.split()
+            keyword = fields[0].lower()
+            if not in_crystal:
+                if keyword == "crystal":
+                    in_crystal = True
+                    if len(fields) > 1:
+                        lines.append(" ".join(fields[1:]))
+                continue
+
+            if keyword in self.KEYWORDS or keyword == "end":
+                break
+
+            # Stop when an unrelated alphabetic keyword starts a new block.
+            if fields[0][0].isalpha():
+                break
+
+            lines.append(line)
+        return lines
+
     @staticmethod
     def render(
         absorber: int = 1,

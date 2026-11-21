@@ -62,6 +62,75 @@ class PlotFdmDos:
         plt.close(figure)
         return Path(output)
 
+    def plot_occupied_ldos(
+        self,
+        reader,
+        output,
+        *,
+        orbital="p",
+        edge_offset=0.0,
+        fermi_position=0.0,
+        emin=None,
+        emax=None,
+        dmax=None,
+    ):
+        """Plot LDOS with the occupied states shaded below the Fermi level.
+
+        SAE's ``fdLDOS_color.py`` draws the LDOS in black and shades the
+        occupied region in gray. The energy and Fermi reference must use
+        the same coordinate system.
+
+        Args:
+            reader: FDMNES SD object for the selected format year.
+            output: Destination figure path.
+            orbital: Orbital channel whose LDOS is plotted.
+            edge_offset: Energy offset added to SD energies, in eV.
+            fermi_position: Fermi level in the shifted energy axis, in eV.
+            emin: Optional lower energy limit, in eV.
+            emax: Optional upper energy limit, in eV.
+            dmax: Optional upper density limit.
+
+        Returns:
+            pathlib.Path: Destination of the saved figure.
+        """
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        energy = reader.get_eng() + edge_offset
+        density = reader.get_ldos(orbital)
+
+        figure, axis = plt.subplots(figsize=(7.0, 9.89))
+        axis.plot(energy, density, linewidth=1, color="black", label=orbital)
+
+        # SAE marks occupied states by shading only below the Fermi energy.
+        occupied = energy < fermi_position
+        axis.fill_between(
+            energy,
+            density,
+            where=occupied,
+            color="#cccccc",
+            linewidth=2,
+        )
+        axis.axvline(x=fermi_position, color="black", linewidth=1)
+        axis.set_xlabel("Energy [eV]")
+        axis.set_ylabel("LDOS [stat/eV]")
+        axis.ticklabel_format(axis="x", useOffset=False)
+
+        if emin is not None:
+            axis.set_xlim(left=emin)
+        if emax is not None:
+            axis.set_xlim(right=emax)
+        if dmax is not None:
+            axis.set_ylim(top=dmax)
+
+        axis.legend(loc="upper right")
+        figure.tight_layout()
+        figure.savefig(output)
+        plt.close(figure)
+        return Path(output)
+
     def plot(self, reader, output, orbitals=("s", "p", "d"), *, integrated=False):
         """Plot orbital-resolved density-of-states curves.
 
@@ -251,6 +320,90 @@ class PlotFdmDos:
         if emax is not None:
             axes[-1].set_xlim(right=emax)
 
+        figure.tight_layout()
+        figure.savefig(output)
+        plt.close(figure)
+        return Path(output)
+
+    def plot_three_calculations(
+        self,
+        readers,
+        fermi_energies,
+        labels,
+        output,
+        *,
+        orbital="p",
+        emin=None,
+        emax=None,
+        density_max=5.0,
+    ):
+        """Compare p-LDOS from three independent FDMNES calculations.
+
+        This follows SAE ``fdMulti_3.py`` rather than ``fdLDOSmulti.py``.
+        Each calculation has its own Fermi energy. Its energy axis is
+        shifted independently so that the Fermi level is at zero.
+
+        Args:
+            readers: Three SD readers, one per calculation.
+            fermi_energies: Three Fermi energies from the corresponding
+                ``FdmTxt`` objects, expressed in the SD energy reference.
+            labels: Labels for the three independent calculations.
+            output: Destination image path.
+            orbital: LDOS channel to plot.
+            emin: Optional minimum Fermi-relative energy in eV.
+            emax: Optional maximum Fermi-relative energy in eV.
+            density_max: Upper bound of the LDOS axis.
+
+        Returns:
+            pathlib.Path: Path to the saved figure.
+
+        Raises:
+            ValueError: If input lengths are not three or limits are invalid.
+        """
+        if len(readers) != 3:
+            raise ValueError("Three SD readers are required")
+        if len(fermi_energies) != 3:
+            raise ValueError("Three Fermi energies are required")
+        if len(labels) != 3:
+            raise ValueError("Three labels are required")
+        if density_max <= 0:
+            raise ValueError("density_max must be positive")
+
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        colors = ("red", "blue", "green")
+        figure, axes = plt.subplots(
+            3,
+            1,
+            sharex=True,
+            figsize=(7.0, 9.89),
+        )
+
+        for index, reader in enumerate(readers):
+            # SAE aligns each calculation to its own Fermi level.
+            relative_energy = reader.get_eng() - fermi_energies[index]
+            density = reader.get_ldos(orbital)
+            axis = axes[index]
+            axis.plot(
+                relative_energy,
+                density,
+                color=colors[index],
+                linewidth=1,
+                label=labels[index],
+            )
+            axis.axvline(x=0.0, color="black", linewidth=1)
+            axis.set_ylim(bottom=0.0, top=density_max)
+            axis.legend(loc="upper right")
+
+        if emin is not None:
+            axes[-1].set_xlim(left=emin)
+        if emax is not None:
+            axes[-1].set_xlim(right=emax)
+
+        axes[-1].set_xlabel("Energy relative to Fermi level [eV]")
         figure.tight_layout()
         figure.savefig(output)
         plt.close(figure)

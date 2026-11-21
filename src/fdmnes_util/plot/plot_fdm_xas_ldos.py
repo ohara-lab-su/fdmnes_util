@@ -66,3 +66,99 @@ class PlotFdmXasLdos:
         figure.savefig(output)
         plt.close(figure)
         return Path(output)
+
+
+    def plot_experiment_ldos(
+        self,
+        *,
+        calculated_energy,
+        calculated_absorption,
+        raw_energy,
+        raw_absorption,
+        observed_energy,
+        observed_absorption,
+        ldos_energy,
+        ldos_density,
+        fermi_energy,
+        output,
+        xmin=None,
+        xmax=None,
+    ):
+        """Draw the SAE two-panel XAS, experiment, and LDOS comparison.
+
+        The upper panel contains p-LDOS. The lower panel contains
+        broadened XAS, raw XAS, and the Athena measurement. Each
+        spectrum retains its own energy grid.
+
+        Args:
+            calculated_energy: Photon energies of broadened XAS.
+            calculated_absorption: Broadened absorption values.
+            raw_energy: Photon energies of unbroadened XAS.
+            raw_absorption: Unbroadened absorption values.
+            observed_energy: Experimental photon energies.
+            observed_absorption: Scaled and shifted experimental XAS.
+            ldos_energy: Photon energies corresponding to the LDOS grid.
+            ldos_density: p-orbital LDOS values.
+            fermi_energy: Fermi level in photon-energy coordinates.
+            output: Destination figure filename.
+            xmin: Optional lower photon-energy limit.
+            xmax: Optional upper photon-energy limit.
+
+        Returns:
+            pathlib.Path: Saved figure path.
+
+        Raises:
+            ValueError: If a spectrum has mismatched axis/value lengths.
+        """
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        spectra = [
+            (calculated_energy, calculated_absorption),
+            (raw_energy, raw_absorption),
+            (observed_energy, observed_absorption),
+            (ldos_energy, ldos_density),
+        ]
+        for energy, values in spectra:
+            if len(energy) != len(values):
+                raise ValueError("Energy and intensity grids have different lengths")
+
+        figure, axes = plt.subplots(2, 1, figsize=(7.0, 9.89), sharex=True)
+        upper_axis = axes[0]
+        lower_axis = axes[1]
+
+        upper_axis.plot(ldos_energy, ldos_density, color="red", label="LDOS p")
+        upper_axis.set_ylabel("LDOS [/eV]")
+        upper_axis.set_ylim(bottom=0)
+        upper_axis.legend(loc="lower right")
+
+        lower_axis.plot(
+            calculated_energy,
+            calculated_absorption,
+            color="black",
+            label="XAS with broadening",
+        )
+        lower_axis.plot(raw_energy, raw_absorption, color="green", label="Raw XAS")
+        lower_axis.plot(
+            observed_energy,
+            observed_absorption,
+            color="blue",
+            label="Experiment",
+        )
+        lower_axis.set_ylabel("Absorption [arb. unit]")
+        lower_axis.set_xlabel("Photon energy [eV]")
+        lower_axis.set_ylim(bottom=0)
+        lower_axis.legend(loc="lower right")
+
+        for axis in axes:
+            axis.axvline(fermi_energy, color="black", linewidth=1)
+            if xmin is not None or xmax is not None:
+                axis.set_xlim(left=xmin, right=xmax)
+
+        figure.tight_layout()
+        destination = Path(output)
+        figure.savefig(destination)
+        plt.close(figure)
+        return destination

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from fdmnes_util.plot.plot_fdm_dos import PlotFdmDos
 from fdmnes_util.fdm_inp import FdmInp
-from fdmnes_util.fdm_sd import fdm_sd
+from fdmnes_util.fdm_sd import FdmSd
 
 
 def main(argv=None):
@@ -46,11 +46,11 @@ def main(argv=None):
     # The SD index is zero in the original fdLDOS0_specified command.
     prefix = input_path.parent / filout
     sd_path = Path(f"{prefix}_sd0.txt")
-    sd = fdm_sd(
+    sd = FdmSd(
         sd_path,
         format_year=options.year,
         ispin=inp.get_ispin(),
-    )
+    ).select_reader()
 
     plotter = PlotFdmDos()
     saved_files = []

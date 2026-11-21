@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from fdmnes_util.fdm_sd_2020 import FdmSd2020
 from fdmnes_util.fdm_sd_2016 import FdmSd2016
-from fdmnes_util.fdm_sd import fdm_sd
+from fdmnes_util.fdm_sd import FdmSd
 from fdmnes_util.fdm_bav import FdmBav
 from fdmnes_util.fdm_txt import FdmTxt
 from fdmnes_util.fdm_conv import FdmConv
@@ -66,7 +66,7 @@ def test_unverified_2022_not_silently_mapped():
         処理結果。
     
     """
-    with pytest.raises(ValueError,match='Unverified'):fdm_sd(F/'Fe_sd0.txt',format_year=2022)
+    with pytest.raises(ValueError,match='Unverified'):FdmSd(F/'Fe_sd0.txt',format_year=2022).select_reader()
 
 def test_2020_bav_version():
     """test_2020_bav_versionの処理を実行する。

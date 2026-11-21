@@ -100,3 +100,17 @@ Modules and classes are organized by FDMNES file format, rather than by read/wri
 ## CIF conversion example
 
 Added `FDcif2fdm.py`. The original SAE script reads CIF but only prints `bug version`; the conversion here is a new extension, not a faithful reconstruction of a working original. It uses ASE through `Cif` and `FdmStructure`.
+
+### Selecting an SD format
+
+Select the verified SD layout explicitly with `FdmSd(..., format_year=2016).select_reader()` or `format_year=2020`. Unverified years are not automatically treated as the 2020 layout.
+
+### Averaging PDOS across calculations (v28)
+
+The editable `fdPDOS_XAS_av.py` example averages orbital PDOS across SD files after validating matching energy grids. The original SAE options for XAS overlay and energy-reference switching remain to be ported.
+
+Added the editable `fdMulti_3.py` example for comparing LDOS from three independent calculations aligned to their respective Fermi levels.
+
+### v37: Averaged XAS overlay
+
+In `fdPDOS_XAS_av.py`, use `--xas-files` for convolved XAS and `--raw-xas-files` for unbroadened XAS to overlay both averaged spectra. Each family is averaged on its own energy grid. SAE energy-reference conversion is not yet reproduced.

@@ -6,7 +6,7 @@ PARTIAL means functionality differs from the source: options and numerical/plot 
 - `FDcif2fdm.py`: EXTENDED FROM BUG-ONLY ORIGINAL (`scripts/FDcif2fdm.py`; original only read CIF and printed "bug version")
 - `FDclean.py`: PARTIAL (`scripts/FDclean.py`)
 - `FDconv_e2photoe.py`: PARTIAL (`scripts/FDconv_e2photoe.py`)
-- `FDfdm2vasp.py`: NOT YET REBUILT
+- `FDfdm2vasp.py`: PARTIAL (`scripts/FDfdm2vasp.py`; Crystal-only ASE-backed POSCAR output; Molecule not supported)
 - `FDgetfermi.py`: PARTIAL (`scripts/FDgetfermi.py`)
 - `FDmakeCconvAllsite.py`: PARTIAL (`scripts/FDmakeCconvAllsite.py`)
 - `FDmove.py`: PARTIAL (`scripts/FDmove.py`)
@@ -17,17 +17,17 @@ PARTIAL means functionality differs from the source: options and numerical/plot 
 - `FDplot_XAS_LDOS.py`: PARTIAL (`scripts/FDplot_XAS_LDOS.py`; stacked XAS/LDOS PDF, explicit verified SD layout required)
 - `FDplot_XASs.py`: PARTIAL (`scripts/FDplot_XASs.py`, convolved site series and observed Athena overlay; remaining options not fully verified)
 - `FDvasp2fdm.py`: PARTIAL (`scripts/FDvasp2fdm.py`)
-- `FDvasp2fdm_BUG.py`: NOT YET REBUILT
-- `FDvasp2fdm_NEW_20151125_BUGversion.py`: NOT YET REBUILT
+- `FDvasp2fdm_BUG.py`: HISTORICAL FROZEN (`scripts/FDvasp2fdm_BUG.py`; original conversion disabled after critical bug; non-converting behavior preserved)
+- `FDvasp2fdm_NEW_20151125_BUGversion.py`: HISTORICAL FROZEN (`scripts/FDvasp2fdm_NEW_20151125_BUGversion.py`; original conversion disabled after critical bug; non-converting behavior preserved)
 - `FDxyz2fdm.py`: PARTIAL (`scripts/FDxyz2fdm.py`)
 - `fdExp_comp_XAS.py`: PARTIAL (`scripts/fdExp_comp_XAS.py`; experimental comparison with photon-energy conversion)
 - `fdLDOS.py`: PARTIAL (`scripts/fdLDOS.py`)
 - `fdLDOS0_specified.py`: PARTIAL (`scripts/fdLDOS0_specified.py`, original axis-limit flags and p-LDOS output; hard-coded Pd6 path replaced by input Filout)
-- `fdLDOS_color.py`: NOT YET REBUILT
+- `fdLDOS_color.py`: PARTIAL (`scripts/fdLDOS_color.py`; occupied-state LDOS shading only)
 - `fdLDOSmulti.py`: PARTIAL (`scripts/fdLDOSmulti.py`; three-site plot implemented; EPS/PDF/PNG batch export available via --all-formats; interactive display pending)
-- `fdMulti_2_XAS+LDOS+EXP.py`: NOT YET REBUILT
-- `fdMulti_3.py`: NOT YET REBUILT
-- `fdPDOS_XAS_av.py`: NOT YET REBUILT
+- `fdMulti_2_XAS+LDOS+EXP.py`: PARTIAL (`scripts/fdMulti_2_XAS+LDOS+EXP.py`; XAS/LDOS/experiment two-panel figure)
+- `fdMulti_3.py`: PARTIAL (`scripts/fdMulti_3.py`; three independent Fermi-aligned p-LDOS panels and EPS/PDF/PNG output; SAE layout and interactive display remain incomplete)
+- `fdPDOS_XAS_av.py`: PARTIAL (`scripts/fdPDOS_XAS_av.py`; averaged PDOS and optional averaged convolved XAS; raw/convolved XAS overlay available via --raw-xas-files; original energy offsets and other display options pending)
 - `fdXAS.py`: PARTIAL (`scripts/fdXAS.py`)
 - `fdXAS_specified.py`: PARTIAL (`scripts/fdXAS_specified.py`; Fermi-relative convolved XAS, original plot styling not fully reproduced)
 

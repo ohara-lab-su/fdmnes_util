@@ -4,7 +4,7 @@
 import argparse
 
 from fdmnes_util.plot.plot_fdm_dos import PlotFdmDos
-from fdmnes_util.fdm_sd import fdm_sd
+from fdmnes_util.fdm_sd import FdmSd
 
 
 def main(argv=None):
@@ -20,7 +20,7 @@ def main(argv=None):
     parser.add_argument("--intdos", action="store_true")
     options = parser.parse_args(argv)
 
-    reader = fdm_sd(options.sd_file, format_year=options.year)
+    reader = FdmSd(options.sd_file, format_year=options.year).select_reader()
     plotter = PlotFdmDos()
     plotter.plot(reader, options.output, integrated=options.intdos)
 
