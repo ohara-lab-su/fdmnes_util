@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+"""FDMNES utility module: fd conv e2photoe."""
 import argparse
 from pathlib import Path
 from fdmnes_util.read_fdm_inp import ReadFdmInp

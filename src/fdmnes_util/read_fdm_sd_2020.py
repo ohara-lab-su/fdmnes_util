@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """SD (2020.06.16-2) format: named orbital columns and Int(total)."""
 from pathlib import Path
 import numpy as np

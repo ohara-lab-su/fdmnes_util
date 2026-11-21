@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Write a list of FDMNES input jobs."""
 from pathlib import Path
 class WriteFdmfile:

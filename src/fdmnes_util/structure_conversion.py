@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Structure input conversion. POSCAR is read by the installed vasp_util module."""
 from pathlib import Path
 class StructureConversion:

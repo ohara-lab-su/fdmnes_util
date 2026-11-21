@@ -1,7 +1,8 @@
+#!/usr/bin/env python3
 """Single spectrum script: all analysis/plotting lives in classes."""
 import argparse
 from fdmnes_util.read_fdm_conv import ReadFdmConv
-from fdmnes_util.plot_fdm_xas import PlotFdmXas
+from fdmnes_util.plot.plot_fdm_xas import PlotFdmXas
 
 def main(argv=None):
     parser=argparse.ArgumentParser()

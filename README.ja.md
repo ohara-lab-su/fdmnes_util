@@ -1,40 +1,66 @@
-# fdmnes_util — FDMNES計算入力・出力の解析ライブラリ
+# fdmnes_util
 
-## 位置づけ
+FDMNESの計算入力・出力ファイルを扱うためのPythonクラスライブラリです。
 
-`fdmnes_util` はFDMNESの入力ファイル、計算ログ、吸収スペクトル、SD（状態密度）出力を**ファイル形式別のクラス**として扱う独立ライブラリです。2016形式と2020形式のSD、BAVは独立クラスです。2022年版の形式は実データ照合後に追加し、2020形式と同一であると仮定しません。
+FDMNESでは、計算条件を記述する入力ファイルのほか、計算ログ、XANESスペクトル、状態密度（SD）、畳み込み後のスペクトルなど、目的の異なるファイルが出力されます。本ライブラリでは、これらを**ファイルの種類ごとに独立したクラス**として扱います。ファイルの読み込みと、スペクトルの数値処理、グラフ作成は別のクラスに分けています。
 
 ## 開発の経緯
 
-本ライブラリの前身は、2014年前後から開発されたStructural Analysis Environment（SAE）のFDMNES関連処理です。開発者は、pyFDMNESとほぼ同時期から解析支援ツールの開発を進めていました。SAEはFDMNESに限らない大規模環境へ成長したため、開発が途中で中断されました。本プロジェクトはFDMNES関連機能を抽出するのではなく、SAEの `FD*` / `fd*` スクリプトが持つ操作・解析・描画機能を単独パッケージに**再設計**するものです。前身: https://github.com/ohara-lab-su/sae 。SPring-8 BL14B2利用者情報での言及の正確な書誌情報は照合中です。
+本ライブラリの元になったプログラムは、[Structural Analysis Environment（SAE）](https://github.com/ohara-lab-su/sae) のFDMNES関連ツールです。FDMNESを利用したXANESの計算・解析を支援するため、pyFDMNESとほぼ同じ時期から開発してきました。当時は研究で必要となった解析プログラムをその都度作り、SAEの一部としてまとめていました。
 
-## クラス責務
+その後、SAEはFDMNES以外の構造解析も含む大きなプログラム群になりました。一方、FDMNES関連ツールの開発は途中で止まっていました。今回、これまでのコードをそのまま移すのではなく、計算入力・出力ファイルの形式を中心にクラスを組み直し、単独のパッケージとして整備することにしました。SAEの `FD*` / `fd*` スクリプトが持っていた解析・描画機能も、個別のクラスへ移していく方針です。
 
-- `ReadFdmInp` → `read_fdm_inp.py`: 計算入力 `.inp` のタグ・結晶パラメータ
-- `ReadFdmfile` → `read_fdmfile.py`: `fdmfile.txt` ジョブ一覧
-- `ReadFdmBav2016`、`ReadFdmBav2020` → 対応する `read_fdm_bav_20xx.py`: 計算ログ
-- `ReadFdmSd2016`、`ReadFdmSd2020` → 対応する `read_fdm_sd_20xx.py`: SDの軌道・スピン・積分列
-- `ReadFdmTxt`、`ReadFdmConv`: XANES、畳み込み後XANES
-- `AnalyzeFdmXas`、`AnalyzeFdmLog`: ファイル読み出し以外の数値処理
-- `PlotFdmXas`、`PlotFdmDos`: 描画
-- `WriteFdmXyz`、`WriteFdmPhotoenergy`: 派生ファイルの生成
+SAEの開発については、SPring-8 BL14B2の利用者情報にも記録があります。該当する年度・記事を確認し、書誌情報が特定できたものから追加します。開発者が関わったXAFS研究では、SAEを解析環境として使用してきました。研究論文ではFDMNESによる計算に言及していても、SAEそのものを明示していない場合があります。SAEの開発中断と、研究での利用実績は別の話です。
 
-VASPのPOSCAR読込は `vasp_util.vasp_poscar.VaspPoscar` をモジュールimportします。VASPの内部実装は複製しません。
+## クラスの構成
 
-## 実行例
+基本は**一つのファイル形式に一つの読み込みクラス**です。読み込み対象が同じでも、FDMNESの版によって形式が異なる場合は別のクラスにしています。
+
+| ファイル | クラス | 主な内容 |
+| --- | --- | --- |
+| `*.inp` | `ReadFdmInp` | 計算条件、`Filout`、結晶情報 |
+| `fdmfile.txt` | `ReadFdmfile` / `WriteFdmfile` | 複数入力ファイルの一覧 |
+| `*_bav.txt` | `ReadFdmBav2016` / `ReadFdmBav2020` | 計算ログ、原子情報、エネルギー |
+| `*_sd*.txt` | `ReadFdmSd2016` / `ReadFdmSd2020` | LDOS、PDOS、TDOSなど |
+| `*.txt` | `ReadFdmTxt` | XANESスペクトル |
+| `*_conv.txt` | `ReadFdmConv` | 畳み込み後のスペクトル |
+
+クラス名は `ReadFdmSd2016`、ファイル名は `read_fdm_sd_2016.py` のように、Pythonの命名規則に従って対応させています。2016年形式と2020年形式は別クラスです。2022年版については、実際の出力を照合するまでは2020年形式と同じものとして扱いません。
+
+ファイルから読み出した値を使う処理は `AnalyzeFdmXas`、`AnalyzeFdmLog` などの解析クラスが担当します。グラフ作成は `PlotFdmXas`、`PlotFdmDos` が担当します。**スクリプトには解析式や描画処理を重複して書かず、これらのクラスを呼び出す形**にします。
+
+## 使用例
+
+2020年形式のSDファイルから、エネルギー軸とd軌道の状態密度を取り出す例です。
 
 ```python
 from fdmnes_util.read_fdm_sd_2020 import ReadFdmSd2020
-sd = ReadFdmSd2020('Fe_sd0.txt')
-energy, d_dos = sd.get_eng(), sd.get_ldos('d')
+
+sd = ReadFdmSd2020("Fe_sd0.txt")
+energy = sd.get_eng()
+d_dos = sd.get_ldos("d")
 ```
 
-## 実装状況
+VASPのPOSCARは、別パッケージの `vasp_util` をPythonモジュールとしてimportして扱います。VASP用の読み書き処理をこのパッケージに複製する方針ではありません。
 
-この版は再構築途中の成果物です。原本の全28コマンドを実行可能と主張しません。コマンドごとの差分は `COMMAND_AUDIT.md` に記載します。
+## スクリプトの再構築
 
-## スクリプト対応状況
+対象は、SAEにあった `FD*` / `fd*` の全28本です。コマンド名だけを残すのではなく、各スクリプトに書かれている機能をファイル読み込み・解析・描画クラスへ整理し、同じ操作を再現することが目標です。
 
-SAEの28本を個別に列挙した `COMMAND_AUDIT.md` を参照してください。11本は一部の操作に対応し、全オプションの同等性はまだ確認していません。
+現段階では、28本すべての機能を再現できていません。対応状況と、まだ確認できていないオプションは [`COMMAND_AUDIT.md`](COMMAND_AUDIT.md) に記載しています。
 
-VASPファイルの変換機能を使用する場合は、独立パッケージ `vasp_util` を別途インストールしてください。配布名は実際の `vasp_util/pyproject.toml` を確認してください。
+`FDplot_XASs` は、複数サイトの畳み込みスペクトルを読み込んで表示します。元の `-o` は実験データの表示指定として扱います。Athenaの `*_obs.txt.nor` は `ReadAthenaNor` で読み込みます。Fermi準位基準への変換も解析クラスに分離しています。旧スクリプトの全オプションとの一致は引き続き確認が必要です。元のスクリプトと完全に同等という意味ではありません。
+
+## 関連資料
+
+- [SAE（Structural Analysis Environment）](https://github.com/ohara-lab-su/sae)
+- [尾原研究室の公開ソフトウェア](https://ohara-lab-su.github.io/)
+
+
+## コードの記述規則
+
+Pythonファイルにはシバン行とdocstringを記載し、クラスや公開メソッドの説明にはGoogleスタイルを使用します。条件分岐や処理の途中経過を省略せず、人が読んで処理を追える書き方を優先します。
+
+## プロットクラスの配置
+
+グラフ描画を担当するクラスは `fdmnes_util.plot` にまとめ、コマンドと分離しています。XASとサイト別LDOSを組み合わせた図は `FDplot_XAS_LDOS` で出力できます。SD形式は `--year 2016` または `--year 2020` で明示します。

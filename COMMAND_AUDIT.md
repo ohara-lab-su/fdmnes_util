@@ -14,8 +14,8 @@ PARTIAL means functionality differs from the source: options and numerical/plot 
 - `FDplot_LDOS.py`: PARTIAL (`commands/fd_plot_dos.py`)
 - `FDplot_PDOS.py`: PARTIAL (`commands/fd_plot_dos.py`)
 - `FDplot_XAS.py`: PARTIAL (`commands/fd_plot_xas.py`)
-- `FDplot_XAS_LDOS.py`: NOT YET REBUILT
-- `FDplot_XASs.py`: NOT YET REBUILT
+- `FDplot_XAS_LDOS.py`: PARTIAL (`commands/fd_plot_xas_ldos.py`; stacked XAS/LDOS PDF, explicit verified SD layout required)
+- `FDplot_XASs.py`: PARTIAL (`commands/fd_plot_xass.py`, convolved site series and observed Athena overlay; remaining options not fully verified)
 - `FDvasp2fdm.py`: NOT YET REBUILT
 - `FDvasp2fdm_BUG.py`: NOT YET REBUILT
 - `FDvasp2fdm_NEW_20151125_BUGversion.py`: NOT YET REBUILT

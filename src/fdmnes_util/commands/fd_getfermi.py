@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """FDgetfermi data reporting (reader-only CLI)."""
 import argparse
 from fdmnes_util.read_fdm_inp import ReadFdmInp

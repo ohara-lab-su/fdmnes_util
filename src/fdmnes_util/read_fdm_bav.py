@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Detect FDMNES _bav.txt revision without guessing a modern format."""
 from pathlib import Path
 import re

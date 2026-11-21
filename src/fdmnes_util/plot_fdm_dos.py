@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Density-of-states plotting, not embedded in read_sd implementations."""
 from pathlib import Path
 class PlotFdmDos:

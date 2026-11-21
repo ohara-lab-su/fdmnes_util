@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """File-set operations across one FDMNES run; not an individual parser."""
 from pathlib import Path
 import shutil

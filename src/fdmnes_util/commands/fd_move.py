@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+"""FDMNES utility module: fd move."""
 import argparse
 from fdmnes_util.read_fdm_inp import ReadFdmInp
 from fdmnes_util.fdm_result_files import FdmResultFiles

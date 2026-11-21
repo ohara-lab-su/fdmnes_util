@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """FDMNES fdmfile.txt calculation input list."""
 from pathlib import Path
 class ReadFdmfile:

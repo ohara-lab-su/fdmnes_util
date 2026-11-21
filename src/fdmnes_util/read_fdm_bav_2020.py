@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """2020-revision FDMNES log layout (separate implementation)."""
 from pathlib import Path
 import re

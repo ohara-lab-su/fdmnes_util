@@ -1,0 +1,13 @@
+!KPOINTS
+!POTCAR
+!POSCAR
+!INCAR
+update*sh
+
+__pycache__/
+build/
+work/
+.idea/
+*.egg-info/
+*.pyc
+*.py[cod]

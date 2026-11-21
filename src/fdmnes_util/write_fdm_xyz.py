@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Write XYZ output from the parsed FDMNES calculation log."""
 from pathlib import Path
 class WriteFdmXyz:

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+"""Regression tests for the FDMNES class library."""
 from pathlib import Path
 import numpy as np
 import pytest
@@ -54,8 +56,8 @@ def test_input_missing_crystal(tmp_path):
 
 def test_plot(tmp_path):
     pytest.importorskip('matplotlib')
-    from fdmnes_util.plot_fdm_xas import PlotFdmXas
-    from fdmnes_util.plot_fdm_dos import PlotFdmDos
+    from fdmnes_util.plot.plot_fdm_xas import PlotFdmXas
+    from fdmnes_util.plot.plot_fdm_dos import PlotFdmDos
     x=ReadFdmTxt(F/'Fe.txt');s=ReadFdmSd2020(F/'Fe_sd0.txt')
     assert PlotFdmXas().plot([(x.energy,x.get_xas(),'Fe')],tmp_path/'x.pdf').stat().st_size>100
     assert PlotFdmDos().plot(s,tmp_path/'d.pdf').stat().st_size>100

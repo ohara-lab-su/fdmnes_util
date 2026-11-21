@@ -1,7 +1,8 @@
+#!/usr/bin/env python3
 """Single LDOS plot through the versioned file-reader and plotter classes."""
 import argparse
 from fdmnes_util.read_fdm_sd import read_fdm_sd
-from fdmnes_util.plot_fdm_dos import PlotFdmDos
+from fdmnes_util.plot.plot_fdm_dos import PlotFdmDos
 
 def main(argv=None):
     parser=argparse.ArgumentParser()

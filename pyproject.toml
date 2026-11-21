@@ -31,5 +31,8 @@ FDmakeCconvAllsite = "fdmnes_util.commands.fd_make_conv_allsite:main"
 fdXAS = "fdmnes_util.commands.fd_xas:main"
 fdLDOS = "fdmnes_util.commands.fd_ldos:main"
 
+FDplot_XASs = "fdmnes_util.commands.fd_plot_xass:main"
+FDplot_XAS_LDOS = "fdmnes_util.commands.fd_plot_xas_ldos:main"
+
 [tool.setuptools.package-data]
 fdmnes_util = ["atomic_symbols.list"]

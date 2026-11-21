@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Write convolution job inputs corresponding to allsite output spectra."""
 from pathlib import Path
 import re

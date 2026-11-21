@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """2016 SD format: ordered n(l,m)/Intn(l,m)/n_l(l) data, spin aware."""
 from pathlib import Path
 import re

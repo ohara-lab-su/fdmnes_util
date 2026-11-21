@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+"""FDMNES utility module: fd bav2xyz."""
 import argparse
 from pathlib import Path
 from fdmnes_util.read_fdm_bav import ReadFdmBav

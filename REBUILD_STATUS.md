@@ -24,3 +24,10 @@ Entrypoints exist for 11 partially ported names only. The other 17 are explicitl
 3. Year-specific BAV readers cover key fields but not every section of SAE's original parsers.
 4. 2016 tests use reconstructed header-layout fixtures; there is no original 2016 output sample in the supplied SAE archive.
 5. VASP writing must use an actual confirmed `vasp_util` API; no writer is fabricated.
+
+## v4 update
+
+- Rewrote Japanese README against the style and explanatory structure of the Ohara Lab public website; English README follows the Japanese sections.
+- Added `AnalyzeFdmXas.site_spectra` for selected absorbing-site outputs and `PlotFdmXas.plot_sites` for two-panel site visualization.
+- Added the partial `FDplot_XASs` command. The command explicitly rejects unverified Fermi-axis behavior and does not claim the original experimental-overlay option.
+- This is a partial implementation; it does not change the 2016/2020 format readers or claim support for 2022.

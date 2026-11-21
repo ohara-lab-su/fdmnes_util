@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Allsite convolution input generation via separate input/output classes."""
 import argparse
 from fdmnes_util.read_fdm_inp import ReadFdmInp

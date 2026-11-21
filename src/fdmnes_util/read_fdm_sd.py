@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Explicit SD format dispatch: does not merge version-specific readers."""
 from pathlib import Path
 from .read_fdm_sd_2016 import ReadFdmSd2016

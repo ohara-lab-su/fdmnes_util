@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Pre-2017 FDMNES cluster/log layout (separate reader)."""
 from pathlib import Path
 import re

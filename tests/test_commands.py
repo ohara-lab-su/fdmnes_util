@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+"""Regression tests for the FDMNES class library."""
 from pathlib import Path
 import shutil
 import numpy as np

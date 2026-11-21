@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Analysis of cluster coordinates from an FDMNES _bav.txt calculation log."""
 from importlib.resources import files
 import numpy as np
