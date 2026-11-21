@@ -96,3 +96,7 @@ POSCAR parsing is delegated to the separately installed `vasp_util` package. The
 ## File-based classes (v17)
 
 Modules and classes are organized by FDMNES file format, rather than by read/write operations. For example, `FdmInp` in `fdm_inp.py` and `Fdmfile` in `fdmfile.py` handle operations for their respective formats. BAV and SD retain separate 2016 and 2020 classes for their differing formats.
+
+## CIF conversion example
+
+Added `FDcif2fdm.py`. The original SAE script reads CIF but only prints `bug version`; the conversion here is a new extension, not a faithful reconstruction of a working original. It uses ASE through `Cif` and `FdmStructure`.

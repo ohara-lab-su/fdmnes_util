@@ -130,3 +130,65 @@ class PlotFdmXas:
         figure.savefig(output)
         plt.close(figure)
         return Path(output)
+
+    def plot_experiment_comparison(
+        self,
+        calculated_energy,
+        calculated_absorption,
+        observed_energy,
+        observed_absorption,
+        output,
+        *,
+        xmin=None,
+        xmax=None,
+        ymin=0.0,
+        ymax=None,
+    ):
+        """Plot calculated and measured XAS on one photon-energy axis.
+
+        The calculated energy must already be converted to photon energy.
+        The caller is responsible for adding the FDMNES edge energy.
+
+        Args:
+            calculated_energy: Calculated photon energies in eV.
+            calculated_absorption: Calculated absorption intensity.
+            observed_energy: Experimental photon energies in eV.
+            observed_absorption: Normalized experimental absorption.
+            output: Destination PDF or image filename.
+            xmin: Optional minimum photon energy in eV.
+            xmax: Optional maximum photon energy in eV.
+            ymin: Optional minimum absorption value.
+            ymax: Optional maximum absorption value.
+
+        Returns:
+            pathlib.Path: Saved figure filename.
+        """
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        figure, axis = plt.subplots(figsize=(7.0, 9.89))
+        axis.plot(
+            calculated_energy,
+            calculated_absorption,
+            color="red",
+            linewidth=1,
+            label="FDMNES",
+        )
+        axis.plot(
+            observed_energy,
+            observed_absorption,
+            color="blue",
+            linewidth=1,
+            label="Experiment",
+        )
+        axis.set_xlabel("Photon Energy [eV]")
+        axis.set_ylabel("Absorption [arb. unit]")
+        axis.set_xlim(left=xmin, right=xmax)
+        axis.set_ylim(bottom=ymin, top=ymax)
+        axis.legend(loc="lower right")
+        figure.tight_layout()
+        figure.savefig(output)
+        plt.close(figure)
+        return Path(output)

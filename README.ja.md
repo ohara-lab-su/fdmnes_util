@@ -116,3 +116,7 @@ python FDvasp2fdm.py -i POSCAR
 ## クラスの命名（v17）
 
 FDMNESのファイル形式を単位としてモジュールとクラスを分けます。読み込みと書き出しでクラスを分割せず、`fdm_inp.py` の `FdmInp`、`fdmfile.py` の `Fdmfile` などが同じファイル形式の操作を担当します。年度によって形式が異なるBAVとSDは `FdmBav2016` / `FdmBav2020`、`FdmSd2016` / `FdmSd2020` に分けます。
+
+## CIF変換サンプル
+
+`FDcif2fdm.py` を追加しました。原本はCIFを読み込んだ後 `bug version` と表示して終了するため、変換処理は原本に存在しない拡張実装です。ASEでCIFを読み込み、`Cif` と `FdmStructure` を利用します。
