@@ -1,0 +1,11 @@
+numpy>=1.23
+
+[plot]
+matplotlib>=3.6
+
+[structure]
+ase
+
+[test]
+pytest
+matplotlib

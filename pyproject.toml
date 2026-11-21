@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fdmnes-util"
+version = "0.0.0"
+description = "FDMNES per-output-file Python analysis and visualization"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.23"]
+
+[project.optional-dependencies]
+plot = ["matplotlib>=3.6"]
+structure = ["ase"]
+test = ["pytest", "matplotlib"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+FDclean = "fdmnes_util.commands.fd_clean:main"
+FDmove = "fdmnes_util.commands.fd_move:main"
+FDgetfermi = "fdmnes_util.commands.fd_getfermi:main"
+FDconv_e2photoe = "fdmnes_util.commands.fd_conv_e2photoe:main"
+FDbav2xyz = "fdmnes_util.commands.fd_bav2xyz:main"
+FDplot_XAS = "fdmnes_util.commands.fd_plot_xas:main"
+FDplot_LDOS = "fdmnes_util.commands.fd_plot_dos:main"
+FDplot_PDOS = "fdmnes_util.commands.fd_plot_dos:main"
+FDmakeCconvAllsite = "fdmnes_util.commands.fd_make_conv_allsite:main"
+fdXAS = "fdmnes_util.commands.fd_xas:main"
+fdLDOS = "fdmnes_util.commands.fd_ldos:main"
+
+[tool.setuptools.package-data]
+fdmnes_util = ["atomic_symbols.list"]
