@@ -61,17 +61,23 @@ class AnalyzeFdmXas:
         subtract_fermi=False,
         fermi_energy=None,
     ):
-        """photon_energyの処理を実行する。
-        
+        """Convert a convolved XAS spectrum to photon-energy coordinates.
+
+        The convolution file supplies both the energy and intensity columns.
+        Using the raw-XAS energy array instead would misalign the spectrum
+        whenever the convolution and raw grids have different lengths.
+
         Args:
-            convolution: convolutionを指定する。
-            raw_xas: raw_xasを指定する。
-            subtract_fermi: subtract_fermiを指定する。
-            fermi_energy: fermi_energyを指定する。
-        
+            convolution: ``FdmConv`` containing the convolved energy grid.
+            raw_xas: ``FdmTxt`` supplying the absorption-edge energy.
+            subtract_fermi: Subtract the Fermi-energy offset when True.
+            fermi_energy: Fermi-energy offset in eV, when subtraction is used.
+
         Returns:
-            処理結果。
-        
+            tuple[numpy.ndarray, numpy.ndarray]: Converted energy and XAS.
+
+        Raises:
+            ValueError: If the required edge or Fermi energy is missing.
         """
         if raw_xas.edge_energy is None:
             raise ValueError("Missing E_edge")

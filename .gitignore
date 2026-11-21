@@ -11,3 +11,5 @@ work/
 *.egg-info/
 *.pyc
 *.py[cod]
+
+PROGRESS/
