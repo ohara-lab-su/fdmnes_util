@@ -1,5 +1,9 @@
 # fdmnes_util
 
+[日本語ドキュメント](https://ohara-lab-su.github.io/fdmnes_util/ja/) · [English documentation](https://ohara-lab-su.github.io/fdmnes_util/en/)
+
+[SAE原本とのスクリプト比較](docs/ja/scripts.md)
+
 FDMNESの計算入力・出力ファイルを扱うためのPythonクラスライブラリです。
 
 FDMNESでは、計算条件を記述する入力ファイルのほか、計算ログ、XANESスペクトル、状態密度（SD）、畳み込み後のスペクトルなど、目的の異なるファイルが出力されます。本ライブラリでは、これらを**ファイルの種類ごとに独立したクラス**として扱います。ファイルの読み込みと、スペクトルの数値処理、グラフ作成は別のクラスに分けています。
@@ -28,6 +32,13 @@ SAEの開発については、SPring-8 BL14B2の利用者情報にも記録が�
 クラス名は `FdmSd2016`、ファイル名は `fdm_sd_2016.py` のように、Pythonの命名規則に従って対応させています。2016年形式と2020年形式は別クラスです。2022年版については、実際の出力を照合するまでは2020年形式と同じものとして扱いません。
 
 ファイルから読み出した値を使う処理は `AnalyzeFdmXas`、`AnalyzeFdmLog` などの解析クラスが担当します。グラフ作成は `PlotFdmXas`、`PlotFdmDos` が担当します。**スクリプトには解析式や描画処理を重複して書かず、これらのクラスを呼び出す形**にします。
+
+## クラスライブラリ API
+
+`src/fdmnes_util` の公開クラスを Python から直接使うための資料です。
+
+- [手書き API リファレンス](docs/ja/manual_reference.md) クラスごとの import 文、メソッドの引数と戻り値、Python の使用例。
+- [Sphinx 自動生成 API](https://ohara-lab-su.github.io/fdmnes_util/ja/api/) ソースのシグネチャと docstring。
 
 ## 使用例
 

@@ -1,5 +1,9 @@
 # fdmnes_util
 
+[English documentation](https://ohara-lab-su.github.io/fdmnes_util/en/) · [日本語ドキュメント](https://ohara-lab-su.github.io/fdmnes_util/ja/)
+
+[Script guide and SAE comparison](docs/en/scripts.md)
+
 A Python class library for reading and analyzing FDMNES input and output files.
 
 FDMNES produces different types of files for calculation settings, calculation logs, XANES spectra, site- and orbital-resolved density of states (SD), and convolved spectra. This package groups file operations by format, including reading and writing where supported. Numerical analysis and plotting belong to separate classes.
@@ -24,6 +28,13 @@ Rather than copying SAE into another package, this project reorganizes its FDMNE
 Python module names follow snake_case, so `FdmSd2016` is defined in `fdm_sd_2016.py`. The 2016 and 2020 file layouts have separate readers. The 2022 file layout has not yet been verified, and is not automatically treated as the 2020 format.
 
 `AnalyzeFdmXas` and `AnalyzeFdmLog` implement numerical processing. `PlotFdmXas` and `PlotFdmDos` handle visualization. The command scripts call these classes rather than duplicating their algorithms. VASP POSCAR handling is delegated to the separately installed `vasp_util` module rather than copied into this package.
+
+## Class library API
+
+Use these references to call the public classes in `src/fdmnes_util` directly from Python.
+
+- [Handwritten API reference](docs/en/manual_reference.md) for imports, method inputs and return values, and Python examples.
+- [Sphinx-generated API](https://ohara-lab-su.github.io/fdmnes_util/en/api/) for source signatures and docstrings.
 
 ## Example
 
