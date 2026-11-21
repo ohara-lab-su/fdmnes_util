@@ -1,8 +1,12 @@
 # fdmnes_util
 
-[日本語ドキュメント](https://ohara-lab-su.github.io/fdmnes_util/ja/) · [English documentation](https://ohara-lab-su.github.io/fdmnes_util/en/)
+[![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/ohara-lab-su/fdmnes_util/blob/main/README.md)
+[![ja](https://img.shields.io/badge/lang-ja-yellow.svg)](https://github.com/ohara-lab-su/fdmnes_util/blob/main/README.ja.md)
 
-[SAE原本とのスクリプト比較](docs/ja/scripts.md)
+[![GitHub](https://img.shields.io/badge/GitHub-ohara--lab--su%2Ffdmnes_util-181717?logo=github)](https://github.com/ohara-lab-su/fdmnes_util/)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Documentation-222222?logo=githubpages&logoColor=white)](https://ohara-lab-su.github.io/fdmnes_util/)
+[![Ohara Lab](https://img.shields.io/badge/Ohara%20Lab-Home-4B5563?logo=homeassistant&logoColor=white)](https://ohara-lab-su.github.io/)
+
 
 FDMNESの計算入力・出力ファイルを扱うためのPythonクラスライブラリです。
 
@@ -10,15 +14,17 @@ FDMNESでは、計算条件を記述する入力ファイルのほか、計算�
 
 ## 開発の経緯
 
-本ライブラリの元になったプログラムは、[Structural Analysis Environment（SAE）](https://github.com/ohara-lab-su/sae) のFDMNES関連ツールです。FDMNESを利用したXANESの計算・解析を支援するため、pyFDMNESとほぼ同じ時期から開発してきました。当時は研究で必要となった解析プログラムをその都度作り、SAEの一部としてまとめていました。
+`fdmnes_util` は、2014年頃に開発した [Structural Analysis Environment（SAE）](https://github.com/ohara-lab-su/sae) のFDMNES関連プログラムを元にしています。当時はXANESの計算や解析で必要になった機能をSAEに追加していました。SAEの開発内容はSPring-8の刊行物などでも紹介しており、プログラム本体は関係者に直接渡していました。まだGitを使っていなかった頃のプログラムです。
 
-その後、SAEはFDMNES以外の構造解析も含む大きなプログラム群になりました。一方、FDMNES関連ツールの開発は途中で止まっていました。今回、これまでのコードをそのまま移すのではなく、計算入力・出力ファイルの形式を中心にクラスを組み直し、単独のパッケージとして整備することにしました。SAEの `FD*` / `fd*` スクリプトが持っていた解析・描画機能も、個別のクラスへ移していく方針です。
+当時、SPring-8 BL14B2ではXAFS利用者向けの講習会などを通じてFDMNESの紹介・普及にも取り組んでいました。その後、BL14B2からJASRIの制御・情報部門へ異動したこともあり、SAEのFDMNES関連プログラムの開発は止まりましたが、FDMNESの講習には引き続き関わっていました。当時の資料として、[2016年のFDMNES実習（PDF）](https://support.spring8.or.jp/new/assets/materials/190228_4.nakada_160128.pdf)、[2019年の講習会資料一覧](https://support.spring8.or.jp/new/event-materials.html)、[2019年のFDMNES実習（PDF）](https://support.spring8.or.jp/assets/materials/190228_5.nakada.pdf) が残っています。
 
-SAEの開発については、SPring-8 BL14B2の利用者情報にも記録があります。該当する年度・記事を確認し、書誌情報が特定できたものから追加します。開発者が関わったXAFS研究では、SAEを解析環境として使用してきました。研究論文ではFDMNESによる計算に言及していても、SAEそのものを明示していない場合があります。SAEの開発中断と、研究での利用実績は別の話です。
+最近、再びFDMNESを使う必要ができたので、10年以上前のプログラムを掘り出してきました。せっかくなので少し使ってみようと思い、現在のPython環境で動くように整備しています。あわせて、入出力ファイルを扱うクラスを整理し、SAEの `FD*` / `fd*` スクリプトに含まれていた解析・描画機能をライブラリへ移しています。
+
+現在は [pyFDMNES](https://github.com/tinaw/pyFDMNES) などのライブラリもあります。ただ、FDMNESの計算実行全体を管理するラッパーを作ることには、今のところあまり関心がありません。まずは以前の解析機能を使えるようにし、現行のFDMNESのマニュアルも読み直しながら、研究で必要になった機能を追加していくつもりです。
 
 ## クラスの構成
 
-ファイル形式ごとにクラスを設け、必要な読み込みと書き出しを同じクラスで扱います。FDMNESの版によって形式が異なる場合は別のクラスにしています。
+ファイル形式ごとにクラスを設け、必要な読み込みと書き出しを同じクラスで扱っています。FDMNESの版によって形式が異なる場合は別のクラスにしています。
 
 | ファイル | クラス | 主な内容 |
 | --- | --- | --- |
@@ -29,9 +35,9 @@ SAEの開発については、SPring-8 BL14B2の利用者情報にも記録が�
 | `*.txt` | `FdmTxt` | XANESスペクトル |
 | `*_conv.txt` | `FdmConv` | 畳み込み後のスペクトル |
 
-クラス名は `FdmSd2016`、ファイル名は `fdm_sd_2016.py` のように、Pythonの命名規則に従って対応させています。2016年形式と2020年形式は別クラスです。2022年版については、実際の出力を照合するまでは2020年形式と同じものとして扱いません。
+クラス名は `FdmSd2016`、ファイル名は `fdm_sd_2016.py` のように、Pythonの命名規則に従って対応させています。2016年形式と2020年形式は別クラスにしています。2022年版については、実際の出力を照合するまでは2020年形式と同じものとして扱いません。
 
-ファイルから読み出した値を使う処理は `AnalyzeFdmXas`、`AnalyzeFdmLog` などの解析クラスが担当します。グラフ作成は `PlotFdmXas`、`PlotFdmDos` が担当します。**スクリプトには解析式や描画処理を重複して書かず、これらのクラスを呼び出す形**にします。
+ファイルから読み出した値を使う処理は `AnalyzeFdmXas`、`AnalyzeFdmLog` などの解析クラスが担当します。グラフ作成は `PlotFdmXas`、`PlotFdmDos` が担当します。**スクリプトには解析式や描画処理を重複して書かず、これらのクラスを呼び出す形**にしています。
 
 ## クラスライブラリ API
 
@@ -77,11 +83,11 @@ SAEの対象28本に対応する編集用サンプルを収録しています。
 
 ## スクリプトの再構築
 
-対象は、SAEにあった `FD*` / `fd*` の全28本です。コマンド名だけを残すのではなく、各スクリプトに書かれている機能をファイル読み込み・解析・描画クラスへ整理し、同じ操作を再現することが目標です。
+対象は、SAEにあった `FD*` / `fd*` の全28本です。コマンド名だけを残すのではなく、各スクリプトに書かれている機能をファイル読み込み・解析・描画クラスへ整理し、同じ操作を再現することを目標にしています。
 
 現段階では、28本すべての機能を再現できていません。対応状況と、まだ確認できていないオプションは [`COMMAND_AUDIT.md`](.PROGRESS/COMMAND_AUDIT.md) に記載しています。
 
-`FDplot_XASs` は、複数サイトの畳み込みスペクトルを読み込んで表示します。元の `-o` は実験データの表示指定として扱います。Athenaの `*_obs.txt.nor` は `AthenaNor` で読み込みます。Fermi準位基準への変換も解析クラスに分離しています。旧スクリプトの全オプションとの一致は引き続き確認が必要です。元のスクリプトと完全に同等という意味ではありません。
+`FDplot_XASs` では、複数サイトの畳み込みスペクトルを読み込んで表示します。元の `-o` は実験データの表示指定として扱います。Athenaの `*_obs.txt.nor` は `AthenaNor` で読み込みます。Fermi準位基準への変換も解析クラスに分離しています。旧スクリプトの全オプションとの一致は引き続き確認が必要です。元のスクリプトとの完全な同等性は、まだ確認できていません。
 
 ## 関連資料
 
@@ -112,7 +118,7 @@ EPS、PDF、PNGを出力します。元のスクリプトが持っていた対�
 
 ## VASPとの連携
 
-POSCARの読み込みは、別パッケージの `vasp_util` に任せています。`fdmnes_util` にVASP用のパーサーは実装しません。`FDvasp2fdm.py` は `VaspPoscarFile` を通してPOSCARを読み込み、`FdmStructure` でFDMNESの構造部分を書き出すサンプルです。
+POSCARの読み込みは、別パッケージの `vasp_util` に任せています。`fdmnes_util` にVASP用のパーサーは実装しない方針です。`FDvasp2fdm.py` は `VaspPoscarFile` を通してPOSCARを読み込み、`FdmStructure` でFDMNESの構造部分を書き出すサンプルです。
 
 ```console
 fdmnes_util install script
@@ -126,7 +132,7 @@ python FDvasp2fdm.py -i POSCAR
 
 ## クラスの命名
 
-FDMNESのファイル形式を単位としてモジュールとクラスを分けます。読み込みと書き出しでクラスを分割せず、`fdm_inp.py` の `FdmInp`、`fdmfile.py` の `Fdmfile` などが同じファイル形式の操作を担当します。年度によって形式が異なるBAVとSDは `FdmBav2016` / `FdmBav2020`、`FdmSd2016` / `FdmSd2020` に分けます。
+FDMNESのファイル形式を単位としてモジュールとクラスを分けています。読み込みと書き出しでクラスを分割せず、`fdm_inp.py` の `FdmInp`、`fdmfile.py` の `Fdmfile` などが同じファイル形式の操作を担当します。年度によって形式が異なるBAVとSDは `FdmBav2016` / `FdmBav2020`、`FdmSd2016` / `FdmSd2020` に分けています。
 
 ## CIF変換サンプル
 
