@@ -82,3 +82,10 @@ fdmnes_util install script --force
 The single source of the example scripts is the repository's top-level `scripts/` directory. Scripts are bundled into the installed package at build time. The class library owns file-format parsing, numerical analysis, and plotting; the examples demonstrate those classes in readable Python code. Currently 14 of the 28 historical SAE script names have partial implementations.
 
 The package build and editable sample installation are configured in `pyproject.toml`; no `setup.py` is used.
+
+
+The editable `fdXAS_specified.py` example now uses a separate analysis method for Fermi-relative energy and a plotting class for rendering.
+
+## VASP integration
+
+POSCAR parsing is delegated to the separately installed `vasp_util` package. The editable `FDvasp2fdm.py` example uses `ReadVaspPoscar` and `WriteFdmStructure` to produce the FDMNES structure section. The original SAE calculation-input template is not yet reproduced. Writing POSCAR from FDMNES requires confirmation of the appropriate public `vasp_util` API.

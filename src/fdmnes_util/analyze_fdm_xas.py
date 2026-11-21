@@ -66,6 +66,28 @@ class AnalyzeFdmXas:
         return energy, intensity
 
     @staticmethod
+    def fermi_relative_convolution(convolution, raw_xas):
+        """Convert a convolved spectrum to the Fermi-relative energy axis.
+
+        The original ``fdXAS_specified.py`` subtracts the Fermi energy
+        from the energy column in ``*_conv.txt``. It does not add the
+        absorption-edge energy in this particular plotting operation.
+
+        Args:
+            convolution: Reader for the convolved FDMNES spectrum.
+            raw_xas: Reader for the corresponding non-convolved spectrum.
+
+        Returns:
+            tuple[numpy.ndarray, numpy.ndarray]: Fermi-relative energy
+                and absorption intensity, in the original row order.
+        """
+        energy = convolution.get_eng().copy()
+        intensity = convolution.get_xas().copy()
+        fermi_energy = raw_xas.get_efermi()
+        energy -= fermi_energy
+        return energy, intensity
+
+    @staticmethod
     def energy_reference(energy, raw_xas, *, input_is_photon, fermi):
         """Apply the energy-axis rules used by the original FDplot_XASs script.
 

@@ -29,4 +29,4 @@ PARTIAL means functionality differs from the source: options and numerical/plot 
 - `fdMulti_3.py`: NOT YET REBUILT
 - `fdPDOS_XAS_av.py`: NOT YET REBUILT
 - `fdXAS.py`: PARTIAL (`scripts/fdXAS.py`)
-- `fdXAS_specified.py`: NOT YET REBUILT
+- `fdXAS_specified.py`: PARTIAL (`scripts/fdXAS_specified.py`; Fermi-relative convolved XAS, original plot styling not fully reproduced)

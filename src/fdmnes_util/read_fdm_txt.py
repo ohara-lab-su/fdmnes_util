@@ -10,6 +10,14 @@ class ReadFdmTxt:
     """Read one XAS output, including edge and Fermi-energy metadata."""
 
     def __init__(self, filename):
+        """Read a non-convolved XAS file.
+
+        Args:
+            filename: Path to the FDMNES output file.
+
+        Raises:
+            ValueError: If the input has too few numerical columns.
+        """
         self.path = Path(filename)
         lines = self.path.read_text(
             encoding="utf-8",
@@ -60,9 +68,18 @@ class ReadFdmTxt:
         self.fermi_energy = self.parameters.get("E_Fermi", 0.0)
 
     def get_eng(self):
+        """Return the energy axis in the file-defined reference frame."""
         return self.energy
 
     def get_xas(self, spin=0):
+        """Return the requested absorption column.
+
+        Args:
+            spin: Zero-based index of the absorption column.
+
+        Returns:
+            numpy.ndarray: Absorption intensity values.
+        """
         return self.xas[:, spin]
 
     def get_xas_all(self):

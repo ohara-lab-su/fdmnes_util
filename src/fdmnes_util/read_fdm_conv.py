@@ -10,6 +10,14 @@ class ReadFdmConv:
     """Retain the energy axis and all absorption columns of one output file."""
 
     def __init__(self, filename):
+        """Read a convolved XAS file.
+
+        Args:
+            filename: Path to the FDMNES output file.
+
+        Raises:
+            ValueError: If the input has too few numerical columns.
+        """
         self.path = Path(filename)
 
         with self.path.open(encoding="utf-8", errors="replace") as file:
@@ -23,7 +31,16 @@ class ReadFdmConv:
         self.xas = self.values[:, 1:]
 
     def get_eng(self):
+        """Return the energy axis in the file-defined reference frame."""
         return self.energy
 
     def get_xas(self, spin=0):
+        """Return the requested absorption column.
+
+        Args:
+            spin: Zero-based index of the absorption column.
+
+        Returns:
+            numpy.ndarray: Absorption intensity values.
+        """
         return self.xas[:, spin]

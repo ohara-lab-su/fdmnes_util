@@ -62,7 +62,7 @@ fdmnes_util install script --force
 
 配布するスクリプトの編集元は、リポジトリ直下の `scripts/` です。`pyproject.toml` の設定で、インストール用のスクリプトをwheelに収録します。`setup.py` は使用しません。ライブラリ本体には解析や描画のアルゴリズムを実装し、各スクリプトはその具体的な利用例として記述しています。
 
-現段階では、旧SAEの28本のうち14本に対応するサンプルを収録しています。残るスクリプトと一部オプションは引き続き再構築中です。
+現段階では、旧SAEの28本のうち16本に対応するサンプルを収録しています。残るスクリプトと一部オプションは引き続き再構築中です。
 
 ## スクリプトの再構築
 
@@ -95,3 +95,17 @@ python fdLDOS0_specified.py -i read_pdb.inp --year 2020 --emin -10 --emax 20 --d
 ```
 
 EPS、PDF、PNGを出力します。元のスクリプトが持っていた対話的な画面表示は、このコマンドでは行いません。2022年形式は実データを確認できていないため、2020年形式として処理しません。
+
+
+`fdXAS_specified.py` のサンプルも追加しました。元のSAEスクリプトにあるフェルミ準位基準のエネルギー変換は解析クラスが担当し、描画は `plot/` のクラスを使用します。
+
+## VASPとの連携
+
+POSCARの読み込みは、別パッケージの `vasp_util` に任せています。`fdmnes_util` にVASP用のパーサーは実装しません。`FDvasp2fdm.py` は `ReadVaspPoscar` を通してPOSCARを読み込み、`WriteFdmStructure` でFDMNESの構造部分を書き出すサンプルです。
+
+```console
+fdmnes_util install script
+python FDvasp2fdm.py -i POSCAR
+```
+
+この段階では、元のSAEスクリプトが生成していた計算条件を含む `.inp` のひな形は再現していません。また、FDMNESからPOSCARへの書き出しには、`vasp_util` の対応する公開APIを確認する必要があります。

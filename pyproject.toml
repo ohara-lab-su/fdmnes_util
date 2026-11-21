@@ -12,7 +12,7 @@ dependencies = ["numpy>=1.23"]
 
 [project.optional-dependencies]
 plot = ["matplotlib>=3.6"]
-structure = ["ase"]
+structure = ["vasp-util"]
 test = ["pytest", "matplotlib"]
 
 [tool.setuptools.packages.find]
