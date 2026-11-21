@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+# Original SAE source: fdmfile.py
+# SAE: K.NAKADA, kengo.nakada@gmail.com
+# SAE: 2018.08.15
+# SAE: 2015.11.12 startup
+# SAE: Copyright Kengo NAKADA; SAE class library.
 """Read the FDMNES ``fdmfile.txt`` list of calculation inputs."""
 
 from pathlib import Path

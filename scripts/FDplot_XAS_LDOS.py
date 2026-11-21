@@ -6,10 +6,10 @@ from pathlib import Path
 
 from fdmnes_util.analyze_fdm_xas import AnalyzeFdmXas
 from fdmnes_util.plot.plot_fdm_xas_ldos import PlotFdmXasLdos
-from fdmnes_util.read_fdm_conv import ReadFdmConv
-from fdmnes_util.read_fdm_inp import ReadFdmInp
-from fdmnes_util.read_fdm_sd import read_fdm_sd
-from fdmnes_util.read_fdm_txt import ReadFdmTxt
+from fdmnes_util.fdm_conv import FdmConv
+from fdmnes_util.fdm_inp import FdmInp
+from fdmnes_util.fdm_sd import fdm_sd
+from fdmnes_util.fdm_txt import FdmTxt
 
 
 def main(argv=None):
@@ -33,7 +33,7 @@ def main(argv=None):
     options = parser.parse_args(argv)
 
     inp_path = Path(options.inpname)
-    inp = ReadFdmInp(inp_path)
+    inp = FdmInp(inp_path)
     filout = options.filout
     if not filout:
         filout = inp.get_filout()
@@ -41,9 +41,9 @@ def main(argv=None):
         parser.error("Filout is absent; specify --filout")
 
     prefix = inp_path.parent / filout
-    raw_xas = ReadFdmTxt(Path(f"{prefix}.txt"))
-    conv = ReadFdmConv(Path(f"{prefix}_conv.txt"))
-    sd = read_fdm_sd(
+    raw_xas = FdmTxt(Path(f"{prefix}.txt"))
+    conv = FdmConv(Path(f"{prefix}_conv.txt"))
+    sd = fdm_sd(
         Path(f"{prefix}_sd{options.atom}.txt"),
         format_year=options.year,
         ispin=inp.get_ispin(),

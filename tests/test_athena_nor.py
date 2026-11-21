@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from fdmnes_util.read_athena_nor import ReadAthenaNor
+from fdmnes_util.athena_nor import AthenaNor
 from test_commands import load_script
 
 main = load_script("FDplot_XASs.py").main
@@ -17,7 +17,7 @@ def test_read_athena_nor(tmp_path):
     source = tmp_path / "sample.nor"
     source.write_text("# Athena E0=7112.3\n7100 0.25\n7101 0.75\n")
 
-    result = ReadAthenaNor(source)
+    result = AthenaNor(source)
 
     assert result.e0 == pytest.approx(7112.3)
     np.testing.assert_allclose(result.get_eng(), [7100, 7101])

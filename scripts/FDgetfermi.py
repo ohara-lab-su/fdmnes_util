@@ -3,9 +3,9 @@
 
 import argparse
 
-from fdmnes_util.read_fdm_bav import ReadFdmBav
-from fdmnes_util.read_fdm_inp import ReadFdmInp
-from fdmnes_util.read_fdm_txt import ReadFdmTxt
+from fdmnes_util.fdm_bav import FdmBav
+from fdmnes_util.fdm_inp import FdmInp
+from fdmnes_util.fdm_txt import FdmTxt
 
 
 def main(argv=None):
@@ -22,14 +22,14 @@ def main(argv=None):
     if options.name:
         filout = options.name
     else:
-        input_file = ReadFdmInp(options.input)
+        input_file = FdmInp(options.input)
         filout = input_file.get_filout()
 
     if not filout:
         raise ValueError("Filout is missing")
 
-    spectrum = ReadFdmTxt(f"{filout}.txt")
-    log = ReadFdmBav(f"{filout}_bav.txt").select_reader()
+    spectrum = FdmTxt(f"{filout}.txt")
+    log = FdmBav(f"{filout}_bav.txt").select_reader()
 
     print("E_Fermi")
     print(spectrum.get_efermi())

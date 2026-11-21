@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+# Original SAE source: bav_2020.py
+# SAE: K.NAKADA, kengo.nakada@gmail.com
+# SAE: 2020.08.11: lmax 関係の 2020対応が場合寄っては機能しなかったのを修正
+# SAE: 2020.07.17
+# SAE: 2016.08.01 以降に sd? のナンバリングルールが変わったのでそれに対する対応
+# SAE: 2018.08.15
+# SAE: 2015.09.11
+# SAE: 2015.06.25
+# SAE: 2015.06.23 startup
+# SAE: Copyright Kengo NAKADA; SAE class library.
 """Read the FDMNES 2020 calculation-log format."""
 
 import re

@@ -8,8 +8,8 @@ Matplotlib. This script can be copied and adapted for each research project.
 import argparse
 
 from fdmnes_util.plot.plot_fdm_xas import PlotFdmXas
-from fdmnes_util.read_fdm_conv import ReadFdmConv
-from fdmnes_util.read_fdm_txt import ReadFdmTxt
+from fdmnes_util.fdm_conv import FdmConv
+from fdmnes_util.fdm_txt import FdmTxt
 
 
 def main(argv=None):
@@ -25,9 +25,9 @@ def main(argv=None):
     options = parser.parse_args(argv)
 
     if options.broad:
-        spectrum = ReadFdmConv(f"{options.filout}_conv.txt")
+        spectrum = FdmConv(f"{options.filout}_conv.txt")
     else:
-        spectrum = ReadFdmTxt(f"{options.filout}.txt")
+        spectrum = FdmTxt(f"{options.filout}.txt")
 
     energy = spectrum.get_eng()
     absorption = spectrum.get_xas()

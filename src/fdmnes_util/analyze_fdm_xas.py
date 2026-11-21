@@ -5,8 +5,8 @@ from pathlib import Path
 
 import numpy as np
 
-from .read_fdm_conv import ReadFdmConv
-from .read_fdm_txt import ReadFdmTxt
+from .fdm_conv import FdmConv
+from .fdm_txt import FdmTxt
 
 
 class AnalyzeFdmXas:
@@ -14,6 +14,16 @@ class AnalyzeFdmXas:
 
     @staticmethod
     def average(spectra, weights=None):
+        """averageの処理を実行する。
+        
+        Args:
+            spectra: spectraを指定する。
+            weights: weightsを指定する。
+        
+        Returns:
+            処理結果。
+        
+        """
         spectra = list(spectra)
         if not spectra:
             raise ValueError("No spectra")
@@ -51,6 +61,18 @@ class AnalyzeFdmXas:
         subtract_fermi=False,
         fermi_energy=None,
     ):
+        """photon_energyの処理を実行する。
+        
+        Args:
+            convolution: convolutionを指定する。
+            raw_xas: raw_xasを指定する。
+            subtract_fermi: subtract_fermiを指定する。
+            fermi_energy: fermi_energyを指定する。
+        
+        Returns:
+            処理結果。
+        
+        """
         if raw_xas.edge_energy is None:
             raise ValueError("Missing E_edge")
 
@@ -145,16 +167,16 @@ class AnalyzeFdmXas:
             prefix = Path(f"{base_name}_{index}")
             if convolved:
                 output_path = Path(f"{prefix}_conv.txt")
-                reader = ReadFdmConv(output_path)
+                reader = FdmConv(output_path)
             else:
                 output_path = Path(f"{prefix}.txt")
-                reader = ReadFdmTxt(output_path)
+                reader = FdmTxt(output_path)
 
             energy = reader.get_eng().copy()
             intensity = reader.get_xas().copy()
 
             if input_is_photon is not None:
-                raw_xas = ReadFdmTxt(Path(f"{prefix}.txt"))
+                raw_xas = FdmTxt(Path(f"{prefix}.txt"))
                 energy = cls.energy_reference(
                     energy,
                     raw_xas,

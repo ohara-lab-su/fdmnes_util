@@ -2,15 +2,15 @@
 """Convert a VASP POSCAR file to a FDMNES structure section.
 
 This editable example demonstrates the external vasp_util POSCAR reader and
-FDMNES structure writer. It does not silently generate a full calculation
-input template; the output contains only the structural section.
+FDMNES structure writer. It also generates the original SAE calculation input template as read_pdb.inp.
 """
 
 import argparse
 from pathlib import Path
 
-from fdmnes_util.read_vasp_poscar import ReadVaspPoscar
-from fdmnes_util.write_fdm_structure import WriteFdmStructure
+from fdmnes_util.vasp_poscar import VaspPoscarFile
+from fdmnes_util.fdm_structure import FdmStructure
+from fdmnes_util.fdm_inp import FdmInp
 
 
 def main() -> int:
@@ -38,11 +38,13 @@ def main() -> int:
     else:
         output_path = Path(args.output)
 
-    structure = ReadVaspPoscar(str(input_path))
-    writer = WriteFdmStructure(structure)
+    structure = VaspPoscarFile(str(input_path))
+    writer = FdmStructure(structure)
     writer.write(output_path, molecule=args.mol)
+    FdmInp.write("read_pdb.inp", structure_writer=writer, molecule=args.mol)
     print(writer.render(molecule=args.mol), end="")
     print(f"Written: {output_path}")
+    print("Written: read_pdb.inp")
     return 0
 
 

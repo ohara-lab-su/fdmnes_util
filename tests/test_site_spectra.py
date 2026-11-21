@@ -9,6 +9,15 @@ from test_commands import load_script
 main = load_script("FDplot_XASs.py").main
 
 def test_site_series_and_command(tmp_path):
+    """test_site_series_and_commandの処理を実行する。
+    
+    Args:
+        tmp_path: tmp_pathを指定する。
+    
+    Returns:
+        処理結果。
+    
+    """
     pytest.importorskip('matplotlib')
     (tmp_path/'read_pdb.inp').write_text('Filout\n Fe\nEND\n')
     for i in (1, 3):
@@ -21,10 +30,28 @@ def test_site_series_and_command(tmp_path):
     assert out.stat().st_size>100
 
 def test_site_series_reject_duplicate(tmp_path):
+    """test_site_series_reject_duplicateの処理を実行する。
+    
+    Args:
+        tmp_path: tmp_pathを指定する。
+    
+    Returns:
+        処理結果。
+    
+    """
     with pytest.raises(ValueError,match='Duplicate'):
         AnalyzeFdmXas.site_spectra(tmp_path/'Fe',[1,1])
 
 def test_fermi_flag_not_silently_accepted(tmp_path):
+    """test_fermi_flag_not_silently_acceptedの処理を実行する。
+    
+    Args:
+        tmp_path: tmp_pathを指定する。
+    
+    Returns:
+        処理結果。
+    
+    """
     (tmp_path/'read_pdb.inp').write_text('Filout\n Fe\nEND\n')
     (tmp_path/'Fe_1_conv.txt').write_text('Energy XAS\n0 2\n1 3\n')
     (tmp_path/'Fe_1.txt').write_text('7112 26 = E_edge Z\nE XAS\n0 1\n1 2\n')

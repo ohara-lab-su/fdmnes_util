@@ -7,8 +7,8 @@ from pathlib import Path
 import numpy as np
 
 from fdmnes_util.analyze_fdm_xas import AnalyzeFdmXas
-from fdmnes_util.read_fdm_conv import ReadFdmConv
-from fdmnes_util.read_fdm_txt import ReadFdmTxt
+from fdmnes_util.fdm_conv import FdmConv
+from fdmnes_util.fdm_txt import FdmTxt
 
 
 def test_fermi_relative_convolution(tmp_path):
@@ -18,9 +18,9 @@ def test_fermi_relative_convolution(tmp_path):
     raw.write_text("100 26\nEnergy XAS\n0 1\n1 2\n")
     conv.write_text("Energy XAS\n0 3\n1 4\n")
 
-    raw_reader = ReadFdmTxt(raw)
+    raw_reader = FdmTxt(raw)
     raw_reader.fermi_energy = 2.5
-    conv_reader = ReadFdmConv(conv)
+    conv_reader = FdmConv(conv)
     energy, intensity = AnalyzeFdmXas.fermi_relative_convolution(
         conv_reader,
         raw_reader,

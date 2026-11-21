@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# Original SAE source: inp.py
+# SAE: K.NAKADA, kengo.nakada@gmail.com
+# SAE: 2018.08.15
+# SAE: 2015.11.20
+# SAE: 2015.08.25
+# SAE: 2015.08.20
+# SAE: 2015.08.19
+# SAE: 2015.06.24
+# SAE: 2015.06.19
+# SAE: 2015.05.19 startup
+# SAE: Copyright Kengo NAKADA; SAE class library.
 """Read keywords and crystal parameters from a FDMNES input file."""
 
 from pathlib import Path

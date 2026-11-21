@@ -83,10 +83,28 @@ class ReadFdmTxt:
         return self.xas[:, spin]
 
     def get_xas_all(self):
+        """get_xas_allの処理を実行する。
+        
+        Returns:
+            処理結果。
+        
+        """
         return self.xas
 
     def get_eedge(self):
+        """get_eedgeの処理を実行する。
+        
+        Returns:
+            処理結果。
+        
+        """
         return self.edge_energy
 
     def get_efermi(self):
+        """get_efermiの処理を実行する。
+        
+        Returns:
+            処理結果。
+        
+        """
         return self.fermi_energy

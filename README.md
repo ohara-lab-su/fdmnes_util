@@ -89,3 +89,10 @@ The editable `fdXAS_specified.py` example now uses a separate analysis method fo
 ## VASP integration
 
 POSCAR parsing is delegated to the separately installed `vasp_util` package. The editable `FDvasp2fdm.py` example uses `ReadVaspPoscar` and `WriteFdmStructure` to produce the FDMNES structure section. The original SAE calculation-input template is not yet reproduced. Writing POSCAR from FDMNES requires confirmation of the appropriate public `vasp_util` API.
+
+`FDvasp2fdm.py` creates both the structural file and the calculation input `read_pdb.inp`. `WriteFdmInp` writes the calculation input; `WriteFdmStructure` writes the structural section.
+
+
+## File-based classes (v17)
+
+Modules and classes are organized by FDMNES file format, rather than by read/write operations. For example, `FdmInp` in `fdm_inp.py` and `Fdmfile` in `fdmfile.py` handle operations for their respective formats. BAV and SD retain separate 2016 and 2020 classes for their differing formats.

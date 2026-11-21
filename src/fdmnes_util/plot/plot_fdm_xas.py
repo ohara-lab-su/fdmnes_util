@@ -16,6 +16,19 @@ class PlotFdmXas:
         xlabel="Energy (eV)",
         ylabel="XAS",
     ):
+        """plotの処理を実行する。
+        
+        Args:
+            spectra: spectraを指定する。
+            output: outputを指定する。
+            title: titleを指定する。
+            xlabel: xlabelを指定する。
+            ylabel: ylabelを指定する。
+        
+        Returns:
+            処理結果。
+        
+        """
         import matplotlib
 
         matplotlib.use("Agg")

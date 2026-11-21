@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+# Original SAE source: conv.py
+# SAE: K.NAKADA, kengo.nakada@gmail.com
+# SAE: 2018.08.15
+# SAE: 2015.07.22
+# SAE: 2015.07.01
+# SAE: 2015.06.30
+# SAE: 2015.05.21 startup
+# SAE: Copyright Kengo NAKADA; SAE class library.
 """Read the convolved XAS spectrum written to ``*_conv.txt`` by FDMNES."""
 
 from pathlib import Path

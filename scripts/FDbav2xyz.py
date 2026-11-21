@@ -5,8 +5,8 @@ import argparse
 from pathlib import Path
 
 from fdmnes_util.analyze_fdm_log import AnalyzeFdmLog
-from fdmnes_util.read_fdm_bav import ReadFdmBav
-from fdmnes_util.write_fdm_xyz import WriteFdmXyz
+from fdmnes_util.fdm_bav import FdmBav
+from fdmnes_util.fdm_xyz import FdmXyz
 
 
 def main(argv=None):
@@ -25,7 +25,7 @@ def main(argv=None):
         log_path = Path(f"{options.name}_bav.txt")
 
     # The log reader handles year-specific output formats.
-    log = ReadFdmBav(log_path).select_reader()
+    log = FdmBav(log_path).select_reader()
     analyzer = AnalyzeFdmLog(log)
     symbols, coordinates = analyzer.positions()
 
@@ -36,7 +36,7 @@ def main(argv=None):
             print(symbol, *position)
     else:
         output_name = f"{str(log_path).removesuffix('_bav.txt')}.xyz"
-        writer = WriteFdmXyz()
+        writer = FdmXyz()
         output_path = writer.write(symbols, coordinates, output_name)
         print(output_path)
 

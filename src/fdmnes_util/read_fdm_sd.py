@@ -5,6 +5,18 @@ from .read_fdm_sd_2016 import ReadFdmSd2016
 from .read_fdm_sd_2020 import ReadFdmSd2020
 
 def read_fdm_sd(filename, *, format_year, ispin=1, weight=None):
+    """read_fdm_sdの処理を実行する。
+    
+    Args:
+        filename: filenameを指定する。
+        format_year: format_yearを指定する。
+        ispin: ispinを指定する。
+        weight: weightを指定する。
+    
+    Returns:
+        処理結果。
+    
+    """
     if format_year==2016:
         return ReadFdmSd2016(filename,ispin=ispin,weight=weight)
     if format_year==2020:

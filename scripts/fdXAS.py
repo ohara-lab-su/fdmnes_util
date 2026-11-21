@@ -4,7 +4,7 @@
 import argparse
 
 from fdmnes_util.plot.plot_fdm_xas import PlotFdmXas
-from fdmnes_util.read_fdm_conv import ReadFdmConv
+from fdmnes_util.fdm_conv import FdmConv
 
 
 def main(argv=None):
@@ -22,7 +22,7 @@ def main(argv=None):
     options = parser.parse_args(argv)
 
     prefix = options.input.removesuffix("_conv.txt")
-    spectrum = ReadFdmConv(f"{prefix}_conv.txt")
+    spectrum = FdmConv(f"{prefix}_conv.txt")
     energy = spectrum.get_eng()
     absorption = spectrum.get_xas()
 

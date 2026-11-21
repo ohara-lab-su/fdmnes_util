@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Original SAE source: inp_writer.py
+# SAE: Copyright Kengo NAKADA; SAE class library.
 """Write the Crystal or Molecule section of a FDMNES input file."""
 
 from pathlib import Path

@@ -4,10 +4,10 @@
 import argparse
 
 from fdmnes_util.analyze_fdm_xas import AnalyzeFdmXas
-from fdmnes_util.read_fdm_conv import ReadFdmConv
-from fdmnes_util.read_fdm_inp import ReadFdmInp
-from fdmnes_util.read_fdm_txt import ReadFdmTxt
-from fdmnes_util.write_fdm_photoenergy import WriteFdmPhotoenergy
+from fdmnes_util.fdm_conv import FdmConv
+from fdmnes_util.fdm_inp import FdmInp
+from fdmnes_util.fdm_txt import FdmTxt
+from fdmnes_util.fdm_photoenergy import FdmPhotoenergy
 
 
 def main(argv=None):
@@ -23,7 +23,7 @@ def main(argv=None):
     parser.add_argument("-f", "--fermi", action="store_true")
     options = parser.parse_args(argv)
 
-    input_file = ReadFdmInp(options.inp)
+    input_file = FdmInp(options.inp)
     if input_file.get_energygpho():
         raise ValueError("Input already uses PhotonEnergy")
 
@@ -37,8 +37,8 @@ def main(argv=None):
     else:
         convolution_prefix = raw_prefix
 
-    spectrum = ReadFdmTxt(f"{raw_prefix}.txt")
-    convolution = ReadFdmConv(f"{convolution_prefix}_conv.txt")
+    spectrum = FdmTxt(f"{raw_prefix}.txt")
+    convolution = FdmConv(f"{convolution_prefix}_conv.txt")
 
     # Energy conversion stays in the analysis class, not in this example.
     energy, intensity = AnalyzeFdmXas.photon_energy(
@@ -47,7 +47,7 @@ def main(argv=None):
         subtract_fermi=options.fermi,
         fermi_energy=spectrum.get_efermi(),
     )
-    writer = WriteFdmPhotoenergy()
+    writer = FdmPhotoenergy()
     output_name = f"{convolution_prefix}_conv_photoe.txt"
     output = writer.write(energy, intensity, output_name)
     print(output)

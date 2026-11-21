@@ -23,7 +23,8 @@ def install_scripts(
     The examples are ordinary Python source files, not console entry points.
 
     Args:
-        directory: Destination directory; usually the current directory.
+        directory: Destination directory
+        usually the current directory.
         overwrite: Replace existing script files when set to True.
 
     Returns:

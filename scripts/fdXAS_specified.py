@@ -10,8 +10,8 @@ from pathlib import Path
 
 from fdmnes_util.analyze_fdm_xas import AnalyzeFdmXas
 from fdmnes_util.plot.plot_fdm_xas import PlotFdmXas
-from fdmnes_util.read_fdm_conv import ReadFdmConv
-from fdmnes_util.read_fdm_txt import ReadFdmTxt
+from fdmnes_util.fdm_conv import FdmConv
+from fdmnes_util.fdm_txt import FdmTxt
 
 
 def main(argv=None):
@@ -44,8 +44,8 @@ def main(argv=None):
     raw_path = Path(f"{prefix}.txt")
     convolution_path = Path(f"{prefix}_conv.txt")
 
-    raw_spectrum = ReadFdmTxt(raw_path)
-    convolved_spectrum = ReadFdmConv(convolution_path)
+    raw_spectrum = FdmTxt(raw_path)
+    convolved_spectrum = FdmConv(convolution_path)
 
     # Match the energy reference in the original SAE example.
     energy, absorption = AnalyzeFdmXas.fermi_relative_convolution(

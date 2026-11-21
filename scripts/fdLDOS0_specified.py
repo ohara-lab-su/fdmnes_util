@@ -5,8 +5,8 @@ import argparse
 from pathlib import Path
 
 from fdmnes_util.plot.plot_fdm_dos import PlotFdmDos
-from fdmnes_util.read_fdm_inp import ReadFdmInp
-from fdmnes_util.read_fdm_sd import read_fdm_sd
+from fdmnes_util.fdm_inp import FdmInp
+from fdmnes_util.fdm_sd import fdm_sd
 
 
 def main(argv=None):
@@ -35,7 +35,7 @@ def main(argv=None):
     options = parser.parse_args(argv)
 
     input_path = Path(options.input)
-    inp = ReadFdmInp(input_path)
+    inp = FdmInp(input_path)
     filout = options.filout
     if filout is None:
         filout = inp.get_filout()
@@ -46,7 +46,7 @@ def main(argv=None):
     # The SD index is zero in the original fdLDOS0_specified command.
     prefix = input_path.parent / filout
     sd_path = Path(f"{prefix}_sd0.txt")
-    sd = read_fdm_sd(
+    sd = fdm_sd(
         sd_path,
         format_year=options.year,
         ispin=inp.get_ispin(),

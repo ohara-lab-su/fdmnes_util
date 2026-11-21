@@ -38,7 +38,7 @@ def test_force_replaces_existing_script(tmp_path):
 
     assert filename in installed
     assert filename not in skipped
-    assert "ReadFdmInp" in filename.read_text()
+    assert "FdmInp" in filename.read_text()
 
 
 def test_script_sources_are_self_contained(tmp_path):

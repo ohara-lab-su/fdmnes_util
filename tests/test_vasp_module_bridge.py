@@ -6,7 +6,7 @@ import types
 
 import numpy as np
 
-from fdmnes_util.read_vasp_poscar import ReadVaspPoscar
+from fdmnes_util.vasp_poscar import VaspPoscarFile
 
 
 def test_vasp_reader_uses_external_module(monkeypatch, tmp_path):
@@ -36,7 +36,7 @@ def test_vasp_reader_uses_external_module(monkeypatch, tmp_path):
     monkeypatch.setitem(sys.modules, "vasp_util", package)
     monkeypatch.setitem(sys.modules, "vasp_util.vasp_poscar", module)
 
-    structure = ReadVaspPoscar(str(tmp_path / "POSCAR"))
+    structure = VaspPoscarFile(str(tmp_path / "POSCAR"))
     assert structure.get_symbols() == ["Fe"]
     np.testing.assert_allclose(structure.get_lattice_vectors(), np.diag([3, 4, 5]))
 
@@ -44,7 +44,7 @@ def test_vasp_reader_uses_external_module(monkeypatch, tmp_path):
 def test_fdmnes_writer_uses_read_vasp_poscar(monkeypatch, tmp_path):
     """Check FDMNES output without introducing a second VASP parser."""
     class FakeStructure:
-        """Provide the public interface of ReadVaspPoscar."""
+        """Provide the public interface of VaspPoscarFile."""
 
         def get_lattice_vectors(self):
             """Return the test lattice."""
@@ -58,9 +58,9 @@ def test_fdmnes_writer_uses_read_vasp_poscar(monkeypatch, tmp_path):
             """Return the test element."""
             return ["Fe"]
 
-    from fdmnes_util.write_fdm_structure import WriteFdmStructure
+    from fdmnes_util.fdm_structure import FdmStructure
 
-    writer = WriteFdmStructure(FakeStructure())
+    writer = FdmStructure(FakeStructure())
     output = writer.write(tmp_path / "POSCAR.fdmnes")
     content = output.read_text(encoding="utf-8")
     assert "Crystal" in content

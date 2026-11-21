@@ -8,14 +8,14 @@ import pytest
 from test_commands import load_script
 
 main = load_script("fdLDOS0_specified.py").main
-from fdmnes_util.read_fdm_sd_2020 import ReadFdmSd2020
+from fdmnes_util.fdm_sd_2020 import FdmSd2020
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
 def test_single_orbital_matches_reader(tmp_path):
     """Use the SD reader's p-channel without changing its values."""
-    reader = ReadFdmSd2020(FIXTURES / "Fe_sd0.txt")
+    reader = FdmSd2020(FIXTURES / "Fe_sd0.txt")
     assert len(reader.get_eng()) == len(reader.get_ldos("p"))
 
 

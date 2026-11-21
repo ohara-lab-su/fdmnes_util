@@ -3,8 +3,8 @@
 
 import argparse
 
-from fdmnes_util.read_fdm_inp import ReadFdmInp
-from fdmnes_util.write_fdm_convolution_inputs import WriteFdmConvolutionInputs
+from fdmnes_util.fdm_inp import FdmInp
+from fdmnes_util.fdm_convolution_inputs import FdmConvolutionInputs
 
 
 def main(argv=None):
@@ -17,12 +17,12 @@ def main(argv=None):
     parser.add_argument("-i", "--input", default="conv.inp")
     options = parser.parse_args(argv)
 
-    calculation = ReadFdmInp(options.input)
+    calculation = FdmInp(options.input)
     filout = calculation.get_filout()
     if not filout:
         raise ValueError("Filout is missing")
 
-    writer = WriteFdmConvolutionInputs()
+    writer = FdmConvolutionInputs()
     generated_paths = writer.write(filout)
     for path in generated_paths:
         print(path)

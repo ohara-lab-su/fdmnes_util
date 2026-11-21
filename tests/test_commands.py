@@ -29,12 +29,32 @@ F = Path(__file__).parent / 'fixtures'
 
 
 def prepare(tmp_path):
+    """prepareの処理を実行する。
+    
+    Args:
+        tmp_path: tmp_pathを指定する。
+    
+    Returns:
+        処理結果。
+    
+    """
     for name in ('Fe.txt', 'Fe_conv.txt', 'Fe_sd0.txt', 'Fe_bav.txt'):
         shutil.copy(F / name, tmp_path / name)
     (tmp_path / 'read_pdb.inp').write_text('Filout\n  Fe\nEND\n')
 
 
 def test_getfermi_and_conversion(tmp_path, monkeypatch, capsys):
+    """test_getfermi_and_conversionの処理を実行する。
+    
+    Args:
+        tmp_path: tmp_pathを指定する。
+        monkeypatch: monkeypatchを指定する。
+        capsys: capsysを指定する。
+    
+    Returns:
+        処理結果。
+    
+    """
     prepare(tmp_path)
     monkeypatch.chdir(tmp_path)
     fd_getfermi.main([])
@@ -45,6 +65,16 @@ def test_getfermi_and_conversion(tmp_path, monkeypatch, capsys):
 
 
 def test_clean(tmp_path, monkeypatch):
+    """test_cleanの処理を実行する。
+    
+    Args:
+        tmp_path: tmp_pathを指定する。
+        monkeypatch: monkeypatchを指定する。
+    
+    Returns:
+        処理結果。
+    
+    """
     prepare(tmp_path)
     monkeypatch.chdir(tmp_path)
     fd_clean.main([])
@@ -54,6 +84,16 @@ def test_clean(tmp_path, monkeypatch):
 
 
 def test_move(tmp_path, monkeypatch):
+    """test_moveの処理を実行する。
+    
+    Args:
+        tmp_path: tmp_pathを指定する。
+        monkeypatch: monkeypatchを指定する。
+    
+    Returns:
+        処理結果。
+    
+    """
     prepare(tmp_path)
     monkeypatch.chdir(tmp_path)
     fd_move.main(['-d', 'archive'])
@@ -63,6 +103,16 @@ def test_move(tmp_path, monkeypatch):
 
 
 def test_bav2xyz_real_data(tmp_path, capsys):
+    """test_bav2xyz_real_dataの処理を実行する。
+    
+    Args:
+        tmp_path: tmp_pathを指定する。
+        capsys: capsysを指定する。
+    
+    Returns:
+        処理結果。
+    
+    """
     path = tmp_path/'Fe_bav.txt'
     shutil.copy(F/'Fe_bav.txt',path)
     fd_bav2xyz.main([str(path).removesuffix('_bav.txt')])
@@ -74,6 +124,16 @@ def test_bav2xyz_real_data(tmp_path, capsys):
 
 
 def test_convolution_allsite(tmp_path, monkeypatch):
+    """test_convolution_allsiteの処理を実行する。
+    
+    Args:
+        tmp_path: tmp_pathを指定する。
+        monkeypatch: monkeypatchを指定する。
+    
+    Returns:
+        処理結果。
+    
+    """
     monkeypatch.chdir(tmp_path)
     (tmp_path/'conv.inp').write_text('Filout\n Fe\nEND\n')
     for i in (1,2):(tmp_path/f'Fe_{i}.txt').write_text('data\n')
@@ -83,6 +143,16 @@ def test_convolution_allsite(tmp_path, monkeypatch):
 
 
 def test_plotting_cli(tmp_path, monkeypatch):
+    """test_plotting_cliの処理を実行する。
+    
+    Args:
+        tmp_path: tmp_pathを指定する。
+        monkeypatch: monkeypatchを指定する。
+    
+    Returns:
+        処理結果。
+    
+    """
     pytest.importorskip('matplotlib')
     prepare(tmp_path)
     monkeypatch.chdir(tmp_path)

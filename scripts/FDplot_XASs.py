@@ -6,9 +6,9 @@ from pathlib import Path
 
 from fdmnes_util.analyze_fdm_xas import AnalyzeFdmXas
 from fdmnes_util.plot.plot_fdm_xas import PlotFdmXas
-from fdmnes_util.read_athena_nor import ReadAthenaNor
-from fdmnes_util.read_fdm_inp import ReadFdmInp
-from fdmnes_util.read_fdm_txt import ReadFdmTxt
+from fdmnes_util.athena_nor import AthenaNor
+from fdmnes_util.fdm_inp import FdmInp
+from fdmnes_util.fdm_txt import FdmTxt
 
 
 def main(argv=None):
@@ -42,7 +42,7 @@ def main(argv=None):
     parser.add_argument("--output", default="XAS.pdf")
     options = parser.parse_args(argv)
 
-    input_file = ReadFdmInp(options.input)
+    input_file = FdmInp(options.input)
     filout = input_file.get_filout()
     if not filout:
         parser.error("The input file does not contain the Filout keyword")
@@ -50,7 +50,7 @@ def main(argv=None):
     base = Path(options.input).parent / filout
     first_site = options.average[0]
     raw_xas_path = Path(f"{base}_{first_site}.txt")
-    raw_xas = ReadFdmTxt(raw_xas_path)
+    raw_xas = FdmTxt(raw_xas_path)
 
     spectra = AnalyzeFdmXas.site_spectra(
         base,
@@ -65,7 +65,7 @@ def main(argv=None):
         for site in options.average:
             # Athena measurements follow the file name used in SAE.
             observed_path = Path(f"{base}_{site}_obs.txt.nor")
-            reader = ReadAthenaNor(observed_path)
+            reader = AthenaNor(observed_path)
             observed.append(
                 (reader.get_eng(), reader.get_nor(), f"obs. {site}")
             )

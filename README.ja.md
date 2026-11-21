@@ -109,3 +109,10 @@ python FDvasp2fdm.py -i POSCAR
 ```
 
 この段階では、元のSAEスクリプトが生成していた計算条件を含む `.inp` のひな形は再現していません。また、FDMNESからPOSCARへの書き出しには、`vasp_util` の対応する公開APIを確認する必要があります。
+
+`FDvasp2fdm.py` は、POSCARから構造ファイルと計算条件付きの `read_pdb.inp` を作成します。入力ファイルの生成は `WriteFdmInp`、結晶構造の出力は `WriteFdmStructure` が担当します。
+
+
+## クラスの命名（v17）
+
+FDMNESのファイル形式を単位としてモジュールとクラスを分けます。読み込みと書き出しでクラスを分割せず、`fdm_inp.py` の `FdmInp`、`fdmfile.py` の `Fdmfile` などが同じファイル形式の操作を担当します。年度によって形式が異なるBAVとSDは `FdmBav2016` / `FdmBav2020`、`FdmSd2016` / `FdmSd2020` に分けます。

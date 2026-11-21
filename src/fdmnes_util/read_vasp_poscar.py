@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+# Original SAE source: FDvasp2fdm.py
+# SAE: Copyright Kengo NAKADA; SAE class library.
+# SAE: 2018.08.21
+# SAE: 2016.01.16
+# SAE: 2015.05.18 startup
 """Read VASP POSCAR structures through the external vasp_util package."""
 
 from pathlib import Path
