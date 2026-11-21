@@ -85,7 +85,7 @@ Not all functions of the 28 scripts have been reproduced yet. Progress and comma
 ## References
 
 - [SAE (Structural Analysis Environment)](https://github.com/ohara-lab-su/sae)
-- [Ohara Lab public software](https://ohara-lab-su.github.io/)
+
 ## Coding conventions
 
 Python modules include shebangs and docstrings. Class and public-method documentation follows Google style. Readability takes precedence over one-line expressions and compressed control flow.

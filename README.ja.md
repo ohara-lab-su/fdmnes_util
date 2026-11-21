@@ -92,8 +92,6 @@ SAEの対象28本に対応する編集用サンプルを収録しています。
 ## 関連資料
 
 - [SAE（Structural Analysis Environment）](https://github.com/ohara-lab-su/sae)
-- [尾原研究室の公開ソフトウェア](https://ohara-lab-su.github.io/)
-
 
 ## コードの記述規則
 
