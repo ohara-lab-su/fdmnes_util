@@ -1,36 +1,63 @@
 #!/usr/bin/env python3
-"""Structure input conversion. POSCAR is read by the installed vasp_util module."""
-from pathlib import Path
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Related SAE source: sae/commands/FDvasp2fdm.py
+# Original author: Kengo NAKADA (kengo.nakada@gmail.com)
+# Copyright 2015, Kengo NAKADA. License: MIT.
+#
+# Original SAE development history:
+#   2015.05.18 startup
+#   2016.01.16 A standalone replacement for ASE was found to contain a
+#              critical bug; the earlier ASE-backed implementation returned.
+#   2016.01.16 Output format adapted to the newer FDMNES format.
+#   2018.08.21 Python2/3 両対応
+#
+# This class is a new adapter, not an SAE class copied verbatim.
+# POSCAR parsing is delegated to the external vasp_util package.
+# =============================================================================
+"""Convert supported structure-file data to ASE atomic structures."""
+
+
 class StructureConversion:
-    """StructureConversionに関する処理を提供する。"""
+    """Adapt structure readers to ASE without duplicating POSCAR parsing."""
+
     @staticmethod
     def poscar_to_atoms(filename):
-        """poscar_to_atomsの処理を実行する。
-        
+        """Load a VASP POSCAR using vasp_util and construct an ASE structure.
+
         Args:
-            filename: filenameを指定する。
-        
+            filename: Path to the POSCAR file.
+
         Returns:
-            処理結果。
-        
+            ase.Atoms: Periodic structure in the POSCAR atom order.
         """
-        from vasp_util.vasp_poscar import VaspPoscar
         from ase import Atoms
-        poscar=VaspPoscar(str(filename))
-        return Atoms(symbols=poscar.get_atom_indices(),
-                     scaled_positions=poscar.get_coords_direct(),
-                     cell=poscar.get_lattice_vectors(),pbc=True)
+        from vasp_util.vasp_poscar import VaspPoscar
+
+        poscar = VaspPoscar(str(filename))
+        symbols = poscar.get_atom_indices()
+        direct_positions = poscar.get_coords_direct()
+        lattice_vectors = poscar.get_lattice_vectors()
+
+        return Atoms(
+            symbols=symbols,
+            scaled_positions=direct_positions,
+            cell=lattice_vectors,
+            pbc=True,
+        )
+
     @staticmethod
-    def other_to_atoms(filename,format):
-        """other_to_atomsの処理を実行する。
-        
+    def other_to_atoms(filename, format):
+        """Read a non-POSCAR structure using ASE's format-specific reader.
+
         Args:
-            filename: filenameを指定する。
-            format: formatを指定する。
-        
+            filename: Path to the structure file.
+            format: ASE file-format identifier.
+
         Returns:
-            処理結果。
-        
+            ase.Atoms: Structure returned by ASE.
         """
         from ase.io import read
-        return read(str(filename),format=format)
+
+        atoms = read(str(filename), format=format)
+        return atoms

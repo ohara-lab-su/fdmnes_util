@@ -12,6 +12,51 @@ import numpy as np
 class AnalyzeFdmAverage:
     """Average data from independent calculations on a shared energy grid."""
 
+    def energy_reference(self, input_file, spectrum, fermi=False):
+        """Determine the shared energy shift used by the SAE average plot.
+
+        The source script distinguishes FDMNES Fermi-relative and photon-energy
+        calculation modes. Its photon-energy-to-Fermi branch contains a
+        subtraction without assignment; this implementation corrects that
+        specific defect rather than reproducing an undefined offset.
+
+        Args:
+            input_file: FdmInp instance describing the calculation mode.
+            spectrum: FdmTxt instance containing edge and Fermi energies.
+            fermi: If True, use the Fermi-relative energy reference.
+                Otherwise, use photon energy.
+
+        Returns:
+            tuple[float, float]: Energy-axis shift and absolute Fermi
+            position in the photon-energy reference, both in eV.
+
+        Raises:
+            ValueError: If the required energy metadata is not finite.
+        """
+        edge_energy = float(spectrum.get_eedge())
+        fermi_energy = float(spectrum.get_efermi())
+
+        if not np.isfinite(edge_energy):
+            raise ValueError("The absorption-edge energy must be finite")
+        if not np.isfinite(fermi_energy):
+            raise ValueError("The Fermi energy must be finite")
+
+        absolute_fermi = edge_energy + fermi_energy
+        photon_mode = input_file.get_energygpho()
+
+        if photon_mode:
+            if fermi:
+                energy_shift = -absolute_fermi
+            else:
+                energy_shift = 0.0
+        else:
+            if fermi:
+                energy_shift = -fermi_energy
+            else:
+                energy_shift = edge_energy
+
+        return energy_shift, absolute_fermi
+
     def average(self, readers, value_method, **kwargs):
         """Return the common energy axis and arithmetic mean of a quantity.
 

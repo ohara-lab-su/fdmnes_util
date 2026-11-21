@@ -22,6 +22,8 @@ class PlotFdmAverage:
         emax=None,
         dmax=None,
         ymax=None,
+        energy_offset=0.0,
+        orbital_groups=None,
     ):
         """Save a stacked plot of orbital projections and optional XAS.
 
@@ -34,6 +36,9 @@ class PlotFdmAverage:
             emax: Optional maximum energy.
             dmax: Optional upper bound for each PDOS panel.
             ymax: Optional upper bound for the XAS panel.
+            energy_offset: Energy shift in eV applied to every plotted curve.
+            orbital_groups: Optional orbital-name groups. Each group is
+                plotted in one panel, following the SAE orbital block layout.
 
         Returns:
             pathlib.Path: Path to the generated figure.
@@ -55,12 +60,40 @@ class PlotFdmAverage:
             if ymax <= 0:
                 raise ValueError("ymax must be positive")
 
+        import numpy as np
+
+        if not np.isfinite(energy_offset):
+            raise ValueError("energy_offset must be finite")
+
         import matplotlib
 
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
-        panel_count = len(orbital_data)
+        # The original SAE figure groups orbital curves into three panels.
+        # Keep the ungrouped behavior for callers that do not select a mode.
+        panels = []
+        if orbital_groups is None:
+            for curve in orbital_data:
+                panels.append([curve])
+        else:
+            used_orbitals = set()
+            for group in orbital_groups:
+                panel_curves = []
+                for orbital in group:
+                    if orbital in used_orbitals:
+                        raise ValueError("Orbital groups must not overlap")
+                    used_orbitals.add(orbital)
+                    for curve in orbital_data:
+                        label = curve[0]
+                        if label.endswith("-" + orbital):
+                            panel_curves.append(curve)
+                if panel_curves:
+                    panels.append(panel_curves)
+            if not panels:
+                raise ValueError("No orbital data match the selected groups")
+
+        panel_count = len(panels)
         if xas_data is not None:
             panel_count += 1
 
@@ -72,9 +105,12 @@ class PlotFdmAverage:
             squeeze=False,
         )
         axis_index = 0
-        for label, energy, density in orbital_data:
+        for panel_curves in panels:
             axis = axes[axis_index, 0]
-            axis.plot(energy, density, linewidth=1.8, label=label)
+            for label, energy, density in panel_curves:
+                # Each orbital retains its own original energy grid.
+                shifted_energy = np.asarray(energy) + energy_offset
+                axis.plot(shifted_energy, density, linewidth=1.8, label=label)
             axis.set_ylabel("PDOS [states/eV]")
             if dmax is not None:
                 axis.set_ylim(top=dmax)
@@ -85,7 +121,7 @@ class PlotFdmAverage:
             energy, absorption = xas_data
             axis = axes[axis_index, 0]
             axis.plot(
-                energy,
+                np.asarray(energy) + energy_offset,
                 absorption,
                 linewidth=1.8,
                 color="black",
@@ -94,7 +130,7 @@ class PlotFdmAverage:
             if raw_xas_data is not None:
                 raw_energy, raw_absorption = raw_xas_data
                 axis.plot(
-                    raw_energy,
+                    np.asarray(raw_energy) + energy_offset,
                     raw_absorption,
                     linewidth=1.0,
                     label="XAS (without broadening)",

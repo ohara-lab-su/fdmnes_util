@@ -42,6 +42,7 @@ from fdmnes_util.analyze_fdm_average import AnalyzeFdmAverage
 from fdmnes_util.fdm_sd import FdmSd
 from fdmnes_util.fdm_conv import FdmConv
 from fdmnes_util.fdm_txt import FdmTxt
+from fdmnes_util.fdm_inp import FdmInp
 from fdmnes_util.plot.plot_fdm_average import PlotFdmAverage
 
 
@@ -57,6 +58,35 @@ def main(argv=None):
     parser.add_argument("--orbitals", nargs="+", default=["s", "p_z"])
     parser.add_argument("--spin", type=int, default=0)
     parser.add_argument(
+        "--sp",
+        action="store_true",
+        help="SAE s/p orbital grouping: s, p_z, and (p_y, p_x)",
+    )
+    parser.add_argument(
+        "--spd",
+        action="store_true",
+        help="SAE s/p/d orbital grouping (the original default)",
+    )
+    parser.add_argument(
+        "--input",
+        help="FDMNES .inp file used to determine the energy reference",
+    )
+    parser.add_argument(
+        "--fermi",
+        action="store_true",
+        help="Use Fermi-relative energy instead of photon energy (SAE --fermi)",
+    )
+    parser.add_argument(
+        "--label",
+        help="Label prefix for orbital curves (SAE --label)",
+    )
+    parser.add_argument(
+        "--atom",
+        type=int,
+        default=0,
+        help="Site index used in default orbital labels (SAE --atom)",
+    )
+    parser.add_argument(
         "--xas-files",
         nargs="+",
         help="Convolved XAS files corresponding to the calculations",
@@ -65,6 +95,12 @@ def main(argv=None):
         "--raw-xas-files",
         nargs="+",
         help="Unbroadened XAS files paired with --xas-files (SAE --broad)",
+    )
+    parser.add_argument(
+        "--energy-offset",
+        type=float,
+        default=0.0,
+        help="Shift all plotted DOS and XAS energy axes by this value in eV",
     )
     parser.add_argument("--emin", type=float)
     parser.add_argument("--emax", type=float)
@@ -81,6 +117,29 @@ def main(argv=None):
     parser.add_argument("-o", "--output", default="PDOS_average.pdf")
     options = parser.parse_args(argv)
 
+    # Reproduce the orbital blocks defined in the original SAE script.
+    # A custom --orbitals selection keeps the simple ungrouped layout.
+    orbital_groups = None
+    if options.sp and options.spd:
+        parser.error("--sp and --spd cannot be specified together")
+    if options.sp:
+        orbital_groups = [
+            ["s"],
+            ["p_z"],
+            ["p_y", "p_x"],
+        ]
+        options.orbitals = ["s", "p_z", "p_y", "p_x"]
+    if options.spd:
+        orbital_groups = [
+            ["s"],
+            ["p_y", "p_z", "p_x"],
+            ["d_xy", "d_yz", "d_3z2-r2", "d_xz", "d_x2-y2"],
+        ]
+        options.orbitals = [
+            "s", "p_y", "p_z", "p_x", "d_xy", "d_yz",
+            "d_3z2-r2", "d_xz", "d_x2-y2",
+        ]
+
     readers = []
     for filename in options.sd_files:
         sd_file = FdmSd(filename, format_year=options.year)
@@ -95,7 +154,15 @@ def main(argv=None):
             lm=orbital,
             spin=options.spin,
         )
-        orbital_data.append((orbital, energy, density))
+        # The SAE script labels each orbital as <atom>-<orbital> by default.
+        # An explicit --label replaces the atom prefix, not the orbital name.
+        if options.label is None:
+            label_prefix = str(options.atom)
+        else:
+            label_prefix = options.label
+
+        curve_label = f"{label_prefix}-{orbital}"
+        orbital_data.append((curve_label, energy, density))
 
     # Validate the number of paired files before reading any XAS output.
     xas_data = None
@@ -138,6 +205,25 @@ def main(argv=None):
             spin=options.spin,
         )
 
+    # SAE determines the energy reference from the input calculation mode
+    # and the edge/Fermi metadata in the unbroadened XAS file.
+    energy_offset = options.energy_offset
+    if options.input is not None:
+        if options.raw_xas_files is None:
+            parser.error("--input requires --raw-xas-files for energy metadata")
+
+        input_file = FdmInp(options.input)
+        reference_spectrum = FdmTxt(options.raw_xas_files[0])
+        reference_shift, absolute_fermi = analyzer.energy_reference(
+            input_file,
+            reference_spectrum,
+            fermi=options.fermi,
+        )
+        energy_offset += reference_shift
+    else:
+        if options.fermi:
+            parser.error("--fermi requires --input and --raw-xas-files")
+
     plotter = PlotFdmAverage()
     plotter.plot(
         orbital_data,
@@ -148,6 +234,8 @@ def main(argv=None):
         emax=options.emax,
         dmax=options.dmax,
         ymax=options.ymax,
+        energy_offset=energy_offset,
+        orbital_groups=orbital_groups,
     )
 
 

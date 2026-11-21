@@ -114,3 +114,7 @@ Added the editable `fdMulti_3.py` example for comparing LDOS from three independ
 ### v37: Averaged XAS overlay
 
 In `fdPDOS_XAS_av.py`, use `--xas-files` for convolved XAS and `--raw-xas-files` for unbroadened XAS to overlay both averaged spectra. Each family is averaged on its own energy grid. SAE energy-reference conversion is not yet reproduced.
+
+### v40: averaged PDOS/XAS energy reference
+
+The editable `fdPDOS_XAS_av.py` example accepts `--input` and `--raw-xas-files` to determine the energy reference from the FDMNES input mode and the raw XAS edge/Fermi metadata. Use `--fermi` for a Fermi-relative axis. `--energy-offset` remains an additional correction.

@@ -102,3 +102,33 @@ def test_example_rejects_unpaired_xas_files(tmp_path, monkeypatch):
             ]
         )
     assert error.value.code == 2
+
+
+def test_example_preserves_sae_orbital_label_rules(monkeypatch, tmp_path):
+    """Use the SAE atom prefix unless the user supplies --label."""
+    module = load_example()
+    monkeypatch.setattr(module, "FdmSd", FakeSd)
+    recorded_labels = []
+
+    class RecordingPlotter:
+        """Record the curves passed from the editable example."""
+
+        def plot(self, orbital_data, output, **kwargs):
+            """Store labels without rendering a figure.
+
+            Args:
+                orbital_data: Orbital curves passed by the script.
+                output: Unused output path.
+                **kwargs: Other plotting options.
+            """
+            for label, energy, density in orbital_data:
+                recorded_labels.append(label)
+
+    monkeypatch.setattr(module, "PlotFdmAverage", RecordingPlotter)
+
+    module.main(["--year", "2020", "--atom", "3", "sample_sd.txt"])
+    assert recorded_labels == ["3-s", "3-p_z"]
+
+    recorded_labels.clear()
+    module.main(["--year", "2020", "--label", "Pd", "sample_sd.txt"])
+    assert recorded_labels == ["Pd-s", "Pd-p_z"]
