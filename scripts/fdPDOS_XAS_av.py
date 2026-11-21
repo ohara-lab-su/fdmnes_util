@@ -136,8 +136,15 @@ def main(argv=None):
             ["d_xy", "d_yz", "d_3z2-r2", "d_xz", "d_x2-y2"],
         ]
         options.orbitals = [
-            "s", "p_y", "p_z", "p_x", "d_xy", "d_yz",
-            "d_3z2-r2", "d_xz", "d_x2-y2",
+            "s",
+            "p_y",
+            "p_z",
+            "p_x",
+            "d_xy",
+            "d_yz",
+            "d_3z2-r2",
+            "d_xz",
+            "d_x2-y2",
         ]
 
     readers = []
@@ -168,9 +175,7 @@ def main(argv=None):
     xas_data = None
     if options.xas_files is not None:
         if len(options.xas_files) != len(options.sd_files):
-            parser.error(
-                "The number of --xas-files must match the number of SD files"
-            )
+            parser.error("The number of --xas-files must match the number of SD files")
 
         # Each convolved spectrum retains its own energy grid. Averaging
         # is only meaningful when those grids agree point by point.

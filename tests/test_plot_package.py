@@ -33,10 +33,15 @@ def test_combined_xas_ldos_cli(tmp_path):
     inp_path = tmp_path / "read_pdb.inp"
     inp_path.write_text("Filout\n Fe\nEnd\n", encoding="utf-8")
     output = tmp_path / "combined.pdf"
-    result = fd_plot_xas_ldos.main([
-        "-i", str(inp_path),
-        "--year", "2020",
-        "--output", str(output),
-    ])
+    result = fd_plot_xas_ldos.main(
+        [
+            "-i",
+            str(inp_path),
+            "--year",
+            "2020",
+            "--output",
+            str(output),
+        ]
+    )
     assert result == output
     assert output.stat().st_size > 100

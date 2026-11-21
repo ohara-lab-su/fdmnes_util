@@ -16,7 +16,7 @@ class VaspPoscarFile:
     including scaling and Cartesian-to-direct conversion, belongs to vasp_util.
     """
 
-    def __init__(self, filename: str = "POSCAR") -> None:
+    def __init__(self, filename: str | Path = "POSCAR") -> None:
         """Load a POSCAR file.
 
         Args:

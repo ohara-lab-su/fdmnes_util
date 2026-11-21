@@ -9,7 +9,7 @@
 # from sae.fdmnes.conv import ReadFdmConv
 # from sae.fdmnes.sd import ReadFdmSd
 # from sae.fdmnes.txt import ReadFdmTxt
-# 
+#
 # #!/usr/bin/env python
 # # -*- coding: utf-8 -*-
 # ################################################################################

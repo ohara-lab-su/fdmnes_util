@@ -5,6 +5,8 @@
 # SAE: 2015.06.30 startup
 """Generate FDMNES convolution inputs for all calculated sites."""
 
+from glob import escape
+from os.path import relpath
 from pathlib import Path
 import re
 
@@ -22,35 +24,44 @@ class FdmConvolutionInputs:
 
         Args:
             filout: FDMNES output prefix, optionally including a directory.
-            output_dir: Directory receiving convolution inputs and fdmfile.txt.
+            output_dir: Directory receiving the jobs and serving as the
+                working directory when FDMNES runs them.
 
         Returns:
-            list[str]: Generated convolution input filenames, in sorted order.
+            list[str]: Input filenames in lexicographic order of source spectra.
+
+        Raises:
+            ValueError: If Filout has no filename component.
+            OSError: If the input or job-list files cannot be written.
         """
         prefix_path = Path(filout)
         source_directory = prefix_path.parent
         prefix_name = prefix_path.name
+        if not prefix_name:
+            raise ValueError("Filout must include a filename prefix")
         output_directory = Path(output_dir)
         output_directory.mkdir(parents=True, exist_ok=True)
 
-        # Accept only numbered spectra. Do not include *_conv.txt files.
+        # SAE selects numbered site spectra in lexicographic filename order.
         spectrum_pattern = re.compile(re.escape(prefix_name) + r"_\d+\.txt")
         source_spectra = []
-        for candidate in sorted(source_directory.glob(prefix_name + "_*.txt")):
-            if spectrum_pattern.fullmatch(candidate.name):
+        for candidate in sorted(source_directory.glob(escape(prefix_name) + "_*.txt")):
+            if candidate.is_file() and spectrum_pattern.fullmatch(candidate.name):
                 source_spectra.append(candidate)
 
         input_names = []
+        job_prefix = relpath(prefix_path, output_directory)
         for site_number, spectrum in enumerate(source_spectra, start=1):
             input_name = f"conv_{site_number}.inp"
-            convolution_name = spectrum.stem + "_conv.txt"
+            calculation_name = relpath(spectrum, output_directory)
+            convolution_name = str(Path(calculation_name).with_suffix("")) + "_conv.txt"
             input_lines = [
                 "",
                 " Filout",
-                "   " + prefix_name,
+                "   " + job_prefix,
                 "",
                 " Calculation",
-                "   " + spectrum.name,
+                "   " + calculation_name,
                 "",
                 " Conv_out",
                 "   " + convolution_name,

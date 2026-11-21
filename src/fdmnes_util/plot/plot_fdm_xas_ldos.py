@@ -67,7 +67,6 @@ class PlotFdmXasLdos:
         plt.close(figure)
         return Path(output)
 
-
     def plot_experiment_ldos(
         self,
         *,

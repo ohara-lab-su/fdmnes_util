@@ -1,55 +1,61 @@
 #!/usr/bin/env python3
-"""Analysis of cluster coordinates from an FDMNES _bav.txt calculation log."""
+"""Extract cluster coordinates from FDMNES calculation logs."""
+
 from importlib.resources import files
+
 import numpy as np
 
+
 class AnalyzeFdmLog:
-    """AnalyzeFdmLogに関する処理を提供する。"""
-    def __init__(self,reader):
-        """__init__の処理を実行する。
-        
+    """Analyze the cluster block of a year-specific FDMNES BAV reader."""
+
+    def __init__(self, reader):
+        """Store the parsed log.
+
         Args:
-            reader: readerを指定する。
-        
-        Returns:
-            処理結果。
-        
+            reader: BAV reader exposing the source lines in file order.
         """
-        self.reader=reader
+        self.reader = reader
 
     def positions(self):
-        # FDMNES: Z posx posy posz ! dista ia igr ...
-        """positionsの処理を実行する。
-        
+        """Read the atomic symbols and Cartesian positions of the cluster.
+
         Returns:
-            処理結果。
-        
+            A list of chemical symbols and an array of XYZ coordinates.
+
+        Raises:
+            ValueError: If the cluster section is absent or has no atom rows.
         """
-        text=files('fdmnes_util').joinpath('atomic_symbols.list').read_text()
-        periodic={int(row.split()[0]):row.split()[1] for row in text.splitlines()}
-        source=self.reader.lines
-        start=next((i for i,line in enumerate(source)
-                    if 'Cluster: atom positions in order' in line),None)
-        if start is None:
-            raise ValueError('Cluster: atom positions section is missing')
-        symbols=[]
-        positions=[]
-        for line in source[start+1:]:
-            parts=line.split()
-            if len(parts)<4:
-                if symbols:
-                    break
-                continue
+        table = files("fdmnes_util").joinpath("atomic_symbols.list")
+        periodic = {}
+        for row in table.read_text(encoding="utf-8").splitlines():
+            atomic_number, symbol = row.split()[:2]
+            periodic[int(atomic_number)] = symbol
+
+        source = iter(self.reader.lines)
+        for line in source:
+            if "Cluster: atom positions in order" in line:
+                break
+        else:
+            raise ValueError("Cluster: atom positions section is missing")
+
+        # The first four columns contain Z, x, y, and z. Some revisions use
+        # Fortran D exponents. Skip headings and stop after the final atom row.
+        symbols = []
+        positions = []
+        for line in source:
+            parts = line.split()
             try:
-                atomic_number=int(parts[0])
-                point=[float(component.replace('D','E')) for component in parts[1:4]]
-                symbol=periodic[atomic_number]
-            except (ValueError,IndexError,KeyError):
+                if len(parts) < 4:
+                    raise ValueError("Incomplete cluster row")
+                symbol = periodic[int(parts[0])]
+                point = [float(value.replace("D", "E")) for value in parts[1:4]]
+            except (ValueError, KeyError):
                 if symbols:
                     break
                 continue
             symbols.append(symbol)
             positions.append(point)
         if not symbols:
-            raise ValueError('No atom positions in log cluster')
-        return symbols,np.asarray(positions,dtype=float)
+            raise ValueError("No atom positions in log cluster")
+        return symbols, np.asarray(positions, dtype=float)

@@ -1,28 +1,51 @@
 #!/usr/bin/env python3
-"""Plot FDMNES density-of-states data from a site-resolved SD file."""
+# SAE source: sae/commands/FDplot_LDOS.py
+# fmt: off
+# ---- SAE original header ----
+# Copyright Kengo NAKADA; SAE class library.
+################################################################################
+# K.NAKADA, kengo.nakada@gmail.com
+#
+# FDMNES
+#   特定原子の LDOS 多段組
+#
+################################################################################
+#
+# 2018.08.17
+#  Python2/3 両対応
+#
+# 2015.09.11
+#  spin 対応版
+#
+# 2015.09.10
+#  多数のオプション装備
+#
+# 2015.09.07
+#  startup
+#   スピン非対応
+#
+################################################################################
+################################################################################
+# ---- End of SAE original header ----
+"""Plot LDOS and optional XAS from an FDMNES calculation."""
+# fmt: on
 
-import argparse
-
+from fdmnes_util.dos_plot_sample import dos_plot_arguments, plot_dos_sample
 from fdmnes_util.plot.plot_fdm_dos import PlotFdmDos
-from fdmnes_util.fdm_sd import FdmSd
 
 
 def main(argv=None):
-    """Read a selected SD format and create a DOS figure.
+    """Create the LDOS panels and any requested XAS overlay.
 
     Args:
         argv: Optional command-line argument sequence.
-    """
-    parser = argparse.ArgumentParser(description="Plot FDMNES LDOS")
-    parser.add_argument("sd_file")
-    parser.add_argument("--year", type=int, required=True)
-    parser.add_argument("-o", "--output", default="LDOS.pdf")
-    parser.add_argument("--intdos", action="store_true")
-    options = parser.parse_args(argv)
 
-    reader = FdmSd(options.sd_file, format_year=options.year).select_reader()
-    plotter = PlotFdmDos()
-    plotter.plot(reader, options.output, integrated=options.intdos)
+    Returns:
+        pathlib.Path: Main saved figure.
+    """
+    parser = dos_plot_arguments(projected=False)
+    options = parser.parse_args(argv)
+    return plot_dos_sample(PlotFdmDos(), options, projected=False)
 
 
 if __name__ == "__main__":

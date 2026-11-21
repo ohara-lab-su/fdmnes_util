@@ -1,4 +1,51 @@
 #!/usr/bin/env python3
+# SAE source: sae/athena/nor.py
+# ---- SAE original header ----
+# -*- coding: utf-8 -*-
+###############################################################################
+# K.NAKADA, kengo.nakada@gmail.com
+#
+# Read Athena Normalize Data ( *.txt.nor )
+#
+# コメントアウトを除いて energy, XANES 形式に並んだだけのファイル
+# Athena の Normlized Data の読み込みプロット
+#
+###############################################################################
+#
+# 2020.08.10: カプセル化
+#
+# 2018.08.15
+#  Python2/3 両対応
+#
+# 2015.06.30
+#   == Noneo --> is None
+#
+# 2015.05.21
+#  ファイル名の自動取得&基本プロットのサンプル追加
+#
+# 2015.03.30
+#  startup
+#
+###############################################################################
+###############################################################################
+# import gzip
+# import optparse
+# sys.path.append('../..')
+# import SpaceGroupEnvironment as SGE
+###############################################################################
+###############################################################################
+# ラベル等のフォントサイズ
+# レジェンドのフォントサイズ
+# 軸の太さを設定。目盛りは変わらない
+# for portrait
+#   plt.axvline(x=0,color='black',linewidth=1)
+###############################################################################
+###############################################################################
+#   plot_athena_nor(spec.eng,spec.nor)
+#   for i in range(ndata):
+#       print eng[i],nor[i]
+# Copyright Kengo NAKADA; SAE class library.
+# ---- End of SAE original header ----
 """Read an Athena normalized XAFS spectrum from a ``*.nor`` file."""
 
 from pathlib import Path
@@ -47,8 +94,8 @@ class AthenaNor:
                         f"Invalid Athena data row in {self.path}: {stripped}"
                     )
 
-                # Only the first two data columns are used by the original
-                # SAE Athena reader. Remaining columns are not modified.
+                # SAE uses the first two columns as photon energy and
+                # normalized absorption. Athena may append other quantities.
                 energies.append(float(values[0]))
                 normalized.append(float(values[1]))
 

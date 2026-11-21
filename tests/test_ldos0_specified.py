@@ -23,22 +23,27 @@ def test_cli_uses_input_filout_and_writes_selected_format(tmp_path):
     """Resolve Fe_sd0.txt from Filout and save a selected plot."""
     pytest.importorskip("matplotlib")
 
-    (tmp_path / "Fe_sd0.txt").write_bytes(
-        (FIXTURES / "Fe_sd0.txt").read_bytes()
-    )
+    (tmp_path / "Fe_sd0.txt").write_bytes((FIXTURES / "Fe_sd0.txt").read_bytes())
     inp_path = tmp_path / "sample.inp"
     inp_path.write_text("Filout\n Fe\nEnd\n", encoding="utf-8")
     output_prefix = tmp_path / "LDOS"
 
     results = main(
         [
-            "--input", str(inp_path),
-            "--year", "2020",
-            "--emin", "-10",
-            "--emax", "20",
-            "--dmax", "3",
-            "--output-prefix", str(output_prefix),
-            "--formats", "pdf",
+            "--input",
+            str(inp_path),
+            "--year",
+            "2020",
+            "--emin",
+            "-10",
+            "--emax",
+            "20",
+            "--dmax",
+            "3",
+            "--output-prefix",
+            str(output_prefix),
+            "--formats",
+            "pdf",
         ]
     )
     assert len(results) == 1

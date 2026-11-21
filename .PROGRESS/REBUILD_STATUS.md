@@ -1,44 +1,32 @@
-# Rebuild status
+# fdmnes_util ベータ版の実装状況
 
-Clean tree. **No SAE classes copied wholesale**, no old compatibility package, `reference/`, duplicate reader generations, or historic intermediate progress files. Year-specific readers exist as distinct classes.
+- 計算入力は `fdmnes_util.fdm_inp.FdmInp`、ジョブ一覧は `fdmnes_util.fdmfile.Fdmfile` が読み込みと書き出しを担当する。
+- BAV と SD は、それぞれ2016年形式と2020年形式のクラスを持つ。2022年版の非磁性FeO6出力1例を採取し、SDの17列ヘッダが2020年のFe実例と一致することを確認した。2022年形式の一般対応には追加の検証が必要。
+- 解析は `analyze_fdm_*`、描画は `fdmnes_util.plot` に配置する。
+- 編集用サンプル28本は `fdmnes_util install script` で配布する。操作単位の再現状況は [COMMAND_AUDIT.md](COMMAND_AUDIT.md) を参照。
+- POSCARの読み込みは外部の `vasp_util`、`Crystal` からのPOSCAR出力は ASE が担当する。
 
-Implemented: input tags, fdmfile job list, 2016/2020 BAV dispatch, 2016/2020 SD readers, XAS/conv readers, derived photoenergy and XYZ writers, plot classes, result-file management; eleven *partial* thin CLI routes.
+残る作業には、SAE原本の各オプション・数値処理・図の照合、2016年の実出力と2022年の追加パターンによる検証が含まれる。
 
-Unfinished: full behavior of 28 original commands (including combined XAS+LDOS/PDOS, old CLI options and average modes), POSCAR output API through vasp_util, verification for 2022 actual SD outputs, full cell-structure conversion, full BAV sections, 2016 real-world fixture. No assumption that the 2022 layout equals the 2020 layout.
+## 原本照合で修正した機能
 
-Do not claim the named v3 modules implement every original SAE method. Do not delete user originals while replacing project tree.
+| クラス | 実装と検証 |
+| --- | --- |
+| `FdmInp` | `Absorber`・`Magnetism` を読み込む。マニュアルに従い、分子の座標を実空間へ変換する。POSCARの真空幅はサンプルの追加設定。 |
+| `Fdmfile` | 原本同梱のコメント付きバッチリストを読み込む。宣言された件数までをジョブとして扱う。 |
+| `FdmBav2016`・`FdmBav2020` | SCFの有無・反復上限・最後のサイクル番号を扱う。2022年以降のログは年度選択で拒否する。 |
+| `FdmSd2016`・`FdmSd2020` | 2016形式では原本のスピン名を扱う。2020形式は検証済みの単一スピン列に限定し、全取得メソッドでスピンを確認する。 |
+| `FdmConvolutionInputs` | 生成ディレクトリから参照可能なパスを記述し、番号付きのスペクトルだけを処理する。 |
+| `FdmResultFiles`・`FdmXyz` | Filoutの変更と結果ファイルの移動を扱う。XYZはファイルと標準出力で同じ書式を用いる。 |
 
-Entrypoints exist for 11 partially ported names only. The other 17 are explicitly unimplemented.
+`FDplot_XAS`・`FDplot_LDOS`・`FDplot_PDOS` の複合描画、保存形式、対話表示は
+[監査表](COMMAND_AUDIT.md#composite-xas--ldos--pdos-verification) に記録した。
+磁性かつ複数吸収端を含むXASの実データ検証、
+`fdLDOS_color` の複合図、`fdPDOS_XAS_av` の配置・保存オプション、
+標準XYZ変換のOpenMX MD入力が残る。
 
-## Checks performed on this snapshot
+## FDMNESでの実行確認
 
-- `pytest -q tests`: 19 passed (real SAE Fe 2020 fixtures, synthetic 2016 SD layout, end-to-end thin commands).
-- `python -m pip wheel --no-deps --no-build-isolation .`: wheel built successfully.
-- Manual ZIP CRC check: passed.
-- 2022 separate format remains unverified; the format dispatcher refuses it.
-
-## Outstanding priority
-
-1. Every original script option and analysis/plot branch must be mapped to a tested class method; 17 scripts are not implemented, and 11 are partial.
-2. `ReadFdmInp` presently covers keyword/tag extraction but not all original Crystal/coordinate features.
-3. Year-specific BAV readers cover key fields but not every section of SAE's original parsers.
-4. 2016 tests use reconstructed header-layout fixtures; there is no original 2016 output sample in the supplied SAE archive.
-5. VASP writing must use an actual confirmed `vasp_util` API; no writer is fabricated.
-
-## v4 update
-
-- Rewrote Japanese README against the style and explanatory structure of the Ohara Lab public website; English README follows the Japanese sections.
-- Added `AnalyzeFdmXas.site_spectra` for selected absorbing-site outputs and `PlotFdmXas.plot_sites` for two-panel site visualization.
-- Added the partial `FDplot_XASs` command. The command explicitly rejects unverified Fermi-axis behavior and does not claim the original experimental-overlay option.
-- This is a partial implementation; it does not change the 2016/2020 format readers or claim support for 2022.
-
-## v8 update
-
-- Partial CLI implementation for `fdLDOS0_specified` using its own plot method and the existing SD readers.
-- Expanded the 2020 SD reader to readable, documented code without changing orbital mapping.
-- Tested the CLI against the supplied Fe SD fixture.
-- 29 tests pass for the available suite. None of the 28 scripts is declared fully equivalent.
-
-## v9 sample distribution
-
-The project now supplies editable examples in `scripts/` and installs them with `fdmnes_util install script`. `commands/` was removed. Fourteen partial examples are bundled with the wheel; 14 other historical script names remain unimplemented.
+ローカルの2022年6月15日版FortranソースをmacOS arm64向けにビルドした。
+`FDmakeCconvAllsite.py` が既存のFeスペクトルに対して生成したジョブを実行し、
+結果ディレクトリに `Fe_1_conv.txt` が作成されることを確認した。

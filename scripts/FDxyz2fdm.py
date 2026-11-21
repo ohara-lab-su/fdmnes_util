@@ -22,15 +22,19 @@ from fdmnes_util.xyz import Xyz
 def main() -> None:
     """Read XYZ coordinates and write a FDMNES molecule section."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("input", type=Path, help="Standard XYZ file")
+    parser.add_argument("input", type=Path, nargs="?", help="Standard XYZ file")
+    parser.add_argument("-i", "--input", type=Path, dest="input_option")
     parser.add_argument("--output", type=Path, help="Output .fdmnes file")
     args = parser.parse_args()
 
-    xyz = Xyz(args.input)
+    input_path = args.input or args.input_option
+    if input_path is None:
+        parser.error("Specify a standard XYZ file")
+    xyz = Xyz(input_path)
     molecule = FdmStructure.render_xyz_molecule(xyz.symbols, xyz.positions)
 
     if args.output is None:
-        output = args.input.with_suffix(".fdmnes")
+        output = input_path.with_suffix(".fdmnes")
     else:
         output = args.output
 

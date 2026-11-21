@@ -67,7 +67,9 @@ class Xyz:
                     float(fields[3]),
                 )
             except ValueError as error:
-                raise ValueError(f"Invalid XYZ coordinate at atom {index + 1}") from error
+                raise ValueError(
+                    f"Invalid XYZ coordinate at atom {index + 1}"
+                ) from error
             symbols.append(symbol)
             positions.append(coordinates)
 

@@ -1,4 +1,22 @@
 #!/usr/bin/env python3
+# SAE original: sae/commands/FDgetfermi.py
+# ---- SAE original header (verbatim) ----
+# Copyright Kengo NAKADA; SAE class library.
+################################################################################
+# K.NAKADA, kengo.nakada@gmail.com
+#
+# get E_fermi
+#
+################################################################################
+#
+# 2018.08.17
+#  Python2/3 両対応
+#
+# 2015.11.16 startup
+#
+################################################################################
+################################################################################
+# ---- End of SAE original header ----
 """Display the Fermi energy and absorption-edge energy of a calculation."""
 
 import argparse
@@ -6,6 +24,7 @@ import argparse
 from fdmnes_util.fdm_bav import FdmBav
 from fdmnes_util.fdm_inp import FdmInp
 from fdmnes_util.fdm_txt import FdmTxt
+from fdmnes_util.fdmfile import Fdmfile
 
 
 def main(argv=None):
@@ -15,14 +34,18 @@ def main(argv=None):
         argv: Optional command-line argument sequence.
     """
     parser = argparse.ArgumentParser(description="Report FDMNES energies")
-    parser.add_argument("-i", "--input", default="read_pdb.inp")
+    parser.add_argument("-i", "--input", help="FDMNES calculation input")
     parser.add_argument("--name", help="Output prefix overriding Filout")
     options = parser.parse_args(argv)
 
     if options.name:
         filout = options.name
     else:
-        input_file = FdmInp(options.input)
+        try:
+            input_path = Fdmfile.select_input(options.input)
+        except (ValueError, OSError) as error:
+            parser.error(str(error))
+        input_file = FdmInp(input_path)
         filout = input_file.get_filout()
 
     if not filout:

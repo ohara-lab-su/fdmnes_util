@@ -85,13 +85,45 @@
 #       print "NAME",name
 # Copyright Kengo NAKADA; SAE class library.
 # ---- End of SAE original header ----
-"""Read keywords and crystal parameters from a FDMNES input file."""
+# SAE source: sae/fdmnes/inp_writer.py
+# ---- SAE original header ----
+# -*- coding: utf-8 -*-
+################################################################################
+# VASP to FDMNES crystal 情報
+#
+# 構造ファイル & INPUT file
+#
+# (注意)
+#  1) ASE のルーチン(cellconst) を使っている
+#  2) ASE のmodule を呼び出している
+#  3) atoms は ASE オブジェクトが前提
+#
+# FDvasp2fdm.py がベース --> class 化
+#
+################################################################################
+################################################################################
+#
+################################################################################
+## using cellconst
+# from ase.io.xyz import *
+################################################################################
+# atoms.write('POSCAR.pdb',format='pdb')
+# print atoms.positions
+# print ""
+# print atoms.cell
+# print ""
+# print atoms.get_scaled_positions()
+# fdm.write_fdmnes(atoms=atoms, MOL=MOL)
+# Copyright Kengo NAKADA; SAE class library.
+# ---- End of SAE original header ----
+"""Read and generate FDMNES calculation input files."""
 
+from math import cos, isfinite, radians, sin
 from pathlib import Path
 
 
 class FdmInp:
-    """Read the input keywords used by FDMNES command-line utilities.
+    """Read, inspect, and generate FDMNES calculation inputs.
 
     An input file without a ``Crystal`` section is valid. The reader retains
     the original text as well as the values associated with each keyword.
@@ -105,6 +137,7 @@ class FdmInp:
     KEYWORDS = {
         "filout",
         "spin",
+        "magnetism",
         "allsite",
         "energpho",
         "energygpho",
@@ -113,6 +146,8 @@ class FdmInp:
         "calculation",
         "nonexc",
         "crystal",
+        "molecule",
+        "absorber",
     }
 
     def __init__(self, filename="read_pdb.inp"):
@@ -170,13 +205,35 @@ class FdmInp:
             return values[0]
         return ""
 
+    def get_absorber(self) -> int:
+        """Return the one-based absorber index, defaulting to the first atom.
+
+        Returns:
+            The atom index specified by the Absorber keyword, or one.
+
+        Raises:
+            ValueError: If the Absorber record is missing a positive integer.
+        """
+        if "absorber" not in self.tags:
+            return 1
+        values = self.tags["absorber"]
+        if not values:
+            raise ValueError("Absorber requires a positive atom index")
+        try:
+            index = int(values[0])
+        except ValueError as error:
+            raise ValueError("Absorber requires a positive atom index") from error
+        if index < 1:
+            raise ValueError("Absorber requires a positive atom index")
+        return index
+
     def get_ispin(self):
         """Return the number of spin channels indicated by the input.
 
         Returns:
-            int: Two when ``Spin`` is specified, otherwise one.
+            int: Two when ``Spin`` or ``Magnetism`` is specified, otherwise one.
         """
-        if "spin" in self.tags:
+        if "spin" in self.tags or "magnetism" in self.tags:
             return 2
         return 1
 
@@ -272,7 +329,7 @@ class FdmInp:
         from ase import Atoms
         from ase.cell import Cell
 
-        crystal_lines = self._get_crystal_lines()
+        crystal_lines = self._get_structure_lines("crystal")
         if not crystal_lines:
             raise ValueError("No Crystal section was found")
 
@@ -310,26 +367,99 @@ class FdmInp:
             pbc=True,
         )
 
-    def _get_crystal_lines(self) -> list[str]:
-        """Collect the structural records following the Crystal keyword.
+    def get_molecule_atoms(self):
+        """Build an isolated ASE structure from an FDMNES Molecule block.
+
+        The scale record selects spherical (one value), cylindrical (two),
+        or fractional (six) coordinates as in the FDMNES manual.
+
+        Returns:
+            ase.Atoms: Atom positions in angstroms, with periodicity disabled.
+
+        Raises:
+            ValueError: If the scale or atomic-coordinate records are invalid.
+            ImportError: If ASE is not installed.
+        """
+        from ase import Atoms
+        from ase.cell import Cell
+
+        lines = self._get_structure_lines("molecule")
+        if len(lines) < 2:
+            raise ValueError("Molecule requires scale parameters and atom rows")
+        scale = [float(value.replace("D", "E")) for value in lines[0].split()]
+        if len(scale) not in (1, 2, 6) or any(
+            not isfinite(value) or value <= 0 for value in scale
+        ):
+            raise ValueError("Molecule requires one, two, or six positive parameters")
+
+        numbers = []
+        positions = []
+        for line in lines[1:]:
+            fields = line.split()
+            if len(fields) < 4:
+                raise ValueError(
+                    "Molecule atom rows require a number and three coordinates"
+                )
+            number = int(fields[0])
+            if not 1 <= number <= 118:
+                raise ValueError("Invalid atomic number in Molecule section")
+            numbers.append(number)
+            coordinates = [float(value.replace("D", "E")) for value in fields[1:4]]
+            if not all(isfinite(value) for value in coordinates):
+                raise ValueError("Molecule coordinates must be finite")
+            positions.append(coordinates)
+
+        if len(scale) == 6:
+            # The three angles define the basis for the fractional positions.
+            cell = Cell.fromcellpar(scale)
+            positions = cell.cartesian_positions(positions)
+        else:
+            for index, (radius, second, third) in enumerate(positions):
+                radius *= scale[0]
+                angle = radians(second)
+                if len(scale) == 2:
+                    positions[index] = [
+                        radius * cos(angle),
+                        radius * sin(angle),
+                        third * scale[1],
+                    ]
+                else:
+                    azimuth = radians(third)
+                    planar_radius = radius * sin(angle)
+                    positions[index] = [
+                        planar_radius * cos(azimuth),
+                        planar_radius * sin(azimuth),
+                        radius * cos(angle),
+                    ]
+        return Atoms(numbers=numbers, positions=positions)
+
+    def _get_structure_lines(self, section: str) -> list[str]:
+        """Collect the scale and atom rows following a structure keyword.
+
+        Args:
+            section: Lowercase FDMNES structure keyword.
 
         Returns:
             list[str]: Cell and atomic-coordinate records.
         """
         lines = []
-        in_crystal = False
+        in_section = False
         for original_line in self.lines:
             line = original_line.split("!", 1)[0]
             line = line.split("#", 1)[0]
+            # The FDMNES examples annotate structure rows with "= a, b, c…".
+            line = line.partition("=")[0]
             line = line.strip()
             if not line:
                 continue
 
             fields = line.split()
             keyword = fields[0].lower()
-            if not in_crystal:
-                if keyword == "crystal":
-                    in_crystal = True
+            if not in_section:
+                if keyword == "end":
+                    break
+                if keyword == section:
+                    in_section = True
                     if len(fields) > 1:
                         lines.append(" ".join(fields[1:]))
                 continue
@@ -367,6 +497,9 @@ class FdmInp:
 
         Returns:
             str: FDMNES input content including the structural section.
+
+        Raises:
+            ValueError: If no structure writer is provided.
         """
         if structure_writer is None:
             raise ValueError("A structure writer is required")

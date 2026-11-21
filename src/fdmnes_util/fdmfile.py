@@ -30,13 +30,19 @@
 ###############################################################################
 # Copyright Kengo NAKADA; SAE class library.
 # ---- End of SAE original header ----
-"""Read the FDMNES ``fdmfile.txt`` list of calculation inputs."""
+# SAE source: sae/fdmnes/fdmfile_writer.py
+# ---- SAE original header ----
+# coding:utf-8
+# 固定
+# Copyright Kengo NAKADA; SAE class library.
+# ---- End of SAE original header ----
+"""Read and write the FDMNES batch list of calculation inputs."""
 
 from pathlib import Path
 
 
 class Fdmfile:
-    """Read the filenames contained in an FDMNES batch list."""
+    """Represent the ordered input filenames in an FDMNES batch list."""
 
     def __init__(self, filename="fdmfile.txt"):
         """Load the batch list.
@@ -49,22 +55,54 @@ class Fdmfile:
         """
         self.path = Path(filename)
         lines = []
-        for line in self.path.read_text().splitlines():
-            stripped = line.strip()
+        for line in self.path.read_text(encoding="utf-8").splitlines():
+            # FDMNES batch lists can start with a descriptive comment block.
+            stripped = line.partition("!")[0].strip()
             if stripped:
                 lines.append(stripped)
         if not lines:
             raise ValueError("Empty fdmfile.txt")
         count = int(lines[0])
+        if count < 0:
+            raise ValueError("Negative FDMNES job count")
         self.filenames = lines[1 : 1 + count]
         if len(self.filenames) != count:
             raise ValueError("Incomplete fdmfile.txt")
 
-    def get_filout(self):
-        """Return the first calculation filename, or an empty string."""
+    def get_filout(self) -> str:
+        """Return the filename of the first job, or an empty string."""
         if self.filenames:
             return self.filenames[0]
         return ""
+
+    @classmethod
+    def select_input(cls, filename: str | Path | None = None) -> Path:
+        """Select a calculation input in the current working directory.
+
+        Args:
+            filename: Explicit calculation input. If omitted, use the first
+                job in ``fdmfile.txt`` or default to ``read_pdb.inp``.
+
+        Returns:
+            The selected calculation input path.
+
+        Raises:
+            ValueError: If the batch list is invalid or contains no jobs.
+            FileNotFoundError: If the selected input is not a file.
+        """
+        if filename is not None:
+            path = Path(filename)
+        elif Path("fdmfile.txt").is_file():
+            first_input = cls().get_filout()
+            if not first_input:
+                raise ValueError("fdmfile.txt contains no calculation inputs")
+            path = Path(first_input)
+        else:
+            path = Path("read_pdb.inp")
+
+        if not path.is_file():
+            raise FileNotFoundError(f"FDMNES input file not found: {path}")
+        return path
 
     @staticmethod
     def write(filenames, filename="fdmfile.txt"):

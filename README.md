@@ -2,7 +2,7 @@
 
 A Python class library for reading and analyzing FDMNES input and output files.
 
-FDMNES produces different types of files for calculation settings, calculation logs, XANES spectra, site- and orbital-resolved density of states (SD), and convolved spectra. This package assigns each file format its own reader. Numerical analysis and plotting belong to separate classes.
+FDMNES produces different types of files for calculation settings, calculation logs, XANES spectra, site- and orbital-resolved density of states (SD), and convolved spectra. This package groups file operations by format, including reading and writing where supported. Numerical analysis and plotting belong to separate classes.
 
 ## Development history
 
@@ -14,30 +14,30 @@ Rather than copying SAE into another package, this project reorganizes its FDMNE
 
 | File format | Class | Purpose |
 | --- | --- | --- |
-| `*.inp` | `ReadFdmInp` | Calculation parameters and structural information |
-| `fdmfile.txt` | `ReadFdmfile` / `WriteFdmfile` | Lists of calculation input files |
-| `*_bav.txt` | `ReadFdmBav2016` / `ReadFdmBav2020` | Calculation logs |
-| `*_sd*.txt` | `ReadFdmSd2016` / `ReadFdmSd2020` | Orbital- and site-resolved DOS |
-| `*.txt` | `ReadFdmTxt` | XANES |
-| `*_conv.txt` | `ReadFdmConv` | Convolved XANES |
+| `*.inp` | `FdmInp` | Calculation parameters and structural information |
+| `fdmfile.txt` | `Fdmfile` | Lists of calculation input files |
+| `*_bav.txt` | `FdmBav2016` / `FdmBav2020` | Calculation logs |
+| `*_sd*.txt` | `FdmSd2016` / `FdmSd2020` | Orbital- and site-resolved DOS |
+| `*.txt` | `FdmTxt` | XANES |
+| `*_conv.txt` | `FdmConv` | Convolved XANES |
 
-Python module names follow snake_case, so `ReadFdmSd2016` is defined in `read_fdm_sd_2016.py`. The 2016 and 2020 file layouts have separate readers. The 2022 file layout has not yet been verified, and is not automatically treated as the 2020 format.
+Python module names follow snake_case, so `FdmSd2016` is defined in `fdm_sd_2016.py`. The 2016 and 2020 file layouts have separate readers. The 2022 file layout has not yet been verified, and is not automatically treated as the 2020 format.
 
 `AnalyzeFdmXas` and `AnalyzeFdmLog` implement numerical processing. `PlotFdmXas` and `PlotFdmDos` handle visualization. The command scripts call these classes rather than duplicating their algorithms. VASP POSCAR handling is delegated to the separately installed `vasp_util` module rather than copied into this package.
 
 ## Example
 
 ```python
-from fdmnes_util.read_fdm_sd_2020 import ReadFdmSd2020
+from fdmnes_util.fdm_sd_2020 import FdmSd2020
 
-sd = ReadFdmSd2020("Fe_sd0.txt")
+sd = FdmSd2020("Fe_sd0.txt")
 energy = sd.get_eng()
 d_dos = sd.get_ldos("d")
 ```
 
 ## Rebuilding the original scripts
 
-The full scope consists of all 28 `FD*` / `fd*` commands from SAE. The goal is to reproduce their functionality using the file readers, analysis classes, and plotting classes, not merely to preserve command names. Current coverage and unverified command options are recorded in [COMMAND_AUDIT.md](COMMAND_AUDIT.md). Full equivalence has not yet been achieved.
+The full scope consists of all 28 `FD*` / `fd*` commands from SAE. The goal is to reproduce their functionality using the file readers, analysis classes, and plotting classes, not merely to preserve command names. Current coverage and unverified command options are recorded in [COMMAND_AUDIT.md](.PROGRESS/COMMAND_AUDIT.md). Full equivalence has not yet been achieved.
 
 The newly added `FDplot_XASs` plots convolved spectra for explicitly selected absorbing sites. The observed-spectrum overlay and Fermi-referenced axis have been added, but equivalence with every original command-line option is not yet established.
 
@@ -79,7 +79,7 @@ fdmnes_util install script --directory ./analysis
 fdmnes_util install script --force
 ```
 
-The single source of the example scripts is the repository's top-level `scripts/` directory. Scripts are bundled into the installed package at build time. The class library owns file-format parsing, numerical analysis, and plotting; the examples demonstrate those classes in readable Python code. Currently 14 of the 28 historical SAE script names have partial implementations.
+The single source of the example scripts is the repository's top-level `scripts/` directory. Scripts are bundled into the installed package at build time. The class library owns file-format parsing, numerical analysis, and plotting; the examples demonstrate those classes in readable Python code. The package ships editable examples for all 28 SAE scripts. See the command audit for option and output coverage.
 
 The package build and editable sample installation are configured in `pyproject.toml`; no `setup.py` is used.
 
@@ -88,12 +88,12 @@ The editable `fdXAS_specified.py` example now uses a separate analysis method fo
 
 ## VASP integration
 
-POSCAR parsing is delegated to the separately installed `vasp_util` package. The editable `FDvasp2fdm.py` example uses `ReadVaspPoscar` and `WriteFdmStructure` to produce the FDMNES structure section. The original SAE calculation-input template is not yet reproduced. Writing POSCAR from FDMNES requires confirmation of the appropriate public `vasp_util` API.
+POSCAR parsing is delegated to the separately installed `vasp_util` package. The editable `FDvasp2fdm.py` example uses `VaspPoscarFile` and `FdmStructure` to produce the FDMNES structure section. `FDfdm2vasp.py` uses ASE to write POSCAR from an FDMNES `Crystal` or `Molecule` section. Set the molecule padding on each side with `--vacuum` (default 10 Å).
 
-`FDvasp2fdm.py` creates both the structural file and the calculation input `read_pdb.inp`. `WriteFdmInp` writes the calculation input; `WriteFdmStructure` writes the structural section.
+`FDvasp2fdm.py` creates both the structural file and the calculation input `read_pdb.inp`. `FdmInp` writes the calculation input; `FdmStructure` writes the structural section.
 
 
-## File-based classes (v17)
+## File-based classes
 
 Modules and classes are organized by FDMNES file format, rather than by read/write operations. For example, `FdmInp` in `fdm_inp.py` and `Fdmfile` in `fdmfile.py` handle operations for their respective formats. BAV and SD retain separate 2016 and 2020 classes for their differing formats.
 

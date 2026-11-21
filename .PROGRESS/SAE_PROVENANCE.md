@@ -1,4 +1,8 @@
-# SAE source provenance (v16)
+# SAE ソースの対応
+
+現行クラスへの移植元は [SAE_HEADER_AUDIT.md](SAE_HEADER_AUDIT.md) に記録しています。旧モジュールの移植記録を以下に残します。
+
+## 過去の記録
 
 Only directly inspected SAE source headers are cited below. Historical statements are copied from the named files; absence of a dated header is not evidence of absence of development.
 

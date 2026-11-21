@@ -14,18 +14,18 @@ SAEの開発については、SPring-8 BL14B2の利用者情報にも記録が�
 
 ## クラスの構成
 
-基本は**一つのファイル形式に一つの読み込みクラス**です。読み込み対象が同じでも、FDMNESの版によって形式が異なる場合は別のクラスにしています。
+ファイル形式ごとにクラスを設け、必要な読み込みと書き出しを同じクラスで扱います。FDMNESの版によって形式が異なる場合は別のクラスにしています。
 
 | ファイル | クラス | 主な内容 |
 | --- | --- | --- |
-| `*.inp` | `ReadFdmInp` | 計算条件、`Filout`、結晶情報 |
-| `fdmfile.txt` | `ReadFdmfile` / `WriteFdmfile` | 複数入力ファイルの一覧 |
-| `*_bav.txt` | `ReadFdmBav2016` / `ReadFdmBav2020` | 計算ログ、原子情報、エネルギー |
-| `*_sd*.txt` | `ReadFdmSd2016` / `ReadFdmSd2020` | LDOS、PDOS、TDOSなど |
-| `*.txt` | `ReadFdmTxt` | XANESスペクトル |
-| `*_conv.txt` | `ReadFdmConv` | 畳み込み後のスペクトル |
+| `*.inp` | `FdmInp` | 計算条件、`Filout`、結晶情報 |
+| `fdmfile.txt` | `Fdmfile` | 複数入力ファイルの一覧 |
+| `*_bav.txt` | `FdmBav2016` / `FdmBav2020` | 計算ログ、原子情報、エネルギー |
+| `*_sd*.txt` | `FdmSd2016` / `FdmSd2020` | LDOS、PDOS、TDOSなど |
+| `*.txt` | `FdmTxt` | XANESスペクトル |
+| `*_conv.txt` | `FdmConv` | 畳み込み後のスペクトル |
 
-クラス名は `ReadFdmSd2016`、ファイル名は `read_fdm_sd_2016.py` のように、Pythonの命名規則に従って対応させています。2016年形式と2020年形式は別クラスです。2022年版については、実際の出力を照合するまでは2020年形式と同じものとして扱いません。
+クラス名は `FdmSd2016`、ファイル名は `fdm_sd_2016.py` のように、Pythonの命名規則に従って対応させています。2016年形式と2020年形式は別クラスです。2022年版については、実際の出力を照合するまでは2020年形式と同じものとして扱いません。
 
 ファイルから読み出した値を使う処理は `AnalyzeFdmXas`、`AnalyzeFdmLog` などの解析クラスが担当します。グラフ作成は `PlotFdmXas`、`PlotFdmDos` が担当します。**スクリプトには解析式や描画処理を重複して書かず、これらのクラスを呼び出す形**にします。
 
@@ -34,9 +34,9 @@ SAEの開発については、SPring-8 BL14B2の利用者情報にも記録が�
 2020年形式のSDファイルから、エネルギー軸とd軌道の状態密度を取り出す例です。
 
 ```python
-from fdmnes_util.read_fdm_sd_2020 import ReadFdmSd2020
+from fdmnes_util.fdm_sd_2020 import FdmSd2020
 
-sd = ReadFdmSd2020("Fe_sd0.txt")
+sd = FdmSd2020("Fe_sd0.txt")
 energy = sd.get_eng()
 d_dos = sd.get_ldos("d")
 ```
@@ -62,15 +62,15 @@ fdmnes_util install script --force
 
 配布するスクリプトの編集元は、リポジトリ直下の `scripts/` です。`pyproject.toml` の設定で、インストール用のスクリプトをwheelに収録します。`setup.py` は使用しません。ライブラリ本体には解析や描画のアルゴリズムを実装し、各スクリプトはその具体的な利用例として記述しています。
 
-現段階では、旧SAEの28本のうち16本に対応するサンプルを収録しています。残るスクリプトと一部オプションは引き続き再構築中です。
+SAEの対象28本に対応する編集用サンプルを収録しています。オプションや出力の再現状況は監査表を参照してください。
 
 ## スクリプトの再構築
 
 対象は、SAEにあった `FD*` / `fd*` の全28本です。コマンド名だけを残すのではなく、各スクリプトに書かれている機能をファイル読み込み・解析・描画クラスへ整理し、同じ操作を再現することが目標です。
 
-現段階では、28本すべての機能を再現できていません。対応状況と、まだ確認できていないオプションは [`COMMAND_AUDIT.md`](COMMAND_AUDIT.md) に記載しています。
+現段階では、28本すべての機能を再現できていません。対応状況と、まだ確認できていないオプションは [`COMMAND_AUDIT.md`](.PROGRESS/COMMAND_AUDIT.md) に記載しています。
 
-`FDplot_XASs` は、複数サイトの畳み込みスペクトルを読み込んで表示します。元の `-o` は実験データの表示指定として扱います。Athenaの `*_obs.txt.nor` は `ReadAthenaNor` で読み込みます。Fermi準位基準への変換も解析クラスに分離しています。旧スクリプトの全オプションとの一致は引き続き確認が必要です。元のスクリプトと完全に同等という意味ではありません。
+`FDplot_XASs` は、複数サイトの畳み込みスペクトルを読み込んで表示します。元の `-o` は実験データの表示指定として扱います。Athenaの `*_obs.txt.nor` は `AthenaNor` で読み込みます。Fermi準位基準への変換も解析クラスに分離しています。旧スクリプトの全オプションとの一致は引き続き確認が必要です。元のスクリプトと完全に同等という意味ではありません。
 
 ## 関連資料
 
@@ -88,7 +88,7 @@ Pythonファイルにはシバン行とdocstringを記載し、クラスや公�
 
 ## `fdLDOS0_specified` の再構築
 
-元のスクリプトで使用していた `--emin`、`--emax`、`--dmax` を引き継ぎ、p軌道のLDOSを描画するコマンドを追加しました。計算結果の保存先は固定せず、入力ファイルの `Filout` を参照します。読み込みは年度別の `ReadFdmSd2016` または `ReadFdmSd2020` が担当し、描画は `PlotFdmDos` にまとめています。
+元のスクリプトで使用していた `--emin`、`--emax`、`--dmax` を引き継ぎ、p軌道のLDOSを描画するコマンドを追加しました。計算結果の保存先は固定せず、入力ファイルの `Filout` を参照します。読み込みは年度別の `FdmSd2016` または `FdmSd2020` が担当し、描画は `PlotFdmDos` にまとめています。
 
 ```console
 python fdLDOS0_specified.py -i read_pdb.inp --year 2020 --emin -10 --emax 20 --dmax 3
@@ -101,19 +101,19 @@ EPS、PDF、PNGを出力します。元のスクリプトが持っていた対�
 
 ## VASPとの連携
 
-POSCARの読み込みは、別パッケージの `vasp_util` に任せています。`fdmnes_util` にVASP用のパーサーは実装しません。`FDvasp2fdm.py` は `ReadVaspPoscar` を通してPOSCARを読み込み、`WriteFdmStructure` でFDMNESの構造部分を書き出すサンプルです。
+POSCARの読み込みは、別パッケージの `vasp_util` に任せています。`fdmnes_util` にVASP用のパーサーは実装しません。`FDvasp2fdm.py` は `VaspPoscarFile` を通してPOSCARを読み込み、`FdmStructure` でFDMNESの構造部分を書き出すサンプルです。
 
 ```console
 fdmnes_util install script
 python FDvasp2fdm.py -i POSCAR
 ```
 
-この段階では、元のSAEスクリプトが生成していた計算条件を含む `.inp` のひな形は再現していません。また、FDMNESからPOSCARへの書き出しには、`vasp_util` の対応する公開APIを確認する必要があります。
+`FDfdm2vasp.py` は ASE を使い、FDMNES の `Crystal` または `Molecule` から POSCAR を書き出します。分子の場合は `--vacuum`（既定値は片側10 Å）で真空幅を指定できます。
 
-`FDvasp2fdm.py` は、POSCARから構造ファイルと計算条件付きの `read_pdb.inp` を作成します。入力ファイルの生成は `WriteFdmInp`、結晶構造の出力は `WriteFdmStructure` が担当します。
+`FDvasp2fdm.py` は、POSCARから構造ファイルと計算条件付きの `read_pdb.inp` を作成します。入力ファイルの生成は `FdmInp`、結晶構造の出力は `FdmStructure` が担当します。
 
 
-## クラスの命名（v17）
+## クラスの命名
 
 FDMNESのファイル形式を単位としてモジュールとクラスを分けます。読み込みと書き出しでクラスを分割せず、`fdm_inp.py` の `FdmInp`、`fdmfile.py` の `Fdmfile` などが同じファイル形式の操作を担当します。年度によって形式が異なるBAVとSDは `FdmBav2016` / `FdmBav2020`、`FdmSd2016` / `FdmSd2020` に分けます。
 

@@ -3,6 +3,7 @@
 # SAE原本: sae/fdmnes/sd_2016.py
 # 以下はSAE原本の冒頭コメントを原文のまま保存したものです。
 # 原本に記された旧仕様・旧クラス名は現在のAPI仕様を意味しません。
+# fmt: off
 # ---- SAE original header (verbatim) ----
 # -*- coding: utf-8 -*
 ###############################################################################
@@ -110,6 +111,7 @@
 # Copyright Kengo NAKADA; SAE class library.
 # ---- End of SAE original header ----
 """Read the column-ordered FDMNES 2016 SD output format."""
+# fmt: on
 
 import re
 from pathlib import Path
@@ -201,6 +203,7 @@ class FdmSd2016:
         self._integrated_total = {}
         for spin in range(self.ispin):
             total = np.zeros_like(self.energy)
+            # SAE starts with Int_t, then adds each angular-momentum integral.
             integrated_total = self.values[:, 1 + spin].copy()
             for angular_momentum in range(self.lmax + 1):
                 key = (angular_momentum, spin)
@@ -208,6 +211,10 @@ class FdmSd2016:
                 integrated_total += self._intldos[key]
             self._total[spin] = total
             self._integrated_total[spin] = integrated_total
+
+    def get_densities(self):
+        """Return all density and integral columns in file order."""
+        return self.values[:, 1:]
 
     def get_eng(self):
         """Return the energy axis."""
@@ -221,20 +228,75 @@ class FdmSd2016:
         """Return the number of spin channels."""
         return self.ispin
 
+    @staticmethod
+    def _spin_index(spin):
+        """Translate the spin names accepted by the original SAE SD reader.
+
+        Args:
+            spin: Zero-based spin index or its SAE alias.
+
+        Returns:
+            int: Zero-based spin index.
+
+        Raises:
+            KeyError: If the spin name is unrecognized.
+        """
+        if isinstance(spin, str):
+            indices = {"up": 0, "non": 0, "nonmag": 0, "dn": 1, "down": 1}
+            return indices[spin]
+        return spin
+
     def get_ldos(self, l=0, spin=0):
-        """Return an angular-momentum-resolved DOS channel."""
+        """Return the stored angular-momentum DOS channel.
+
+        Args:
+            l: Angular momentum index or the orbital group name s, p, d, or f.
+            spin: Zero-based spin index or an SAE spin name, such as up or down.
+
+        Returns:
+            numpy.ndarray: One value per energy point.
+
+        Raises:
+            ValueError: If the orbital group name is invalid.
+            KeyError: If the requested orbital group or spin is unavailable.
+        """
         if isinstance(l, str):
             l = "spdf".index(l)
-        return self._ldos[(l, spin)]
+        return self._ldos[(l, self._spin_index(spin))]
 
     def get_intldos(self, l=0, spin=0):
-        """Return an integrated angular-momentum DOS channel."""
+        """Return the stored integral of an angular-momentum DOS channel.
+
+        Args:
+            l: Angular momentum index or the orbital group name s, p, d, or f.
+            spin: Zero-based spin index or an SAE spin name, such as up or down.
+
+        Returns:
+            numpy.ndarray: One value per energy point.
+
+        Raises:
+            ValueError: If the orbital group name is invalid.
+            KeyError: If the requested orbital group or spin is unavailable.
+        """
         if isinstance(l, str):
             l = "spdf".index(l)
-        return self._intldos[(l, spin)]
+        return self._intldos[(l, self._spin_index(spin))]
 
     def get_pdos(self, l=0, m=0, lm=None, spin=0):
-        """Return an orbital-projected DOS channel."""
+        """Return the density projected onto a single orbital and spin.
+
+        Args:
+            l: Angular momentum index.
+            m: Magnetic quantum number.
+            lm: Optional orbital name overriding l and m.
+            spin: Zero-based spin index or an SAE spin name.
+
+        Returns:
+            numpy.ndarray: Orbital densities on the file's energy grid.
+
+        Raises:
+            KeyError: If the orbital or spin channel is unavailable.
+        """
         orbitals = {
             "s": (0, 0),
             "px": (1, 1),
@@ -243,18 +305,39 @@ class FdmSd2016:
             "dxy": (2, -2),
             "dyz": (2, -1),
             "dz2": (2, 0),
+            "d3z2-r2": (2, 0),
             "dxz": (2, 1),
             "dx2-y2": (2, 2),
         }
         if lm is not None:
             key = lm.lower().replace("_", "")
             l, m = orbitals[key]
-        return self._partial[(l, m, spin)]
+        return self._partial[(l, m, self._spin_index(spin))]
 
     def get_tdos(self, spin=0):
-        """Return the total projected DOS for a spin channel."""
-        return self._total[spin]
+        """Return the sum of angular-momentum DOS channels for one spin.
+
+        Args:
+            spin: Zero-based spin index or an SAE spin name.
+
+        Returns:
+            numpy.ndarray: Total or integrated total at each energy point.
+
+        Raises:
+            KeyError: If the requested spin channel is unavailable.
+        """
+        return self._total[self._spin_index(spin)]
 
     def get_inttdos(self, spin=0):
-        """Return integrated total projected DOS for a spin channel."""
-        return self._integrated_total[spin]
+        """Return the SAE sum of the leading integral and per-group integrals.
+
+        Args:
+            spin: Zero-based spin index or an SAE spin name.
+
+        Returns:
+            numpy.ndarray: Total or integrated total at each energy point.
+
+        Raises:
+            KeyError: If the requested spin channel is unavailable.
+        """
+        return self._integrated_total[self._spin_index(spin)]

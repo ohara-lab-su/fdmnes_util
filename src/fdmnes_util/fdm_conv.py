@@ -93,3 +93,19 @@ class FdmConv:
             numpy.ndarray: Absorption intensity values.
         """
         return self.xas[:, spin]
+
+    @staticmethod
+    def write_spectrum(filename, spectrum):
+        """Write the SAE two-column convolved average.
+
+        Args:
+            filename: Destination convolution filename.
+            spectrum: Energy and intensity arrays in the original reference.
+        """
+        np.savetxt(
+            filename,
+            np.column_stack(spectrum),
+            fmt="  %14.8f %14.8f",
+            header=" ",
+            comments="",
+        )

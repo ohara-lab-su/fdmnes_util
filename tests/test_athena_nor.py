@@ -30,19 +30,22 @@ def test_original_observed_option_creates_plot(tmp_path):
 
     input_file = tmp_path / "read_pdb.inp"
     input_file.write_text("Filout\n Fe\nEND\n")
-    (tmp_path / "Fe_1.txt").write_text(
-        "7112 26 = E_edge Z\nE XAS\n0 1\n1 2\n"
-    )
+    (tmp_path / "Fe_1.txt").write_text("7112 26 = E_edge Z\nE XAS\n0 1\n1 2\n")
     (tmp_path / "Fe_1_conv.txt").write_text("E XAS\n0 1\n1 2\n")
-    (tmp_path / "Fe_1_obs.txt.nor").write_text(
-        "# E0=7112\n7112 0.5\n7113 1.0\n"
-    )
+    (tmp_path / "Fe_1_obs.txt.nor").write_text("# E0=7112\n7112 0.5\n7113 1.0\n")
     output = tmp_path / "spectrum.pdf"
 
-    result = main([
-        "-i", str(input_file), "-a", "1", "-o",
-        "--output", str(output),
-    ])
+    result = main(
+        [
+            "-i",
+            str(input_file),
+            "-a",
+            "1",
+            "-o",
+            "--output",
+            str(output),
+        ]
+    )
 
     assert result == output
     assert output.stat().st_size > 100

@@ -21,8 +21,8 @@ from pathlib import Path
 class FdmXyz:
     """Serialize FDMNES atomic positions using the standard XYZ format."""
 
-    def write(self, symbols, positions, filename):
-        """Write atomic symbols and Cartesian coordinates to an XYZ file.
+    def render(self, symbols, positions) -> str:
+        """Serialize Cartesian positions with the precision used by FDbav2xyz.
 
         The first line contains the number of atoms, followed by an empty
         comment line and one element/coordinate record for each atom.
@@ -30,10 +30,9 @@ class FdmXyz:
         Args:
             symbols: Chemical symbols in the desired output order.
             positions: Cartesian positions in angstroms, each with three values.
-            filename: Destination filename or path.
 
         Returns:
-            pathlib.Path: Path of the written XYZ file.
+            Complete XYZ text, including its trailing newline.
 
         Raises:
             ValueError: If the number of symbols and positions differs, or
@@ -62,7 +61,23 @@ class FdmXyz:
             )
             lines.append(atom_line)
 
+        return "\n".join(lines) + "\n"
+
+    def write(self, symbols, positions, filename) -> Path:
+        """Write an XYZ file containing the supplied atomic coordinates.
+
+        Args:
+            symbols: Chemical symbols in the desired output order.
+            positions: Cartesian positions in angstroms, each with three values.
+            filename: Destination filename or path.
+
+        Returns:
+            Path of the written XYZ file.
+
+        Raises:
+            ValueError: If the symbols and positions are inconsistent.
+            OSError: If the destination cannot be written.
+        """
         output_path = Path(filename)
-        output_text = "\n".join(lines) + "\n"
-        output_path.write_text(output_text, encoding="utf-8")
+        output_path.write_text(self.render(symbols, positions), encoding="utf-8")
         return output_path

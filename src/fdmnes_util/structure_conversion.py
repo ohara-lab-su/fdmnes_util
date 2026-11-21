@@ -17,6 +17,8 @@
 # =============================================================================
 """Convert supported structure-file data to ASE atomic structures."""
 
+from .vasp_poscar import VaspPoscarFile
+
 
 class StructureConversion:
     """Adapt structure readers to ASE without duplicating POSCAR parsing."""
@@ -32,17 +34,12 @@ class StructureConversion:
             ase.Atoms: Periodic structure in the POSCAR atom order.
         """
         from ase import Atoms
-        from vasp_util.vasp_poscar import VaspPoscar
 
-        poscar = VaspPoscar(str(filename))
-        symbols = poscar.get_atom_indices()
-        direct_positions = poscar.get_coords_direct()
-        lattice_vectors = poscar.get_lattice_vectors()
-
+        poscar = VaspPoscarFile(filename)
         return Atoms(
-            symbols=symbols,
-            scaled_positions=direct_positions,
-            cell=lattice_vectors,
+            symbols=poscar.get_symbols(),
+            scaled_positions=poscar.get_direct_positions(),
+            cell=poscar.get_lattice_vectors(),
             pbc=True,
         )
 

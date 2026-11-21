@@ -113,12 +113,13 @@ class FdmTxt:
             except ValueError:
                 pass
 
+        # The first line pairs values before "=" with names after it.
         self.parameters = {}
         tokens = lines[0].replace(",", " ").split()
         if "=" in tokens:
             separator = tokens.index("=")
             values = tokens[:separator]
-            names = tokens[separator + 1:]
+            names = tokens[separator + 1 :]
 
             for key, value in zip(names, values):
                 try:
@@ -144,28 +145,54 @@ class FdmTxt:
         return self.xas[:, spin]
 
     def get_xas_all(self):
-        """get_xas_allの処理を実行する。
-        
-        Returns:
-            処理結果。
-        
-        """
+        """Return the absorption matrix, with one row per energy point."""
         return self.xas
 
-    def get_eedge(self):
-        """get_eedgeの処理を実行する。
-        
+    def get_edge_xas(self, edge, spin=0):
+        """Select the spin-indexed XAS column for a named absorption edge.
+
+        Args:
+            edge: Edge label as used in the output header, such as L2 or L3.
+            spin: Zero-based index among columns for the selected edge.
+
         Returns:
-            処理結果。
-        
+            numpy.ndarray: The matching absorption intensities.
+
+        Raises:
+            ValueError: If the selected edge or spin column is absent.
         """
+        indices = []
+        for index, column in enumerate(self.header[1:]):
+            parts = column.upper().replace("-", "_").split("_")
+            if edge.upper() in parts:
+                indices.append(index)
+        if spin < 0 or spin >= len(indices):
+            raise ValueError(
+                f"No XAS column for edge {edge}, spin {spin} in {self.path}"
+            )
+        return self.get_xas(indices[spin])
+
+    def get_eedge(self):
+        """Return the absorption-edge energy in eV, or None if unavailable."""
         return self.edge_energy
 
     def get_efermi(self):
-        """get_efermiの処理を実行する。
-        
-        Returns:
-            処理結果。
-        
-        """
+        """Return the Fermi energy in eV, defaulting to zero as in SAE."""
         return self.fermi_energy
+
+    @staticmethod
+    def write_spectrum(filename, metadata, spectrum):
+        """Write the SAE two-column average with the first site's metadata.
+
+        Args:
+            filename: Destination raw XAS filename.
+            metadata: First-line parameters from the corresponding raw file.
+            spectrum: Energy and intensity arrays in the original reference.
+        """
+        np.savetxt(
+            filename,
+            np.column_stack(spectrum),
+            fmt="  %14.3f %14.8f",
+            header=metadata + "\n    Energy    <xanes>",
+            comments="",
+        )

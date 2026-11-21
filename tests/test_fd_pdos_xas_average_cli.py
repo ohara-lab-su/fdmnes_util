@@ -76,11 +76,17 @@ def test_example_generates_average_xas_figure(tmp_path, monkeypatch):
 
     module.main(
         [
-            "--year", "2020",
-            "--orbitals", "s",
-            "--xas-files", str(first), str(second),
-            "--output", str(output),
-            "first_sd.txt", "second_sd.txt",
+            "--year",
+            "2020",
+            "--orbitals",
+            "s",
+            "--xas-files",
+            str(first),
+            str(second),
+            "--output",
+            str(output),
+            "first_sd.txt",
+            "second_sd.txt",
         ]
     )
 
@@ -95,10 +101,14 @@ def test_example_rejects_unpaired_xas_files(tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as error:
         module.main(
             [
-                "--year", "2020",
-                "--xas-files", "only_one_conv.txt",
-                "--output", str(tmp_path / "unused.pdf"),
-                "first_sd.txt", "second_sd.txt",
+                "--year",
+                "2020",
+                "--xas-files",
+                "only_one_conv.txt",
+                "--output",
+                str(tmp_path / "unused.pdf"),
+                "first_sd.txt",
+                "second_sd.txt",
             ]
         )
     assert error.value.code == 2

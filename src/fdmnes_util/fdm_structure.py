@@ -152,6 +152,10 @@ class FdmStructure:
 
         Returns:
             str: Formatted FDMNES structure section.
+
+        Raises:
+            ValueError: If the structure has inconsistent symbol and position counts.
+            KeyError: If an element symbol cannot be converted to an atomic number.
         """
         # Element numbers are FDMNES output data, not VASP parsing logic.
         atomic_numbers = {}
@@ -187,7 +191,6 @@ class FdmStructure:
             lines.append(atom_line)
 
         return "\n".join(lines) + "\n"
-
 
     @staticmethod
     def render_xyz_molecule(
@@ -227,9 +230,7 @@ class FdmStructure:
                 raise ValueError(f"Unknown atomic symbol: {symbol}")
             number = atomic_numbers[symbol]
             x, y, z = position
-            lines.append(
-                f"   {number:2d} {x:12.6f} {y:12.6f} {z:12.6f}    ! {symbol}"
-            )
+            lines.append(f"   {number:2d} {x:12.6f} {y:12.6f} {z:12.6f}    ! {symbol}")
         return "\n".join(lines) + "\n"
 
     def write(self, filename: str | Path, molecule: bool = False) -> Path:

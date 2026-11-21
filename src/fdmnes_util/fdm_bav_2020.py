@@ -86,16 +86,31 @@ class FdmBav2020:
                 return 2
         return 1
 
-    def get_n_scf_loop(self):
-        """Count the SCF cycles recorded in the log."""
-        count = 0
+    def is_self_consistent(self) -> bool:
+        """Return whether the log announces a self-consistent calculation."""
+        return any("Self consistent calculation" in line for line in self.lines)
+
+    def get_max_scf_iterations(self) -> int | None:
+        """Return the reported SCF iteration limit, or None when absent."""
         for line in self.lines:
-            if "Begining of cycle" in line:
-                count += 1
-        return count
+            match = re.search(r"Maximum number of iterations?\s*[:=]?\s*(\d+)", line)
+            if match:
+                return int(match.group(1))
+        return None
+
+    def get_n_scf_loop(self) -> int:
+        """Return the last reported SCF cycle number, or zero when absent."""
+        cycle = 0
+        # FDMNES output and the SAE readers use the spelling "Begining".
+        pattern = r"Begin(?:n)?ing of cycle\s+(\d+)"
+        for line in self.lines:
+            match = re.search(pattern, line)
+            if match:
+                cycle = int(match.group(1))
+        return cycle
 
     def get_scf_toten(self):
-        """Return the sequence of unit-cell energies from SCF iterations."""
+        """Return the numeric unit-cell energy for each reported SCF record."""
         energies = []
         pattern = r"[-+]?\d+(?:\.\d+)?(?:[EeDd][-+]?\d+)?"
         for line in self.lines:
@@ -116,7 +131,7 @@ class FdmBav2020:
         return positions[1]
 
     def get_atoms_index_j(self):
-        """Return atomic numbers in the cluster section."""
+        """Return chemical symbols in the order recorded in the cluster."""
         from .analyze_fdm_log import AnalyzeFdmLog
 
         analyzer = AnalyzeFdmLog(self)

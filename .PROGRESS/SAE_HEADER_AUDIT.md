@@ -15,3 +15,10 @@ SAEの冒頭コメントは歴史的資料として原文のまま保存しま�
 - `fdmfile.py` ← `sae/fdmnes/fdmfile.py`：原本冒頭コメント 25 行を原文で収録。
 
 この一覧以外のモジュールについては、原本との由来の対応を確定していません。由来を推測してコメントを移植していません。
+
+## 追加の照合
+
+- `fdm_inp.py` には入力の読み込み元 `sae/fdmnes/inp.py` に加え、書き出し元 `sae/fdmnes/inp_writer.py` の冒頭コメントを掲載。
+- `fdmfile.py` には `sae/fdmnes/fdmfile.py` と `sae/fdmnes/fdmfile_writer.py` の冒頭コメントを掲載。
+- `athena_nor.py` に `sae/athena/nor.py` の冒頭コメントを掲載。
+- `FDclean.py`、`FDmove.py`、`FDfdm2vasp.py`、`FDmakeCconvAllsite.py`、`FDbav2xyz.py`、`FDplot_XAS.py`、`FDplot_XASs.py` に各原本から署名と履歴コメントを掲載。

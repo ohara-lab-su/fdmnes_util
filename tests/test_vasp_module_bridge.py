@@ -11,6 +11,7 @@ from fdmnes_util.vasp_poscar import VaspPoscarFile
 
 def test_vasp_reader_uses_external_module(monkeypatch, tmp_path):
     """Verify that the public VaspPoscar API supplies conversion data."""
+
     class FakeVaspPoscar:
         """Implement the subset of the provided vasp_util public API."""
 
@@ -43,6 +44,7 @@ def test_vasp_reader_uses_external_module(monkeypatch, tmp_path):
 
 def test_fdmnes_writer_uses_read_vasp_poscar(monkeypatch, tmp_path):
     """Check FDMNES output without introducing a second VASP parser."""
+
     class FakeStructure:
         """Provide the public interface of VaspPoscarFile."""
 

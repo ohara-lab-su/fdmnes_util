@@ -224,9 +224,7 @@ class PlotFdmDos:
                 raise ValueError(f"Duplicate format: {image_format}")
             used_formats.add(normalized_format)
 
-            destination = Path(output_prefix).with_suffix(
-                f".{normalized_format}"
-            )
+            destination = Path(output_prefix).with_suffix(f".{normalized_format}")
             self.plot_multiple_sites(
                 readers,
                 labels,
@@ -408,3 +406,188 @@ class PlotFdmDos:
         figure.savefig(output)
         plt.close(figure)
         return Path(output)
+
+    def plot_composite(
+        self,
+        reader,
+        output,
+        *,
+        groups,
+        spins=(0,),
+        spin_labels=("", ""),
+        projected=False,
+        integrated=False,
+        xas=(),
+        shift=0.0,
+        fermi_position=0.0,
+        xlabel="Photon Energy [eV]",
+        limits=(None, None),
+        density_max=None,
+        orbital_max=None,
+        xas_max=None,
+        label="0",
+        extra_formats=False,
+        show=False,
+    ):
+        """Draw the SAE portrait DOS stack, with optional XAS at the bottom.
+
+        Args:
+            reader: SD reader supplying densities on its own energy grid.
+            output: Main figure filename.
+            groups: Bottom-to-top groups of orbital names. Use ("total",)
+                for a total DOS panel.
+            spins: Spin channel order within each group, from bottom to top.
+            spin_labels: Label suffixes indexed by spin channel.
+            projected: Use individual orbital projections (PDOS).
+            integrated: Add stored integral curves on right-hand axes.
+            xas: Energy, intensity and label tuples for the absorption panel.
+            shift: Reference-frame shift applied only to the SD grid, in eV.
+            fermi_position: Position of the vertical energy marker, in eV.
+            xlabel: Energy reference label shown on the bottom axis.
+            limits: Lower and upper energy limits, with None for SD bounds.
+            density_max: Default upper limit on DOS magnitudes.
+            orbital_max: Optional mapping of group names to DOS limits.
+            xas_max: Maximum intensity on the absorption panel.
+            label: Site or material label used on the DOS curves.
+            extra_formats: Also save PDF, EPS, and PNG.
+            show: Display the figure after saving.
+
+        Returns:
+            pathlib.Path: Main saved figure.
+
+        Raises:
+            ValueError: If there are no DOS panels or if integrals are
+                requested for magnetic-sublevel projections.
+        """
+        import matplotlib.pyplot as plt
+
+        from ._figure import save_figure
+
+        if not groups or not spins:
+            raise ValueError("At least one DOS group and spin are required")
+        if projected and integrated:
+            raise ValueError("Integrated DOS is available for LDOS groups only")
+
+        energy = reader.get_eng() + shift
+        left, right = limits
+        if left is None:
+            left = energy.min()
+        if right is None:
+            right = energy.max()
+        orbital_max = orbital_max or {}
+        gap, width, height = (0.015, 0.72, 0.75)
+        if projected:
+            gap, width, height = (0.016, 0.75, 0.81)
+
+        panel_count = len(groups) * len(spins) + bool(xas)
+        panel_height = height / panel_count
+        first_orbital_group = int(groups[0] == ("total",))
+        label_group = first_orbital_group
+        if projected:
+            label_group = max(first_orbital_group, len(groups) - 2)
+        color_index = 0
+        bottom = 0.08
+        with plt.rc_context(
+            {
+                "font.family": "serif",
+                "font.serif": ["Times New Roman", "DejaVu Serif"],
+                "font.size": 15,
+                "legend.fontsize": 10,
+                "axes.linewidth": 1.5,
+            }
+        ):
+            figure = plt.figure(figsize=(7.0, 9.89))
+            axes = []
+            if xas:
+                axis = figure.add_axes([0.17, bottom, width, panel_height])
+                for index, (grid, intensity, name) in enumerate(xas):
+                    color = "black"
+                    if index:
+                        color_index += 1
+                        color = plt.cm.prism(color_index * 10)
+                    axis.plot(grid, intensity, color=color, label=name)
+                    if index == 0 and xas_max is None:
+                        xas_max = axis.get_ylim()[1]
+                axis.set_ylim(bottom=0, top=xas_max)
+                axis.set_ylabel("Absorption [arb. unit]")
+                axis.legend(loc="lower right", framealpha=1)
+                axes.append(axis)
+                bottom += panel_height + gap
+
+            for group_index, group in enumerate(groups):
+                if not projected:
+                    color_index += 1
+                for spin in spins:
+                    axis = figure.add_axes([0.17, bottom, width, panel_height])
+                    bottom += panel_height
+                    axes.append(axis)
+                    for orbital in group:
+                        if orbital == "total":
+                            values = reader.get_tdos(spin=spin)
+                            name = orbital
+                        elif projected:
+                            values = reader.get_pdos(lm=orbital, spin=spin)
+                            name = f"{label}-{orbital}"
+                        else:
+                            values = reader.get_ldos(l=orbital, spin=spin)
+                            name = f"{label}-{orbital}"
+                        if projected:
+                            color_index += 1
+                        color = plt.cm.prism((color_index + 1) * 10)
+                        axis.plot(
+                            energy,
+                            values,
+                            linewidth=2,
+                            color=color,
+                            label=name + spin_labels[spin],
+                        )
+
+                    maximum = orbital_max.get(group[0], density_max)
+                    if projected and maximum is None:
+                        maximum = max(line.get_ydata().max() for line in axis.lines)
+                        if maximum <= 0:
+                            maximum = None
+                    if projected or (spin == 1 and len(spins) == 2):
+                        axis.set_ylim(bottom=0, top=maximum)
+                    elif maximum is not None:
+                        axis.set_ylim(top=maximum)
+                    if spin == 1 and len(spins) == 2:
+                        axis.invert_yaxis()
+                    if group == ("total",):
+                        axis.set_ylabel("TDOS")
+                    elif group_index == label_group:
+                        ylabel = "LDOS"
+                        if projected:
+                            ylabel = "DOS [state/eV]"
+                        axis.set_ylabel(ylabel)
+                    axis.legend(loc="upper right", fontsize=10, framealpha=1)
+
+                    if integrated:
+                        integral_axis = axis.twinx()
+                        for orbital in group:
+                            if orbital == "total":
+                                integral = reader.get_inttdos(spin=spin)
+                            else:
+                                integral = reader.get_intldos(l=orbital, spin=spin)
+                            integral_axis.plot(
+                                energy,
+                                integral,
+                                color="black",
+                                label="INT" + spin_labels[spin],
+                            )
+                        if spin == 1 and len(spins) == 2:
+                            integral_axis.invert_yaxis()
+                        if group == ("total",):
+                            integral_axis.set_ylabel("Integrated TDOS")
+                        elif group_index == first_orbital_group:
+                            integral_axis.set_ylabel("Integrated LDOS")
+                bottom += gap
+
+            for index, axis in enumerate(axes):
+                axis.axvline(fermi_position, color="black", linewidth=1)
+                if left != right:
+                    axis.set_xlim(left, right)
+                axis.ticklabel_format(axis="x", useOffset=False)
+                axis.tick_params(axis="x", bottom=index == 0, labelbottom=index == 0)
+            axes[0].set_xlabel(xlabel)
+            return save_figure(figure, output, extra_formats=extra_formats, show=show)

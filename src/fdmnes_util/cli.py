@@ -89,11 +89,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     install_parser = subcommands.add_parser("install", help="Install package resources")
     install_parser.add_argument("resource", choices=["script"])
     install_parser.add_argument(
-        "--directory", "-d", type=Path, default=Path.cwd(),
+        "--directory",
+        "-d",
+        type=Path,
+        default=Path.cwd(),
         help="Destination directory (default: current directory)",
     )
     install_parser.add_argument(
-        "--force", action="store_true",
+        "--force",
+        action="store_true",
         help="Overwrite existing files with the bundled examples",
     )
     args = parser.parse_args(argv)

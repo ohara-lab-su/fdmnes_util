@@ -82,10 +82,16 @@ class FdmBav:
     def select_reader(self):
         """Return the implementation selected by the revision year.
 
-        Notes:
-            The 2020 designation reflects the SAE format. It does not
-            establish equivalence with the output of FDMNES 2022.
+        Returns:
+            FdmBav2016 | FdmBav2020: Reader for the supported revision.
+
+        Raises:
+            ValueError: For revision 2022 or later until those BAV variants
+                have a verified parser.
         """
+        if self.year >= 2022:
+            raise ValueError(f"Unverified BAV layout for revision {self.year}")
+
         if self.year <= 2016:
             from .fdm_bav_2016 import FdmBav2016
 

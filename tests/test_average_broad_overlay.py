@@ -7,7 +7,6 @@ import pytest
 
 from fdmnes_util.plot.plot_fdm_average import PlotFdmAverage
 
-
 matplotlib.use("Agg")
 
 

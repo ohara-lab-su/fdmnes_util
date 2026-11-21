@@ -15,19 +15,26 @@ class PlotFdmXas:
         title=None,
         xlabel="Energy (eV)",
         ylabel="XAS",
+        xmin=None,
+        xmax=None,
+        ymax=None,
+        fermi_position=None,
     ):
-        """plotの処理を実行する。
-        
+        """Draw XAS curves on a common axis and save the figure.
+
         Args:
-            spectra: spectraを指定する。
-            output: outputを指定する。
-            title: titleを指定する。
-            xlabel: xlabelを指定する。
-            ylabel: ylabelを指定する。
-        
+            spectra: Sequence of energy, intensity, and curve-label tuples.
+            output: Destination path. The extension determines the figure format.
+            title: Optional figure title.
+            xlabel: Energy-axis label.
+            ylabel: Absorption-axis label.
+            xmin: Optional minimum energy.
+            xmax: Optional maximum energy.
+            ymax: Optional maximum absorption.
+            fermi_position: Energy at which to draw the optional Fermi marker.
+
         Returns:
-            処理結果。
-        
+            pathlib.Path: Path to the saved figure.
         """
         import matplotlib
 
@@ -38,6 +45,12 @@ class PlotFdmXas:
         for energy, intensity, label in spectra:
             axis.plot(energy, intensity, label=label)
 
+        if fermi_position is not None:
+            axis.axvline(fermi_position, color="black", linewidth=1)
+        if xmin is not None or xmax is not None:
+            axis.set_xlim(left=xmin, right=xmax)
+        if ymax is not None:
+            axis.set_ylim(top=ymax)
         axis.set_xlabel(xlabel)
         axis.set_ylabel(ylabel)
         axis.set_title(title)
@@ -76,6 +89,9 @@ class PlotFdmXas:
 
         Returns:
             pathlib.Path: Destination of the saved figure.
+
+        Raises:
+            ValueError: If no calculated spectrum is supplied.
         """
         import matplotlib
 
@@ -192,3 +208,87 @@ class PlotFdmXas:
         figure.savefig(output)
         plt.close(figure)
         return Path(output)
+
+    def plot_composite(
+        self,
+        spectra,
+        output,
+        *,
+        observed=None,
+        dos=(),
+        xlabel="Photon Energy [eV]",
+        ylabel="Absorption [arb. unit]",
+        xmin=None,
+        xmax=None,
+        ymax=None,
+        dmax=None,
+        fermi_position=None,
+        extra_formats=False,
+        show=False,
+    ):
+        """Draw SAE's experimental, calculated-XAS, and optional LDOS panels.
+
+        Args:
+            spectra: Calculated spectrum tuples of energy, intensity, and label.
+            output: Main output filename.
+            observed: Optional measured energy, absorption, and label tuple.
+            dos: Optional LDOS tuples of energy, density, and label.
+            xlabel: Label of the bottom energy axis.
+            ylabel: Label of the calculated absorption axis.
+            xmin: Lower common energy limit.
+            xmax: Upper common energy limit.
+            ymax: Upper calculated absorption limit.
+            dmax: Upper LDOS limit.
+            fermi_position: Optional Fermi marker on calculated panels, in eV.
+            extra_formats: Also save EPS, PNG and PDF.
+            show: Display the figure using the active Matplotlib backend.
+
+        Returns:
+            pathlib.Path: Main figure path.
+        """
+        import matplotlib.pyplot as plt
+
+        from ._figure import save_figure
+
+        with plt.rc_context(
+            {"font.size": 16, "legend.fontsize": 14, "axes.linewidth": 1.5}
+        ):
+            figure = plt.figure(figsize=(8.1, 9.89))
+            rows = 2 + bool(dos)
+            calculated = figure.add_subplot(rows, 1, 2)
+            style = {"XAS broad": ("red", 3), "XAS": ("green", 1)}
+            for energy, intensity, label in spectra:
+                color, width = style.get(label.split(" (", 1)[0], ("green", 1))
+                calculated.plot(
+                    energy, intensity, label=label, color=color, linewidth=width
+                )
+            calculated.set_ylabel(ylabel)
+            calculated.set_ylim(bottom=0, top=ymax)
+            calculated.set_xlim(left=xmin, right=xmax)
+            calculated.legend(loc="lower right", framealpha=1)
+
+            axes = [calculated]
+            bottom = calculated
+            if observed is not None:
+                observed_axis = figure.add_subplot(rows, 1, 1, sharex=calculated)
+                energy, intensity, label = observed
+                observed_axis.plot(energy, intensity, label=label)
+                observed_axis.set_ylim(bottom=0)
+                observed_axis.legend(loc="lower right", framealpha=1)
+                axes.append(observed_axis)
+            if dos:
+                bottom = figure.add_subplot(rows, 1, 3, sharex=calculated)
+                for energy, density, label in dos:
+                    bottom.plot(energy, density, linewidth=1, label=label)
+                bottom.set_ylabel("DOS [stat/eV]")
+                bottom.set_ylim(bottom=0, top=dmax)
+                bottom.legend(loc="upper right", framealpha=1)
+                axes.append(bottom)
+            if fermi_position is not None:
+                calculated.axvline(fermi_position, color="black", linewidth=1)
+                if dos:
+                    bottom.axvline(fermi_position, color="black", linewidth=1)
+            for axis in axes:
+                axis.ticklabel_format(axis="x", useOffset=False)
+            bottom.set_xlabel(xlabel)
+            return save_figure(figure, output, extra_formats=extra_formats, show=show)

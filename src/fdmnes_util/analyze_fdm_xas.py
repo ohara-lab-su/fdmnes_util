@@ -14,15 +14,18 @@ class AnalyzeFdmXas:
 
     @staticmethod
     def average(spectra, weights=None):
-        """averageの処理を実行する。
-        
+        """Average the first absorption channel across spectra.
+
         Args:
-            spectra: spectraを指定する。
-            weights: weightsを指定する。
-        
+            spectra: Iterable of spectra sampled at exactly the same energies.
+            weights: One relative weight per spectrum. The default is uniform.
+
         Returns:
-            処理結果。
-        
+            tuple[numpy.ndarray, numpy.ndarray]: Common energy grid and mean XAS.
+
+        Raises:
+            ValueError: If no spectra are supplied, energy grids differ, or
+                weights are invalid.
         """
         spectra = list(spectra)
         if not spectra:
@@ -40,7 +43,7 @@ class AnalyzeFdmXas:
         else:
             weights = np.asarray(weights, dtype=float)
 
-        if len(weights) != len(spectra):
+        if weights.shape != (len(spectra),) or not np.all(np.isfinite(weights)):
             raise ValueError("Invalid weights")
         if np.sum(weights) == 0:
             raise ValueError("Invalid weights")
@@ -123,6 +126,18 @@ class AnalyzeFdmXas:
         absorption edge. With ``-f``, the axis becomes relative to E_Fermi.
         When input is already photon energy, the original script subtracts
         both E_edge and E_Fermi to produce the Fermi-relative axis.
+
+        Args:
+            energy: Energy values in the file's original reference frame.
+            raw_xas: Raw spectrum providing edge and Fermi energies.
+            input_is_photon: Whether the input uses the Energpho keyword.
+            fermi: Whether to return a Fermi-relative energy grid.
+
+        Returns:
+            numpy.ndarray: Energy grid in the requested reference frame, in eV.
+
+        Raises:
+            ValueError: If the raw XAS header lacks an edge energy.
         """
         energy = np.asarray(energy)
         edge_energy = raw_xas.get_eedge()
@@ -154,7 +169,21 @@ class AnalyzeFdmXas:
         """Read individual allsite outputs without changing site ordering.
 
         ``input_is_photon`` and ``fermi`` must be passed together to request
-        an energy-axis conversion. Omission of both retains the old raw axis.
+        an energy-axis conversion. Omission of both retains the file's axis.
+
+        Args:
+            base_name: Filout prefix, optionally with a directory.
+            site_indices: One-based absorbing-site indices in plot order.
+            convolved: Select convolved instead of raw site spectra.
+            input_is_photon: Whether the original calculation used Energpho.
+            fermi: Whether to return Fermi-relative energy values.
+
+        Returns:
+            list[tuple]: Tuples of energy, intensity, and site label.
+
+        Raises:
+            ValueError: If site indices or energy-reference options are invalid.
+            OSError: If a requested spectrum cannot be opened.
         """
         indices = list(site_indices)
         if not indices:

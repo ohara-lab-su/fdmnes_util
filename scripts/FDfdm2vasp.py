@@ -1,38 +1,56 @@
 #!/usr/bin/env python3
-# SAE original: sae/commands/FDfdm2vasp.py
-# ---- Original SAE development history ----
+# SAE source: sae/commands/FDfdm2vasp.py
+# ---- SAE original header ----
+# Copyright Kengo NAKADA; SAE class library.
+################################################################################
 # K.NAKADA, kengo.nakada@gmail.com
+#
 # 統合テスト兼、FDMNES --> VASP 変換
-# 2018.08.17: Python2/3 両対応
-# 2015.08.20: startup
-# 既知の問題: 分子系の変換時のunit-cellのスケールがおかしい
-# ---- End of original SAE history ----
-"""Convert a FDMNES Crystal input file into a VASP POSCAR example.
+#
+################################################################################
+# History
+#
+# 2018.08.17
+#  Python2/3 両対応
+#
+# 2015.08.20
+#  startup
+#  既知の問題: 分子系の変換時のunit-cellのスケールがおかしい
+#
+################################################################################
+################################################################################
+# ---- End of SAE original header ----
+"""Convert a FDMNES Crystal or Molecule input file into a VASP POSCAR.
 
 This sample uses the file-oriented FdmInp class for FDMNES parsing.
-ASE writes the VASP file; no POSCAR parser is duplicated here.
-The original SAE script also attempted molecular structures, but this
-example intentionally rejects Molecule inputs until their cell convention
-can be established from the original implementation.
+ASE writes the VASP file. For a molecule, it builds a cell with vacuum
+padding around the positions obtained from the FDMNES coordinate scale.
 """
 
 import argparse
+from math import isfinite
 from pathlib import Path
 
 from fdmnes_util.fdm_inp import FdmInp
 
 
 def main() -> None:
-    """Parse the example's arguments and convert the crystal structure."""
+    """Convert the selected structure and write it to a POSCAR file."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("input", nargs="?", default="read_pdb.inp")
-    parser.add_argument("-i", "--input-file", dest="input_option")
+    parser.add_argument("input", nargs="?")
+    parser.add_argument(
+        "-i", "--input", "--input-file", dest="input_option", default="read_pdb.inp"
+    )
     parser.add_argument("-o", "--output", type=Path)
+    parser.add_argument(
+        "--vacuum",
+        type=float,
+        default=10.0,
+        help="Molecule-only padding on each side, in angstroms (default: 10)",
+    )
     args = parser.parse_args()
 
-    input_path = Path(args.input)
-    if args.input_option is not None:
-        input_path = Path(args.input_option)
+    input_path = Path(args.input or args.input_option)
 
     output_path = args.output
     if output_path is None:
@@ -40,7 +58,14 @@ def main() -> None:
 
     # The FDMNES-specific interpretation remains in its file class.
     input_file = FdmInp(input_path)
-    atoms = input_file.get_crystal_atoms()
+    if "molecule" in input_file.tags:
+        if not isfinite(args.vacuum) or args.vacuum <= 0:
+            parser.error("--vacuum must be a positive finite distance")
+        atoms = input_file.get_molecule_atoms()
+        # POSCAR needs a periodic cell even though Molecule has no translation.
+        atoms.center(vacuum=args.vacuum)
+    else:
+        atoms = input_file.get_crystal_atoms()
 
     # ASE provides the POSCAR writer; this project does not implement one.
     from ase.io import write

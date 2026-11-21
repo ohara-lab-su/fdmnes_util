@@ -1,5 +1,29 @@
 #!/usr/bin/env python3
+# SAE source: sae/commands/FDplot_XASs.py
+# fmt: off
+# ---- SAE original header ----
+# Copyright Kengo NAKADA; SAE class library.
+################################################################################
+# K.NAKADA, kengo.nakada@gmail.com
+#
+# FDMNES
+#   *_{1,2,3,,,}_conv.txt plot program
+#
+#  allsite で出力した XAS の結果(_conv.txt) をまとめてプロット
+#
+#
+################################################################################
+#
+# 2018.08.17
+#  Python2/3 両対応
+#
+# 2015.07.01 fdXAS startup
+#
+################################################################################
+################################################################################
+# ---- End of SAE original header ----
 """Plot convolved spectra from all-site FDMNES calculations."""
+# fmt: on
 
 import argparse
 from pathlib import Path
@@ -9,6 +33,7 @@ from fdmnes_util.plot.plot_fdm_xas import PlotFdmXas
 from fdmnes_util.athena_nor import AthenaNor
 from fdmnes_util.fdm_inp import FdmInp
 from fdmnes_util.fdm_txt import FdmTxt
+from fdmnes_util.fdmfile import Fdmfile
 
 
 def main(argv=None):
@@ -23,7 +48,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Plot FDMNES all-site convolved XAS spectra"
     )
-    parser.add_argument("-i", "--input", default="read_pdb.inp")
+    parser.add_argument("-i", "--input")
     parser.add_argument(
         "-a",
         "--average",
@@ -42,12 +67,13 @@ def main(argv=None):
     parser.add_argument("--output", default="XAS.pdf")
     options = parser.parse_args(argv)
 
-    input_file = FdmInp(options.input)
+    input_path = Fdmfile.select_input(options.input)
+    input_file = FdmInp(input_path)
     filout = input_file.get_filout()
     if not filout:
         parser.error("The input file does not contain the Filout keyword")
 
-    base = Path(options.input).parent / filout
+    base = input_path.parent / filout
     first_site = options.average[0]
     raw_xas_path = Path(f"{base}_{first_site}.txt")
     raw_xas = FdmTxt(raw_xas_path)
@@ -66,9 +92,7 @@ def main(argv=None):
             # Athena measurements follow the file name used in SAE.
             observed_path = Path(f"{base}_{site}_obs.txt.nor")
             reader = AthenaNor(observed_path)
-            observed.append(
-                (reader.get_eng(), reader.get_nor(), f"obs. {site}")
-            )
+            observed.append((reader.get_eng(), reader.get_nor(), f"obs. {site}"))
 
     fermi_position = raw_xas.get_eedge() + raw_xas.get_efermi()
     if options.fermi:

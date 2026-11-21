@@ -3,6 +3,7 @@
 # SAE原本: sae/fdmnes/sd_2020.py
 # 以下はSAE原本の冒頭コメントを原文のまま保存したものです。
 # 原本に記された旧仕様・旧クラス名は現在のAPI仕様を意味しません。
+# fmt: off
 # ---- SAE original header (verbatim) ----
 # -*- coding: utf-8 -*
 ###############################################################################
@@ -105,6 +106,7 @@
 # Copyright Kengo NAKADA; SAE class library.
 # ---- End of SAE original header ----
 """Read the 2020 FDMNES SD layout with named DOS columns."""
+# fmt: on
 
 from pathlib import Path
 
@@ -145,6 +147,7 @@ class FdmSd2020:
         "d_xy": "dxy",
         "d_yz": "dyz",
         "d_z2": "dz2",
+        "d_3z2-r2": "dz2",
         "d_z^2": "dz2",
         "d_xz": "dxz",
         "d_x2-y2": "dx2-y2",
@@ -169,9 +172,7 @@ class FdmSd2020:
         self.columns = lines[0].split()
         column_count = len(self.columns)
         if column_count not in (5, 10, 17):
-            raise ValueError(
-                f"Not a 2020 SD header ({column_count} columns)"
-            )
+            raise ValueError(f"Not a 2020 SD header ({column_count} columns)")
 
         self.values = np.loadtxt(self.path, skiprows=1, ndmin=2)
         if self.values.shape[1] != column_count:
@@ -190,8 +191,20 @@ class FdmSd2020:
         self._fields = dict(zip(self.columns, self.values.T))
 
         required = {"Energy", "s", "Int(s)", "total", "Int(total)"}
-        if not required.issubset(self._fields):
-            raise ValueError("Required SD columns absent")
+        orbital_groups = ("s", "p", "d")
+        for level in range(1, self.lmax + 1):
+            group = orbital_groups[level]
+            required.update((group, f"Int({group})"))
+        for orbital, (level, _) in self.ORBITALS.items():
+            if level <= self.lmax:
+                required.add(orbital)
+        missing = required.difference(self._fields)
+        if missing or len(self._fields) != column_count:
+            raise ValueError(f"Invalid 2020 SD columns; missing: {sorted(missing)}")
+
+    def get_densities(self):
+        """Return all density and integral columns in file order."""
+        return self.values[:, 1:]
 
     def get_eng(self):
         """Return the energy axis (eV)."""
@@ -205,6 +218,19 @@ class FdmSd2020:
         """Return the number of spin channels."""
         return self.ispin
 
+    @staticmethod
+    def _check_spin(spin):
+        """Require the sole spin channel in the verified 2020 layout.
+
+        Args:
+            spin: Zero or one of the accepted names for the sole channel.
+
+        Raises:
+            ValueError: If the requested spin channel is unavailable.
+        """
+        if spin not in (0, "up", "non", "nonmag"):
+            raise ValueError("The verified 2020 SD layout has one spin channel")
+
     def get_ldos(self, l=0, spin=0):
         """Return the l-resolved DOS for the requested orbital.
 
@@ -214,9 +240,13 @@ class FdmSd2020:
 
         Returns:
             numpy.ndarray: Density values for the requested orbital.
+
+        Raises:
+            ValueError: If spin selects an unavailable channel.
+            IndexError: If a numerical angular momentum is out of range.
+            KeyError: If the orbital column is absent.
         """
-        if spin not in (0, "up", "non", "nonmag"):
-            raise ValueError("2020 sample: non-spin SD columns")
+        self._check_spin(spin)
 
         if isinstance(l, int):
             key = ("s", "p", "d")[l]
@@ -225,7 +255,21 @@ class FdmSd2020:
         return self._fields[key]
 
     def get_intldos(self, l=0, spin=0):
-        """Return the integrated l-resolved density of states."""
+        """Return the stored integral of an angular-momentum DOS channel.
+
+        Args:
+            l: Angular momentum index or group name s, p, or d.
+            spin: Zero or the name of the sole available spin channel.
+
+        Returns:
+            numpy.ndarray: Integrated densities on the file's energy grid.
+
+        Raises:
+            ValueError: If spin selects an unavailable channel.
+            IndexError: If a numerical angular momentum is out of range.
+            KeyError: If the integrated orbital column is absent.
+        """
+        self._check_spin(spin)
         if isinstance(l, int):
             key = ("s", "p", "d")[l]
         else:
@@ -239,14 +283,16 @@ class FdmSd2020:
             l: Orbital angular momentum index.
             m: Magnetic quantum number.
             lm: Optional orbital name, such as ``dxy`` or ``p_x``.
-            spin: Retained for the SD reader interface.
+            spin: Zero or the name of the sole available spin channel.
 
         Returns:
             numpy.ndarray: Partial density values.
 
         Raises:
             KeyError: If the orbital column does not exist.
+            ValueError: If spin selects an unavailable channel.
         """
+        self._check_spin(spin)
         if lm is not None:
             orbital_name = lm.lower()
             key = self.ALIASES.get(orbital_name, orbital_name)
@@ -262,9 +308,31 @@ class FdmSd2020:
         return self._fields[key]
 
     def get_tdos(self, spin=0):
-        """Return the total density of states."""
+        """Return the total DOS column written by FDMNES.
+
+        Args:
+            spin: Zero or the name of the sole available spin channel.
+
+        Returns:
+            numpy.ndarray: One value per energy point.
+
+        Raises:
+            ValueError: If spin selects an unavailable channel.
+        """
+        self._check_spin(spin)
         return self._fields["total"]
 
     def get_inttdos(self, spin=0):
-        """Return the integrated total density of states."""
+        """Return the integrated total DOS column written by FDMNES.
+
+        Args:
+            spin: Zero or the name of the sole available spin channel.
+
+        Returns:
+            numpy.ndarray: One value per energy point.
+
+        Raises:
+            ValueError: If spin selects an unavailable channel.
+        """
+        self._check_spin(spin)
         return self._fields["Int(total)"]

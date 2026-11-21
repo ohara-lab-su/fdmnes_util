@@ -21,9 +21,7 @@ def main(argv=None):
     Returns:
         list[pathlib.Path]: Files written in the requested formats.
     """
-    parser = argparse.ArgumentParser(
-        description="Plot p-orbital FDMNES LDOS"
-    )
+    parser = argparse.ArgumentParser(description="Plot p-orbital FDMNES LDOS")
     parser.add_argument("-i", "--input", default="read_pdb.inp")
     parser.add_argument("--year", type=int, choices=(2016, 2020), required=True)
     parser.add_argument("--emin", type=float)

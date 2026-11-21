@@ -89,6 +89,8 @@ sufficient evidence that another FDMNES release uses the same layout.
 
 from pathlib import Path
 
+import numpy as np
+
 from .fdm_sd_2016 import FdmSd2016
 from .fdm_sd_2020 import FdmSd2020
 
@@ -143,3 +145,43 @@ class FdmSd:
             )
 
         return FdmSd2020(self.path, weight=self.weight)
+
+    @staticmethod
+    def format_from_bav(filename):
+        """Select an SD layout from the matching calculation's BAV revision.
+
+        Args:
+            filename: Path to the companion BAV file.
+
+        Returns:
+            int: Supported SD layout year.
+
+        Raises:
+            ValueError: If the BAV revision is missing or unverified.
+        """
+        from .fdm_bav import FdmBav
+
+        year = FdmBav(filename).year
+        if year <= 2016:
+            return 2016
+        if year < 2022:
+            return 2020
+        raise ValueError(f"Unverified SD layout for BAV revision {year}")
+
+    @staticmethod
+    def write_table(filename, columns, grid, densities):
+        """Write an averaged SD file with all original density columns.
+
+        Args:
+            filename: Destination SD filename.
+            columns: Column names, beginning with the energy label.
+            grid: Original energy grid in eV.
+            densities: Averaged density and integral columns, without energy.
+        """
+        np.savetxt(
+            filename,
+            np.column_stack((grid, densities)),
+            header=" ".join(columns),
+            comments="",
+            fmt="%.10g",
+        )

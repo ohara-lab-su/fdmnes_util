@@ -28,7 +28,13 @@ def test_full_input_contains_calculation_keywords_and_structure(tmp_path):
     structure_writer = FdmStructure(ExampleStructure())
     input_writer = FdmInp
     destination = tmp_path / "read_pdb.inp"
-    input_writer.write(destination, absorber=2, fileout="Fe", edge="L3", structure_writer=structure_writer)
+    input_writer.write(
+        destination,
+        absorber=2,
+        fileout="Fe",
+        edge="L3",
+        structure_writer=structure_writer,
+    )
     content = destination.read_text(encoding="utf-8")
     assert " Absorber\n  2" in content
     assert " Filout\n  Fe" in content

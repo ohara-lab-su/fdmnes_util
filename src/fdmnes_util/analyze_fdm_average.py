@@ -57,12 +57,14 @@ class AnalyzeFdmAverage:
 
         return energy_shift, absolute_fermi
 
-    def average(self, readers, value_method, **kwargs):
+    def average(self, readers, value_method, *, divisor=None, **kwargs):
         """Return the common energy axis and arithmetic mean of a quantity.
 
         Args:
             readers: Nonempty sequence of FDMNES output objects.
             value_method: Name of the data access method on each object.
+            divisor: Optional positive divisor for the sum, used for SAE's
+                per-atom normalization. Defaults to the number of readers.
             **kwargs: Arguments passed to the selected data access method.
 
         Returns:
@@ -75,6 +77,10 @@ class AnalyzeFdmAverage:
         """
         if not readers:
             raise ValueError("At least one calculation is required")
+        if divisor is None:
+            divisor = len(readers)
+        if not np.isfinite(divisor) or divisor <= 0:
+            raise ValueError("The averaging divisor must be positive and finite")
 
         reference_energy = np.asarray(readers[0].get_eng(), dtype=float)
         if reference_energy.ndim != 1:
@@ -112,5 +118,5 @@ class AnalyzeFdmAverage:
                 raise ValueError("Data shapes differ between calculations")
             sum_values += values
 
-        mean_values = sum_values / len(readers)
+        mean_values = sum_values / divisor
         return reference_energy.copy(), mean_values
