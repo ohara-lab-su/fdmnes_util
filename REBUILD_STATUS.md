@@ -31,3 +31,14 @@ Entrypoints exist for 11 partially ported names only. The other 17 are explicitl
 - Added `AnalyzeFdmXas.site_spectra` for selected absorbing-site outputs and `PlotFdmXas.plot_sites` for two-panel site visualization.
 - Added the partial `FDplot_XASs` command. The command explicitly rejects unverified Fermi-axis behavior and does not claim the original experimental-overlay option.
 - This is a partial implementation; it does not change the 2016/2020 format readers or claim support for 2022.
+
+## v8 update
+
+- Partial CLI implementation for `fdLDOS0_specified` using its own plot method and the existing SD readers.
+- Expanded the 2020 SD reader to readable, documented code without changing orbital mapping.
+- Tested the CLI against the supplied Fe SD fixture.
+- 29 tests pass for the available suite. None of the 28 scripts is declared fully equivalent.
+
+## v9 sample distribution
+
+The project now supplies editable examples in `scripts/` and installs them with `fdmnes_util install script`. `commands/` was removed. Fourteen partial examples are bundled with the wheel; 14 other historical script names remain unimplemented.

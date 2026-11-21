@@ -9,7 +9,9 @@ import pytest
 from fdmnes_util.plot.plot_fdm_dos import PlotFdmDos
 from fdmnes_util.plot.plot_fdm_xas import PlotFdmXas
 from fdmnes_util.plot.plot_fdm_xas_ldos import PlotFdmXasLdos
-from fdmnes_util.commands import fd_plot_xas_ldos
+from test_commands import load_script
+
+fd_plot_xas_ldos = load_script("FDplot_XAS_LDOS.py")
 
 
 FIXTURES = Path(__file__).parent / "fixtures"

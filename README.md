@@ -39,7 +39,7 @@ d_dos = sd.get_ldos("d")
 
 The full scope consists of all 28 `FD*` / `fd*` commands from SAE. The goal is to reproduce their functionality using the file readers, analysis classes, and plotting classes, not merely to preserve command names. Current coverage and unverified command options are recorded in [COMMAND_AUDIT.md](COMMAND_AUDIT.md). Full equivalence has not yet been achieved.
 
-The newly added `FDplot_XASs` plots convolved spectra for explicitly selected absorbing sites. Overlaying observed spectra and converting to a Fermi-referenced axis are not yet supported.
+The newly added `FDplot_XASs` plots convolved spectra for explicitly selected absorbing sites. The observed-spectrum overlay and Fermi-referenced axis have been added, but equivalence with every original command-line option is not yet established.
 
 ## References
 
@@ -53,3 +53,32 @@ Python modules include shebangs and docstrings. Class and public-method document
 ## Plotting package
 
 Plotting classes live in `fdmnes_util.plot`, separately from command-line entry points. `FDplot_XAS_LDOS` produces a stacked XAS and site-resolved LDOS figure. Select the verified SD layout explicitly with `--year 2016` or `--year 2020`.
+
+## Rebuilding `fdLDOS0_specified`
+
+The command retains the original `--emin`, `--emax`, and `--dmax` options and plots the p-orbital LDOS. It reads the calculation prefix from `Filout` in the input file rather than using the old hard-coded research directory. The 2016 and 2020 SD readers remain separate, and `PlotFdmDos` handles the figure.
+
+```console
+python fdLDOS0_specified.py -i read_pdb.inp --year 2020 --emin -10 --emax 20 --dmax 3
+```
+
+The command writes EPS, PDF, and PNG figures; unlike the old script, it does not open an interactive plot window. The 2022 layout is not treated as identical to the 2020 layout without supporting output files.
+
+## Installing editable example scripts
+
+The scripts in this project are editable examples of how to use the class library. Install the Python package, change to the directory where you want to work, and run:
+
+```console
+fdmnes_util install script
+```
+
+This copies the packaged Python scripts into your current directory. You can modify them for your own experiments. Existing files are left untouched; use `--force` only if you intentionally want to overwrite them. Use `--directory` to specify another destination.
+
+```console
+fdmnes_util install script --directory ./analysis
+fdmnes_util install script --force
+```
+
+The single source of the example scripts is the repository's top-level `scripts/` directory. Scripts are bundled into the installed package at build time. The class library owns file-format parsing, numerical analysis, and plotting; the examples demonstrate those classes in readable Python code. Currently 14 of the 28 historical SAE script names have partial implementations.
+
+The package build and editable sample installation are configured in `pyproject.toml`; no `setup.py` is used.

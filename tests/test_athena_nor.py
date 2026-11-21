@@ -7,7 +7,9 @@ import numpy as np
 import pytest
 
 from fdmnes_util.read_athena_nor import ReadAthenaNor
-from fdmnes_util.commands.fd_plot_xass import main
+from test_commands import load_script
+
+main = load_script("FDplot_XASs.py").main
 
 
 def test_read_athena_nor(tmp_path):

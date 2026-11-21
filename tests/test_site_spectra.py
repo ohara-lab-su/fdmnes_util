@@ -4,7 +4,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 from fdmnes_util.analyze_fdm_xas import AnalyzeFdmXas
-from fdmnes_util.commands.fd_plot_xass import main
+from test_commands import load_script
+
+main = load_script("FDplot_XASs.py").main
 
 def test_site_series_and_command(tmp_path):
     pytest.importorskip('matplotlib')

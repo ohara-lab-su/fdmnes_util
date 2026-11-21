@@ -4,8 +4,26 @@ from pathlib import Path
 import shutil
 import numpy as np
 import pytest
-from fdmnes_util.commands import fd_clean, fd_move, fd_conv_e2photoe, fd_getfermi
-from fdmnes_util.commands import fd_make_conv_allsite, fd_bav2xyz, fd_xas, fd_ldos
+import importlib.util
+
+
+def load_script(filename):
+    """Import an editable example by its published script filename."""
+    path = Path(__file__).resolve().parents[1] / "scripts" / filename
+    spec = importlib.util.spec_from_file_location(path.stem, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+fd_clean = load_script("FDclean.py")
+fd_move = load_script("FDmove.py")
+fd_conv_e2photoe = load_script("FDconv_e2photoe.py")
+fd_getfermi = load_script("FDgetfermi.py")
+fd_make_conv_allsite = load_script("FDmakeCconvAllsite.py")
+fd_bav2xyz = load_script("FDbav2xyz.py")
+fd_xas = load_script("fdXAS.py")
+fd_ldos = load_script("fdLDOS.py")
 
 F = Path(__file__).parent / 'fixtures'
 
