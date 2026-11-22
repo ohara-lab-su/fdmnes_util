@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for the FDMNES class library."""
+"""FDMNES クラスライブラリを回帰検証する。"""
 
 from pathlib import Path
 import shutil
@@ -9,7 +9,7 @@ import importlib.util
 
 
 def load_script(filename):
-    """Import an editable example by its published script filename."""
+    """配布時のスクリプト名で編集用サンプルを取り込む。"""
     path = Path(__file__).resolve().parents[1] / "scripts" / filename
     spec = importlib.util.spec_from_file_location(path.stem, path)
     module = importlib.util.module_from_spec(spec)
@@ -66,7 +66,7 @@ def test_getfermi_and_conversion(tmp_path, monkeypatch, capsys):
 
 
 def test_getfermi_selects_batch_input(tmp_path, monkeypatch, capsys):
-    """Use the first batch job and let an explicit input take precedence."""
+    """ジョブ一覧の最初の入力と明示指定の優先順位を検証する。"""
     prepare(tmp_path)
     (tmp_path / "read_pdb.inp").rename(tmp_path / "job.inp")
     (tmp_path / "fdmfile.txt").write_text("1\njob.inp\n", encoding="utf-8")
@@ -207,7 +207,7 @@ def test_plotting_cli(tmp_path, monkeypatch):
 
 
 def test_move_renames_explicit_prefix(tmp_path, monkeypatch):
-    """Apply the SAE source/destination syntax to spectra and site files."""
+    """SAE の移動元・移動先の指定でスペクトルとサイト別ファイルを移動することを検証する。"""
     prepare(tmp_path)
     monkeypatch.chdir(tmp_path)
     fd_move.main(["Fe", "Fe-run2"])
@@ -218,7 +218,7 @@ def test_move_renames_explicit_prefix(tmp_path, monkeypatch):
 
 
 def test_move_collision_preserves_results(tmp_path, monkeypatch):
-    """Validate all target filenames before changing the first result."""
+    """移動を始める前に全移動先を検査することを検証する。"""
     prepare(tmp_path)
     monkeypatch.chdir(tmp_path)
     (tmp_path / "Fe-run2_sd0.txt").write_text("existing output")
@@ -229,7 +229,7 @@ def test_move_collision_preserves_results(tmp_path, monkeypatch):
 
 
 def test_clean_uses_batch_input(tmp_path, monkeypatch):
-    """Resolve the first batch job before cleaning its generated files."""
+    """ジョブ一覧の最初の入力を決定してから出力を削除することを検証する。"""
     prepare(tmp_path)
     (tmp_path / "read_pdb.inp").rename(tmp_path / "job.inp")
     (tmp_path / "fdmfile.txt").write_text("1\njob.inp\n")
@@ -240,7 +240,7 @@ def test_clean_uses_batch_input(tmp_path, monkeypatch):
 
 
 def test_bav2xyz_stdout_matches_file(tmp_path, monkeypatch, capsys):
-    """Preserve the XYZ precision in both output modes."""
+    """両方の書き出し方法で XYZ の精度を保持することを検証する。"""
     prepare(tmp_path)
     monkeypatch.chdir(tmp_path)
     fd_bav2xyz.main(["-i", "Fe", "--std"])
@@ -250,7 +250,7 @@ def test_bav2xyz_stdout_matches_file(tmp_path, monkeypatch, capsys):
 
 
 def test_plot_xas_uses_independent_grids(tmp_path, monkeypatch):
-    """Capture the two reference-shifted spectra passed through the sample."""
+    """サンプルがエネルギー基準を移動して渡す二つのスペクトルを記録する。"""
     sample = load_script("FDplot_XAS.py")
     monkeypatch.chdir(tmp_path)
     (tmp_path / "read_pdb.inp").write_text("Filout Fe\nEnd\n")
@@ -262,7 +262,7 @@ def test_plot_xas_uses_independent_grids(tmp_path, monkeypatch):
     captured = {}
 
     def capture(plotter, spectra, output, **kwargs):
-        """Record the arguments that would be passed to the renderer."""
+        """描画処理に渡される引数を記録する。"""
         captured["spectra"] = spectra
         captured["fermi_position"] = kwargs["fermi_position"]
 
@@ -275,7 +275,7 @@ def test_plot_xas_uses_independent_grids(tmp_path, monkeypatch):
 
 
 def test_plot_xas_overlay_writes_pdf(tmp_path, monkeypatch):
-    """Render the raw and broadened spectra from the supplied SAE Fe outputs."""
+    """提供された SAE の Fe 出力から生・畳み込みスペクトルを描く。"""
     prepare(tmp_path)
     monkeypatch.chdir(tmp_path)
     output = load_script("FDplot_XAS.py").main(["--nonsubtract", "--nw"])

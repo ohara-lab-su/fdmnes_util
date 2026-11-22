@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for the occupied-LDOS plot based on SAE fdLDOS_color.py."""
+"""SAE の fdLDOS_color.py に基づく占有 LDOS 描画を検証する。"""
 
 import numpy as np
 
@@ -7,27 +7,27 @@ from fdmnes_util.plot.plot_fdm_dos import PlotFdmDos
 
 
 class SampleSd:
-    """Provide deterministic LDOS data for plotting tests."""
+    """描画テスト用に固定の LDOS データを提供する。"""
 
     def get_eng(self):
-        """Return the sample energy axis."""
+        """テスト用のエネルギー軸を返す。"""
         return np.array([-2.0, -1.0, 0.0, 1.0])
 
     def get_ldos(self, orbital):
-        """Return the sample density for the requested orbital.
+        """指定軌道に対するテスト用密度を返す。
 
         Args:
-            orbital: Orbital label.
+            orbital: 対象の軌道名。
 
         Returns:
-            numpy.ndarray: Sample LDOS.
+            numpy.ndarray: テスト用の LDOS。
         """
         assert orbital == "p"
         return np.array([0.1, 0.4, 0.8, 0.2])
 
 
 def test_occupied_ldos_writes_pdf(tmp_path):
-    """Save a plot with an explicit Fermi level and energy offset."""
+    """フェルミ準位とエネルギー移動量を指定して図を保存することを検証する。"""
     output = tmp_path / "occupied.pdf"
     plotter = PlotFdmDos()
     result = plotter.plot_occupied_ldos(

@@ -100,11 +100,11 @@
 ##########################################################################
 ################################################################################
 # ---- End of SAE original header ----
-"""Plot raw and convolved FDMNES XAS on their respective energy grids.
+"""``*.inp`` または出力接頭辞から生 XAS ``<Filout>.txt`` と ``*_conv.txt`` を解決して描く。
 
-Use a calculation input to reproduce the SAE energy reference and the
-default overlay. A positional Filout prefix can also plot a single
-spectrum directly from the data file.
+オプションにより ``*_sdN.txt`` や実験の ``*.nor`` を読み、平均スペクトル・SD 表も保存できる。
+
+計算入力を指定すると SAE のエネルギー基準と既定の重ね描きを使う。Filout を位置引数にすると単一のスペクトルをデータファイルから直接描ける。
 """
 # fmt: on
 
@@ -130,16 +130,15 @@ __license__ = "MIT"
 
 
 class XasPlotSample:
-    """このサンプルの入力選択、サイト平均と描画をつなぐ。"""
-
+    """``*.inp`` または出力接頭辞から生 XAS ``<Filout>.txt``・``*_conv.txt``・``*_sdN.txt`` を選び、平均や図の生成につなぐ。"""
     def run(self, argv=None):
-        """Read calculated and measured spectra and draw the SAE comparison.
+        """計算・実測スペクトルを読み、SAE の比較図を描く。
 
         Args:
-            argv: Optional command-line argument sequence.
+            argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
 
         Returns:
-            pathlib.Path: Path to the main figure.
+            pathlib.Path: 保存したファイルのパス。
         """
         parser = argparse.ArgumentParser(description="Plot FDMNES XAS")
         parser.add_argument(
@@ -303,15 +302,15 @@ class XasPlotSample:
 
     @staticmethod
     def _spectrum_paths(prefix, suffix, sites):
-        """Construct raw or convolved paths for the selected calculations.
+        """選んだ計算の生 XAS または畳み込み XAS のパスを組み立てる。
 
         Args:
-            prefix: Spectrum name or filename.
-            suffix: Filename suffix identifying the spectrum format.
-            sites: Selected one-based absorber indices, if averaging.
+            prefix: スペクトルの接頭辞またはファイル名。
+            suffix: スペクトルの種類を識別するファイル名の接尾辞。
+            sites: 平均する場合に選ぶ1始まりの吸収サイト番号。
 
         Returns:
-            list[str]: Source filenames in site order.
+            list[str]: サイト順の入力ファイル名。
         """
         stem = prefix.removesuffix(suffix)
         if sites:
@@ -322,15 +321,15 @@ class XasPlotSample:
 
     @staticmethod
     def _raw_curves(average, readers, options):
-        """Select named absorption edges and spin channels, then average them.
+        """吸収端とスピンで列を選択し、平均を取る。
 
         Args:
-            average: Analyzer for grids and intensity divisors.
-            readers: Raw XAS files in site order.
-            options: Parsed edge, spin, and normalization options.
+            average: 格子の検証と強度の平均を担当する解析クラス。
+            readers: 読み取りに使うリーダーの並び。
+            options: オプション解析で得た Namespace。
 
         Returns:
-            list[tuple]: Energy grids, intensities, and labels of raw curves.
+            list[tuple]: 生 XAS の各曲線のエネルギー格子、強度、ラベル。
         """
         spins = [0]
         if options.dn and not options.up:
@@ -366,17 +365,17 @@ class XasPlotSample:
         return curves
 
     def _dos_curves(self, average, options, input_file, filout, raw):
-        """Read or average the site's s/p LDOS on the SD energy grid.
+        """SD のエネルギー格子上でサイトの s・p 軌道の LDOS を読み込むか、平均する。
 
         Args:
-            average: Analyzer for SD grid validation and normalization.
-            options: Parsed LDOS, spin, reference, and filename options.
-            input_file: FDMNES input providing photon mode and spin settings.
-            filout: Default spectrum and SD prefix.
-            raw: Raw XAS reader providing edge and Fermi energies.
+            average: 格子の検証と強度の平均を担当する解析クラス。
+            options: オプション解析で得た Namespace。
+            input_file: 計算条件とエネルギー基準を読む FdmInp。
+            filout: ディレクトリを含められる出力ファイルの接頭辞。
+            raw: 吸収端とフェルミエネルギーを保持する生 XAS リーダー。
 
         Returns:
-            list[tuple]: LDOS energy grids, density arrays, and curve labels.
+            list[tuple]: LDOS 曲線ごとのエネルギー格子、密度配列、ラベル。
         """
         prefix = options.name or options.sd or filout
         ispin = input_file.get_ispin()
@@ -427,16 +426,16 @@ class XasPlotSample:
 
     @staticmethod
     def _shift_curves(curves, input_file, raw, fermi):
-        """Shift each curve on its own grid using the calculation's XAS metadata.
+        """計算 XAS のメタデータに基づいて各曲線のエネルギー格子を移動する。
 
         Args:
-            curves: Energy, intensity, and label tuples.
-            input_file: FDMNES input describing the original reference.
-            raw: Raw XAS file containing edge and Fermi energies.
-            fermi: Whether to request a Fermi-relative reference.
+            curves: エネルギー、強度、ラベルの組の並び。
+            input_file: 計算条件とエネルギー基準を読む FdmInp。
+            raw: 吸収端とフェルミエネルギーを保持する生 XAS リーダー。
+            fermi: True の場合はフェルミ準位基準、False の場合は光子エネルギー基準。
 
         Returns:
-            list[tuple]: Curves in the selected energy reference.
+            list[tuple]: 指定されたエネルギー基準での曲線の並び。
         """
         shifted = []
         for grid, intensity, label in curves:

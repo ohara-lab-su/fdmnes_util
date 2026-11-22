@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""XAS numerical operations that do not depend on Matplotlib or CLI options."""
+"""生 XAS ``<Filout>.txt`` と畳み込み XAS ``*_conv.txt`` を使う数値解析。
 
+AnalyzeFdmXas は対応するリーダーや数値配列から平均とエネルギー軸変換を行う。全サイト処理では ``<Filout>_N.txt`` または ``<Filout>_N_conv.txt`` をリーダー経由で読み、サイト順の配列を返す。
+"""
 from pathlib import Path
 
 import numpy as np
@@ -10,22 +12,20 @@ from .fdm_txt import FdmTxt
 
 
 class AnalyzeFdmXas:
-    """Numerical analysis of FDMNES absorption spectra."""
-
+    """生 XAS ``<Filout>.txt`` と畳み込み XAS ``*_conv.txt`` のリーダーを使い、スペクトルを数値解析する。"""
     @staticmethod
     def average(spectra, weights=None):
-        """Average the first absorption channel across spectra.
+        """各スペクトルの先頭の吸収強度列を平均する。
 
         Args:
-            spectra: Iterable of spectra sampled at exactly the same energies.
-            weights: One relative weight per spectrum. The default is uniform.
+            spectra: 同じエネルギー格子でサンプリングされたスペクトルの並び。
+            weights: スペクトルごとの相対重み。省略時は等重み。
 
         Returns:
-            tuple[numpy.ndarray, numpy.ndarray]: Common energy grid and mean XAS.
+            tuple[numpy.ndarray, numpy.ndarray]: 共通のエネルギー格子と平均 XAS。
 
         Raises:
-            ValueError: If no spectra are supplied, energy grids differ, or
-                weights are invalid.
+            ValueError: スペクトルが空、格子が異なる、または重みが不正な場合。
         """
         spectra = list(spectra)
         if not spectra:
@@ -64,23 +64,21 @@ class AnalyzeFdmXas:
         subtract_fermi=False,
         fermi_energy=None,
     ):
-        """Convert a convolved XAS spectrum to photon-energy coordinates.
+        """畳み込み XAS のエネルギー軸を光子エネルギーに変換する。
 
-        The convolution file supplies both the energy and intensity columns.
-        Using the raw-XAS energy array instead would misalign the spectrum
-        whenever the convolution and raw grids have different lengths.
+        エネルギーと吸収強度は畳み込みファイルの同じ行から取得する。生 XAS とはエネルギー格子が異なる場合がある。
 
         Args:
-            convolution: ``FdmConv`` containing the convolved energy grid.
-            raw_xas: ``FdmTxt`` supplying the absorption-edge energy.
-            subtract_fermi: Subtract the Fermi-energy offset when True.
-            fermi_energy: Fermi-energy offset in eV, when subtraction is used.
+            convolution: 畳み込み出力を保持する FdmConv。
+            raw_xas: 対応する生 XAS と吸収端・フェルミエネルギーを保持する FdmTxt。
+            subtract_fermi: True の場合はフェルミエネルギーを引く。
+            fermi_energy: エネルギー軸の基準に対応するフェルミエネルギー（eV）。
 
         Returns:
-            tuple[numpy.ndarray, numpy.ndarray]: Converted energy and XAS.
+            tuple[numpy.ndarray, numpy.ndarray]: 変換後のエネルギーと XAS 強度。
 
         Raises:
-            ValueError: If the required edge or Fermi energy is missing.
+            ValueError: 必要な吸収端またはフェルミエネルギーの記録がない場合。
         """
         if raw_xas.edge_energy is None:
             raise ValueError("Missing E_edge")
@@ -98,19 +96,16 @@ class AnalyzeFdmXas:
 
     @staticmethod
     def fermi_relative_convolution(convolution, raw_xas):
-        """Convert a convolved spectrum to the Fermi-relative energy axis.
+        """畳み込み XAS のエネルギー軸をフェルミ準位基準に変換する。
 
-        The original ``fdXAS_specified.py`` subtracts the Fermi energy
-        from the energy column in ``*_conv.txt``. It does not add the
-        absorption-edge energy in this particular plotting operation.
+        SAE の `fdXAS_specified.py` に従い、`*_conv.txt` のエネルギー列からフェルミエネルギーだけを引く。
 
         Args:
-            convolution: Reader for the convolved FDMNES spectrum.
-            raw_xas: Reader for the corresponding non-convolved spectrum.
+            convolution: 畳み込み出力を保持する FdmConv。
+            raw_xas: 対応する生 XAS と吸収端・フェルミエネルギーを保持する FdmTxt。
 
         Returns:
-            tuple[numpy.ndarray, numpy.ndarray]: Fermi-relative energy
-                and absorption intensity, in the original row order.
+            tuple[numpy.ndarray, numpy.ndarray]: 元の行順でのフェルミ準位基準エネルギーと吸収強度。
         """
         energy = convolution.get_eng().copy()
         intensity = convolution.get_xas().copy()
@@ -120,24 +115,21 @@ class AnalyzeFdmXas:
 
     @staticmethod
     def energy_reference(energy, raw_xas, *, input_is_photon, fermi):
-        """Apply the energy-axis rules used by the original FDplot_XASs script.
+        """SAE の FDplot_XASs が使うエネルギー軸変換を行う。
 
-        For non-photon-energy input the calculation's axis is relative to the
-        absorption edge. With ``-f``, the axis becomes relative to E_Fermi.
-        When input is already photon energy, the original script subtracts
-        both E_edge and E_Fermi to produce the Fermi-relative axis.
+        光子エネルギー指定がない計算の軸は吸収端基準。-f 指定時はフェルミ準位基準に変換する。計算軸が光子エネルギーの場合は E_edge と E_Fermi の両方を引く。
 
         Args:
-            energy: Energy values in the file's original reference frame.
-            raw_xas: Raw spectrum providing edge and Fermi energies.
-            input_is_photon: Whether the input uses the Energpho keyword.
-            fermi: Whether to return a Fermi-relative energy grid.
+            energy: エネルギー値の配列（eV）。
+            raw_xas: 対応する生 XAS と吸収端・フェルミエネルギーを保持する FdmTxt。
+            input_is_photon: 計算入力で Energpho を指定しているか。
+            fermi: True の場合はフェルミ準位基準、False の場合は光子エネルギー基準。
 
         Returns:
-            numpy.ndarray: Energy grid in the requested reference frame, in eV.
+            numpy.ndarray: 指定の基準に変換したエネルギー格子（eV）。
 
         Raises:
-            ValueError: If the raw XAS header lacks an edge energy.
+            ValueError: 生 XAS の見出しに吸収端エネルギーがない場合。
         """
         energy = np.asarray(energy)
         edge_energy = raw_xas.get_eedge()
@@ -166,24 +158,23 @@ class AnalyzeFdmXas:
         input_is_photon=None,
         fermi=None,
     ):
-        """Read individual allsite outputs without changing site ordering.
+        """全サイト計算の出力を指定サイト順に読み込む。
 
-        ``input_is_photon`` and ``fermi`` must be passed together to request
-        an energy-axis conversion. Omission of both retains the file's axis.
+        軸を変換する場合は input_is_photon と fermi を両方指定する。両方を省略するとファイルの軸を使う。
 
         Args:
-            base_name: Filout prefix, optionally with a directory.
-            site_indices: One-based absorbing-site indices in plot order.
-            convolved: Select convolved instead of raw site spectra.
-            input_is_photon: Whether the original calculation used Energpho.
-            fermi: Whether to return Fermi-relative energy values.
+            base_name: ディレクトリを含められる Filout 接頭辞。
+            site_indices: 描画順に並べた1始まりの吸収サイト番号。
+            convolved: True の場合は畳み込み、False の場合は生のサイトスペクトルを読む。
+            input_is_photon: 計算入力で Energpho を指定しているか。
+            fermi: True の場合はフェルミ準位基準、False の場合は光子エネルギー基準。
 
         Returns:
-            list[tuple]: Tuples of energy, intensity, and site label.
+            list[tuple]: エネルギー、強度、サイトラベルの組のリスト。
 
         Raises:
-            ValueError: If site indices or energy-reference options are invalid.
-            OSError: If a requested spectrum cannot be opened.
+            ValueError: サイト番号またはエネルギー基準の指定が不正な場合。
+            OSError: 指定のスペクトルを開けない場合。
         """
         indices = list(site_indices)
         if not indices:

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Plot XAS spectra. File parsing and energy conversion belong elsewhere."""
+"""``<Filout>.txt``、``*_conv.txt``、``*.nor`` などから読んだスペクトルの数値配列を図にする。
 
+PlotFdmXas は計算・実測 XAS の重ね描きやパネル配置を担当し、指定された ``*.pdf`` などの図を保存する。
+"""
 from . import _PlotFigure
 
 
 class PlotFdmXas(_PlotFigure):
-    """Matplotlib visualizations for FDMNES XAS."""
-
+    """``<Filout>.txt``・``*_conv.txt``・``*.nor`` などから取得した XAS の数値配列を受け取り、図を保存する。"""
     def plot_convolved(self, eng, xas, output, *, specified=False):
         """SAE の fdXAS.py または fdXAS_specified.py の配置で描く。
 
@@ -62,21 +63,21 @@ class PlotFdmXas(_PlotFigure):
         ymax=None,
         fermi_position=None,
     ):
-        """Draw XAS curves on a common axis and save the figure.
+        """共通軸に XAS を描いて保存する。
 
         Args:
-            spectra: Sequence of energy, intensity, and curve-label tuples.
-            output: Destination path. The extension determines the figure format.
-            title: Optional figure title.
-            xlabel: Energy-axis label.
-            ylabel: Absorption-axis label.
-            xmin: Optional minimum energy.
-            xmax: Optional maximum energy.
-            ymax: Optional maximum absorption.
-            fermi_position: Energy at which to draw the optional Fermi marker.
+            spectra: エネルギー、強度、曲線ラベルの組の並び。
+            output: 保存先ファイルのパス。拡張子で出力形式を指定する。
+            title: 省略可能な図のタイトル。
+            xlabel: エネルギー軸のラベル。
+            ylabel: 吸収強度軸のラベル。
+            xmin: 省略可能な横軸の下限。
+            xmax: 省略可能な横軸の上限。
+            ymax: 省略可能な吸収強度の上限。
+            fermi_position: 表示に用いる基準でのフェルミ準位（eV）。縦線の位置に使う。
 
         Returns:
-            pathlib.Path: Path to the saved figure.
+            pathlib.Path: 保存したファイルのパス。
         """
         import matplotlib
 
@@ -116,24 +117,24 @@ class PlotFdmXas(_PlotFigure):
         fermi_position=None,
         extra_formats=False,
     ):
-        """Draw computed and optionally observed XAS in separate panels.
+        """計算 XAS と任意の実測 XAS を別々のパネルに描く。
 
         Args:
-            spectra: Computed spectra as energy, intensity, label tuples.
-            output: Destination path for the figure.
-            observed: Optional Athena spectra for the upper panel.
-            xmin: Optional lower limit of the energy axis.
-            xmax: Optional upper limit of the energy axis.
-            ymax: Optional upper limit of the absorption axis.
-            fermi: Whether the energy axis is Fermi-relative.
-            fermi_position: Energy of the vertical Fermi marker.
-            extra_formats: Save the figure in EPS, PDF, and PNG.
+            spectra: 計算スペクトルのエネルギー、強度、ラベルの並び。
+            output: 保存先ファイルのパス。拡張子で出力形式を指定する。
+            observed: 任意の実測吸収スペクトル。
+            xmin: 省略可能な横軸の下限。
+            xmax: 省略可能な横軸の上限。
+            ymax: 省略可能な吸収強度の上限。
+            fermi: True の場合はフェルミ準位基準、False の場合は光子エネルギー基準。
+            fermi_position: 表示に用いる基準でのフェルミ準位（eV）。縦線の位置に使う。
+            extra_formats: 同じ図を PDF・EPS・PNG でも保存する指定。
 
         Returns:
-            pathlib.Path: Destination of the saved figure.
+            pathlib.Path: 図の保存先。
 
         Raises:
-            ValueError: If no calculated spectrum is supplied.
+            ValueError: 計算スペクトルが空の場合。
         """
         import matplotlib.pyplot as plt
 
@@ -191,24 +192,23 @@ class PlotFdmXas(_PlotFigure):
         ymin=0.0,
         ymax=None,
     ):
-        """Plot calculated and measured XAS on one photon-energy axis.
+        """計算と実測の XAS を同じ光子エネルギー軸上に描く。
 
-        The calculated energy must already be converted to photon energy.
-        The caller is responsible for adding the FDMNES edge energy.
+        計算値には、呼び出し側で吸収端エネルギーを加えて光子エネルギーに換算した軸を渡す。
 
         Args:
-            calculated_energy: Calculated photon energies in eV.
-            calculated_absorption: Calculated absorption intensity.
-            observed_energy: Experimental photon energies in eV.
-            observed_absorption: Normalized experimental absorption.
-            output: Destination PDF or image filename.
-            xmin: Optional minimum photon energy in eV.
-            xmax: Optional maximum photon energy in eV.
-            ymin: Optional minimum absorption value.
-            ymax: Optional maximum absorption value.
+            calculated_energy: 計算の光子エネルギー（eV）。
+            calculated_absorption: 計算の吸収強度。
+            observed_energy: 実測の光子エネルギー（eV）。
+            observed_absorption: 実測の吸収強度。
+            output: 保存先ファイルのパス。拡張子で出力形式を指定する。
+            xmin: 省略可能な横軸の下限。
+            xmax: 省略可能な横軸の上限。
+            ymin: 省略可能な吸収強度の下限。
+            ymax: 省略可能な吸収強度の上限。
 
         Returns:
-            pathlib.Path: Saved figure filename.
+            pathlib.Path: 保存したファイルのパス。
         """
         import matplotlib.pyplot as plt
 
@@ -266,25 +266,25 @@ class PlotFdmXas(_PlotFigure):
         extra_formats=False,
         show=False,
     ):
-        """Draw SAE's experimental, calculated-XAS, and optional LDOS panels.
+        """SAE の実測・計算 XAS と任意の LDOS パネルを描く。
 
         Args:
-            spectra: Calculated spectrum tuples of energy, intensity, and label.
-            output: Main output filename.
-            observed: Optional measured energy, absorption, and label tuple.
-            dos: Optional LDOS tuples of energy, density, and label.
-            xlabel: Label of the bottom energy axis.
-            ylabel: Label of the calculated absorption axis.
-            xmin: Lower common energy limit.
-            xmax: Upper common energy limit.
-            ymax: Upper calculated absorption limit.
-            dmax: Upper LDOS limit.
-            fermi_position: Optional Fermi marker on calculated panels, in eV.
-            extra_formats: Also save EPS, PNG and PDF.
-            show: Display the figure using the active Matplotlib backend.
+            spectra: 計算スペクトルのエネルギー、強度、ラベルの並び。
+            output: 保存先ファイルのパス。拡張子で出力形式を指定する。
+            observed: 任意の実測吸収スペクトル。
+            dos: 任意の LDOS のエネルギー、密度、ラベルの組。
+            xlabel: エネルギー軸のラベル。
+            ylabel: 吸収強度軸のラベル。
+            xmin: 省略可能な横軸の下限。
+            xmax: 省略可能な横軸の上限。
+            ymax: 省略可能な吸収強度の上限。
+            dmax: 省略可能な状態密度の上限。
+            fermi_position: 表示に用いる基準でのフェルミ準位（eV）。縦線の位置に使う。
+            extra_formats: 同じ図を PDF・EPS・PNG でも保存する指定。
+            show: 保存後に描画バックエンドで図を表示する指定。
 
         Returns:
-            pathlib.Path: Main figure path.
+            pathlib.Path: 保存したファイルのパス。
         """
         import matplotlib.pyplot as plt
 

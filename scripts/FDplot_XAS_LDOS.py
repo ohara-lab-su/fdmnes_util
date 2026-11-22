@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""Plot FDMNES XAS and orbital LDOS for a selected absorbing site."""
-
+"""``*.inp`` の接頭辞に対応する ``<Filout>.txt``・``*_conv.txt``・``*_sdN.txt`` を読み、XAS と LDOS の図を保存する。"""
 import argparse
 from pathlib import Path
 
@@ -21,13 +20,13 @@ __license__ = "MIT"
 
 
 def main(argv=None):
-    """Reproduce the stacked XAS/LDOS plot of ``FDplot_XAS_LDOS.py``.
+    """SAE の `FDplot_XAS_LDOS.py` に従って XAS と LDOS の縦並び図を描く。
 
     Args:
-        argv: Optional command-line arguments.
+        argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
 
     Returns:
-        pathlib.Path: Path of the generated PDF.
+        pathlib.Path: 保存したファイルのパス。
     """
     parser = argparse.ArgumentParser(
         description="Plot FDMNES XAS and site-resolved orbital LDOS"

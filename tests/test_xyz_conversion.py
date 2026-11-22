@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Regression tests for the editable XYZ conversion example."""
+"""編集可能な XYZ 変換サンプルを回帰検証する。"""
 
 from fdmnes_util.fdm_structure import FdmStructure
 from fdmnes_util.xyz import Xyz
 
 
 def test_xyz_to_molecule(tmp_path):
-    """Preserve Cartesian coordinates and chemical atomic numbers."""
+    """直交座標と原子番号を保持することを検証する。"""
     source = tmp_path / "water.xyz"
     source.write_text("3\nwater\nO 0 0 0\nH 0 0 1\nH 0 1 0\n")
     xyz = Xyz(source)
@@ -18,7 +18,7 @@ def test_xyz_to_molecule(tmp_path):
 
 
 def test_xyz_rejects_short_file(tmp_path):
-    """Reject truncated XYZ data rather than silently omitting atoms."""
+    """原子を省略せず、途中で切れた XYZ を拒否することを検証する。"""
     source = tmp_path / "bad.xyz"
     source.write_text("2\ncomment\nH 0 0 0\n")
     try:

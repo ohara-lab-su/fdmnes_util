@@ -17,8 +17,10 @@
 ################################################################################
 ################################################################################
 # ---- End of SAE original header ----
-"""Display the Fermi energy and absorption-edge energy of a calculation."""
+"""生 XAS ``<Filout>.txt`` と ``*_bav.txt`` を読み、フェルミ準位と吸収端を表示する。
 
+接頭辞はコマンドライン、または ``*.inp`` の Filout から決める。
+"""
 import argparse
 
 from fdmnes_util.fdm_bav import FdmBav
@@ -28,10 +30,10 @@ from fdmnes_util.fdmfile import Fdmfile
 
 
 def main(argv=None):
-    """Read the required files and display the calculated energies.
+    """必要なファイルを読み、計算されたエネルギーを表示する。
 
     Args:
-        argv: Optional command-line argument sequence.
+        argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
     """
     parser = argparse.ArgumentParser(description="Report FDMNES energies")
     parser.add_argument("-i", "--input", help="FDMNES calculation input")

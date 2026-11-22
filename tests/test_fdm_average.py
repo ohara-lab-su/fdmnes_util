@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for averaged FDMNES spectra."""
+"""FDMNES スペクトルの平均処理を回帰検証する。"""
 
 import numpy as np
 import pytest
@@ -8,24 +8,24 @@ from fdmnes_util.analyze_fdm_average import AnalyzeFdmAverage
 
 
 class FakeSd:
-    """Provide the small SD interface used by the averaging class."""
+    """平均化クラスが使う最小限の SD I/F を提供する。"""
 
     def __init__(self, energy, values):
-        """Store a synthetic energy grid and orbital data."""
+        """テスト用のエネルギー格子と軌道データを保持する。"""
         self.energy = np.asarray(energy)
         self.values = np.asarray(values)
 
     def get_eng(self):
-        """Return the synthetic energy grid."""
+        """テスト用のエネルギー格子を返す。"""
         return self.energy
 
     def get_pdos(self, lm=None, spin=0):
-        """Return synthetic orbital data."""
+        """テスト用の軌道データを返す。"""
         return self.values
 
 
 def test_average_pdos():
-    """Average corresponding orbital columns point by point."""
+    """対応する軌道列をエネルギー点ごとに平均することを検証する。"""
     readers = [FakeSd([1, 2], [2, 4]), FakeSd([1, 2], [4, 8])]
     energy, density = AnalyzeFdmAverage().average(readers, "get_pdos", lm="p_z")
     np.testing.assert_allclose(energy, [1, 2])
@@ -33,36 +33,36 @@ def test_average_pdos():
 
 
 def test_mismatched_energy_grids():
-    """Reject averaging spectra sampled at different energies."""
+    """異なるエネルギー格子を持つスペクトルの平均を拒否することを検証する。"""
     readers = [FakeSd([1, 2], [2, 4]), FakeSd([1, 3], [4, 8])]
     with pytest.raises(ValueError, match="Energy grids"):
         AnalyzeFdmAverage().average(readers, "get_pdos")
 
 
 class FakeConv:
-    """Provide the FdmConv interface for convolved XAS averaging tests."""
+    """畳み込み XAS の平均テストに FdmConv と同じ I/F を提供する。"""
 
     def __init__(self, energy, absorption):
-        """Store a synthetic convolved spectrum.
+        """テスト用の畳み込みスペクトルを保持する。
 
         Args:
-            energy: Photon-energy or relative-energy samples.
-            absorption: Absorption values at those samples.
+            energy: エネルギー値の配列（eV）。
+            absorption: 対応するエネルギー点の吸収強度。
         """
         self.energy = np.asarray(energy, dtype=float)
         self.absorption = np.asarray(absorption, dtype=float)
 
     def get_eng(self):
-        """Return the energy samples."""
+        """エネルギー点を返す。"""
         return self.energy
 
     def get_xas(self, spin=0):
-        """Return the absorption channel requested by the example."""
+        """サンプルが要求した吸収強度列を返す。"""
         return self.absorption
 
 
 def test_average_convolved_xas():
-    """Check the XAS averaging path used by fdPDOS_XAS_av.py."""
+    """fdPDOS_XAS_av.py が使う XAS 平均処理を検証する。"""
     readers = [
         FakeConv([0.0, 0.5, 1.0], [2.0, 4.0, 6.0]),
         FakeConv([0.0, 0.5, 1.0], [4.0, 8.0, 12.0]),
@@ -79,7 +79,7 @@ def test_average_convolved_xas():
 
 
 def test_average_convolved_xas_rejects_mismatched_grid():
-    """Prevent averaging spectra with different XAS energy samples."""
+    """XAS のエネルギー点が異なる場合に平均を拒否することを検証する。"""
     readers = [
         FakeConv([0.0, 0.5], [1.0, 2.0]),
         FakeConv([0.0, 0.6], [3.0, 4.0]),
@@ -91,7 +91,7 @@ def test_average_convolved_xas_rejects_mismatched_grid():
 
 @pytest.mark.parametrize("invalid_value", [float("nan"), float("inf")])
 def test_average_rejects_non_finite_xas(invalid_value):
-    """Reject undefined and infinite absorption values before averaging."""
+    """平均化の前に非有限の吸収強度を拒否することを検証する。"""
     readers = [FakeConv([0.0, 1.0], [1.0, invalid_value])]
 
     with pytest.raises(ValueError, match="non-finite"):
@@ -99,7 +99,7 @@ def test_average_rejects_non_finite_xas(invalid_value):
 
 
 def test_average_rejects_empty_energy_grid():
-    """Reject empty inputs rather than returning a meaningless mean."""
+    """空の入力で平均化を拒否することを検証する。"""
     readers = [FakeConv([], [])]
 
     with pytest.raises(ValueError, match="empty"):

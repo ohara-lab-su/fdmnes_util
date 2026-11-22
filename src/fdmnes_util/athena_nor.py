@@ -46,8 +46,10 @@
 #       print eng[i],nor[i]
 # Copyright Kengo NAKADA; SAE class library.
 # ---- End of SAE original header ----
-"""Read an Athena normalized XAFS spectrum from a ``*.nor`` file."""
+"""Athena の実験スペクトル ``*.nor`` を読み取る。
 
+AthenaNor は光子エネルギー、規格化吸収強度、および見出しにあれば E0 を取り出す。
+"""
 from pathlib import Path
 import re
 
@@ -55,23 +57,23 @@ import numpy as np
 
 
 class AthenaNor:
-    """Read the energy axis and normalized absorption from an Athena file.
+    """実験入力の Athena `*.nor` からエネルギー軸と規格化吸収強度を読む。
 
     Attributes:
-        path: Path to the source file.
-        energy: Photon energies in eV.
-        normalized: Normalized absorption values.
-        e0: Optional absorption-edge energy from the header.
+        path: 対象ファイルのパス。
+        energy: エネルギー値の配列（eV）。
+        normalized: 規格化した吸収強度。
+        e0: 見出しに記録された吸収端エネルギー。記録がなければ None。
     """
 
     def __init__(self, filename):
-        """Load an Athena normalized spectrum.
+        """Athena の規格化スペクトルを読み込む。
 
         Args:
-            filename: Path to a ``*.nor`` text file.
+            filename: Athena が出力した規格化スペクトルのパス。
 
         Raises:
-            ValueError: If a data row has fewer than two numeric columns.
+            ValueError: データ行の数値列が2列未満の場合。
         """
         self.path = Path(filename)
         energies = []
@@ -106,17 +108,17 @@ class AthenaNor:
         self.normalized = np.asarray(normalized, dtype=float)
 
     def get_eng(self):
-        """Return the photon-energy axis.
+        """光子エネルギー軸を返す。
 
         Returns:
-            numpy.ndarray: Photon-energy values.
+            numpy.ndarray: 光子エネルギーの配列。
         """
         return self.energy
 
     def get_nor(self):
-        """Return the normalized absorption spectrum.
+        """規格化吸収スペクトルを返す。
 
         Returns:
-            numpy.ndarray: Normalized absorption values.
+            numpy.ndarray: 規格化した吸収強度。
         """
         return self.normalized

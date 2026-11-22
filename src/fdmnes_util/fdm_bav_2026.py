@@ -47,8 +47,10 @@
 #       print position[i][0],position[i][1],position[i][2]
 # Copyright Kengo NAKADA; SAE class library.
 # ---- End of SAE original header ----
-"""2026年11月5日版の BAV と SCF 履歴を読む。"""
+"""FDMNES 2026年11月5日版の計算ログ ``*_bav.txt`` を読む。
 
+FdmBav2026 はクラスタ座標や吸収端に加え、SCF のサイクル番号と記録された全エネルギーを取得する。
+"""
 import re
 from functools import cached_property
 from pathlib import Path
@@ -59,15 +61,14 @@ from .fdm_structure import ElementTable
 
 
 class FdmBav2026:
-    """2026年11月5日版の計算ログを読む。"""
-
+    """FDMNES の出力 `*_bav.txt` を2026年形式で読み、SCF 履歴を取得する。"""
     REVISION = "FDMNES program, Revision 5th of November 2026"
 
     def __init__(self, filename, *, _lines=None):
-        """Load the log file.
+        """計算ログを読み込む。
 
         Args:
-            filename: Path to the FDMNES calculation log.
+            filename: FDMNES 計算ログのパス。
         """
         self.path = Path(filename)
         if _lines is None:
@@ -81,25 +82,25 @@ class FdmBav2026:
                 break
 
     def get_edge(self):
-        """Return the absorption-edge label in the log."""
+        """ログにある吸収端のラベルを返す。"""
         for line in reversed(self.lines):
             if "Threshold:" in line:
                 return line.partition("Threshold:")[2].strip()
         return ""
 
     def get_nspin(self):
-        """Return the number of spin channels reported by FDMNES."""
+        """FDMNES が報告したスピン数を返す。"""
         for line in self.lines:
             if "Magnetic calculation" in line and "Non-" not in line:
                 return 2
         return 1
 
     def is_self_consistent(self) -> bool:
-        """Return whether the log announces a self-consistent calculation."""
+        """自己無撞着計算の記録があるかを返す。"""
         return any("Self consistent calculation" in line for line in self.lines)
 
     def get_max_scf_iterations(self) -> int | None:
-        """Return the reported SCF iteration limit, or None when absent."""
+        """記録された SCF の反復上限を返す。記録がなければ None。"""
         for line in reversed(self.lines):
             match = re.search(r"Maximum number of iterations?\s*[:=]?\s*(\d+)", line)
             if match:
@@ -124,6 +125,7 @@ class FdmBav2026:
 
     @cached_property
     def _scf_history(self):
+        """XANES 計算開始までの各 SCF サイクルを、未記録のエネルギーも含めて保持する。"""
         if not self.is_self_consistent():
             return []
 
@@ -153,19 +155,19 @@ class FdmBav2026:
         return history
 
     def get_position(self):
-        """Return Cartesian atomic positions from the log's cluster section."""
+        """ログのクラスタ節から原子の直交座標を返す。"""
         return self._cluster[1].copy()
 
     def get_atoms_index_j(self):
-        """Return chemical symbols in the order recorded in the cluster."""
+        """ログに記録された原子順で元素記号を返す。"""
         return self._cluster[0].copy()
 
     def get_natom(self):
-        """Return the number of atoms in the cluster section."""
+        """クラスタ節の原子数を返す。"""
         return len(self._cluster[0])
 
     def get_e_edge(self):
-        """Return the numeric absorption-edge energy, if present."""
+        """記録があれば吸収端のエネルギーを返す。"""
         for line in reversed(self.lines):
             if not line.lstrip().startswith("E_edge"):
                 continue
@@ -179,7 +181,7 @@ class FdmBav2026:
         return None
 
     def get_ngroup(self):
-        """Return the number of atom groups, if recorded."""
+        """記録があれば原子グループ数を返す。"""
         for line in reversed(self.lines):
             if re.match(r"^\s*ngroup\s*=", line):
                 match = re.search(r"ngroup\s*=\s*(\d+)", line)
@@ -188,7 +190,7 @@ class FdmBav2026:
         return None
 
     def get_t(self):
-        """Return the 3-by-3 crystal-basis transformation matrix."""
+        """結晶基底の 3×3 変換行列を返す。"""
         lines = self.lines
         # absorber を原点とした時の基本並進ベクトル
         r2_reg = re.compile(".*Transformation Crystal Bases.*Bases R2.*")
@@ -221,6 +223,7 @@ class FdmBav2026:
 
     @cached_property
     def _cluster(self):
+        """最後のクラスタ座標表から元素記号と直交座標を読み、再利用する。"""
         lines = self.lines
         # SAE は座標表を読むたびに上書きするため、最後の表を使う。
         for index in range(len(lines) - 1, -1, -1):
@@ -250,7 +253,7 @@ class FdmBav2026:
         return atoms_index_j, np.array(position)
 
     def get_lmax(self):
-        """Return the maximum angular-momentum index in the atom listing."""
+        """原子リストの最大軌道角運動量を返す。"""
         for begin in range(len(self.lines) - 1, -1, -1):
             if self.lines[begin].lstrip().startswith("Excited atom,"):
                 break

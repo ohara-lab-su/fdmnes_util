@@ -1,5 +1,7 @@
-"""畳み込み XAS の形式を選び、対応するリーダーに委譲する。"""
+"""FDMNES の畳み込み XAS 出力 ``*_conv.txt`` を読み、確認済みの改訂行に応じて委譲する。
 
+FdmConv は通常形式と2026年版の Header 付き形式を選ぶ。平均スペクトルの保存には SAE 由来の二列書式を使う。
+"""
 from pathlib import Path
 
 from .fdm_conv_2016 import FdmConv2016
@@ -7,8 +9,7 @@ from .fdm_conv_2026 import FdmConv2026
 
 
 class FdmConv:
-    """畳み込み XAS の共通の入口。"""
-
+    """FDMNES の畳み込み XAS 出力 `*_conv.txt` を読み書きする。"""
     def __init__(self, filename, *, format_year=None):
         """2026年の改訂行で始まる出力を検出する。形式を明示指定することもできる。"""
         self.path = Path(filename)

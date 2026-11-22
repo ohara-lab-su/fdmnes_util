@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for the FDMNES Crystal to POSCAR sample."""
+"""FDMNES の Crystal 節から POSCAR への変換例を検証する。"""
 
 import importlib.util
 from pathlib import Path
@@ -11,7 +11,7 @@ from fdmnes_util.fdm_inp import FdmInp
 
 
 def test_crystal_coordinates(tmp_path: Path) -> None:
-    """Read the cell and fractional coordinates without changing the order."""
+    """格子と分率座標を順序を変えずに読み取ることを検証する。"""
     pytest.importorskip("ase")
     source = tmp_path / "sample.inp"
     source.write_text(
@@ -27,7 +27,7 @@ def test_crystal_coordinates(tmp_path: Path) -> None:
 
 
 def test_missing_crystal(tmp_path: Path) -> None:
-    """Reject an input file that does not define a crystal."""
+    """結晶構造がない入力を拒否することを検証する。"""
     pytest.importorskip("ase")
     source = tmp_path / "sample.inp"
     source.write_text("Filout\n Fe\nEnd\n", encoding="utf-8")
@@ -36,7 +36,7 @@ def test_missing_crystal(tmp_path: Path) -> None:
 
 
 def test_sample_writes_poscar(tmp_path: Path, monkeypatch) -> None:
-    """Exercise the editable sample and inspect its VASP output."""
+    """編集用サンプルを実行して VASP の出力を検査する。"""
     ase = pytest.importorskip("ase")
     source = tmp_path / "sample.inp"
     source.write_text("Crystal\n 3 4 5 90 90 90\n 26 0 0 0\nEnd\n")
@@ -60,7 +60,7 @@ def test_sample_writes_poscar(tmp_path: Path, monkeypatch) -> None:
     ],
 )
 def test_molecule_coordinates(tmp_path, scale, coordinates, expected):
-    """Convert the three Molecule scale conventions from the FDMNES guide."""
+    """FDMNES マニュアルにある3通りの Molecule 座標指定を変換する。"""
     pytest.importorskip("ase")
     source = tmp_path / "sample.inp"
     source.write_text(
@@ -74,7 +74,7 @@ def test_molecule_coordinates(tmp_path, scale, coordinates, expected):
 
 
 def test_sample_writes_molecule_poscar(tmp_path, monkeypatch):
-    """Exercise the SAE input flag and verify POSCAR distances and vacuum."""
+    """SAE の入力オプションで指定し、POSCAR の原子間距離と真空層を検証する。"""
     ase_io = pytest.importorskip("ase.io")
     source = tmp_path / "molecule.inp"
     source.write_text("Molecule\n 1.9\n 26 0 0 0\n 8 1 90 0\nEnd\n")

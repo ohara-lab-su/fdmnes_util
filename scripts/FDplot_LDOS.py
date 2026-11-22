@@ -27,10 +27,13 @@
 ################################################################################
 ################################################################################
 # ---- End of SAE original header ----
-"""Plot LDOS and optional XAS from an FDMNES calculation."""
+"""計算入力 ``*.inp`` または ``*_sdN.txt`` を指定して LDOS 図を保存する。
+
+オプションに応じて生 XAS ``<Filout>.txt`` や畳み込み XAS ``*_conv.txt`` も使う。
+"""
 # fmt: on
 
-from fdmnes_util.dos_plot_sample import DosPlotSample
+from fdmnes_util.util.dos_plot_workflow import DosPlotWorkflow
 from fdmnes_util.plot.plot_fdm_dos import PlotFdmDos
 
 __author__ = "Kengo NAKADA"
@@ -42,18 +45,18 @@ __license__ = "MIT"
 
 
 def main(argv=None):
-    """Create the LDOS panels and any requested XAS overlay.
+    """LDOS の各パネルと指定した XAS の重ね描きを作る。
 
     Args:
-        argv: Optional command-line argument sequence.
+        argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
 
     Returns:
-        pathlib.Path: Main saved figure.
+        pathlib.Path: 主図の保存先。
     """
-    sample = DosPlotSample(projected=False)
-    parser = sample.build_parser()
+    workflow = DosPlotWorkflow(projected=False)
+    parser = workflow.build_parser()
     options = parser.parse_args(argv)
-    return sample.plot(PlotFdmDos(), options)
+    return workflow.plot(PlotFdmDos(), options)
 
 
 if __name__ == "__main__":

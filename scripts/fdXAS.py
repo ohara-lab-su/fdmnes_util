@@ -15,8 +15,7 @@
 #
 ################################################################################
 ################################################################################
-"""Create an XAS plot from a convolved FDMNES spectrum."""
-
+"""``*_conv.txt`` を読み、畳み込み XAS を描いて既定で ``XAS.pdf`` に保存する。"""
 import argparse
 from pathlib import Path
 
@@ -32,13 +31,13 @@ __license__ = "MIT"
 
 
 def main(argv=None):
-    """Read a convolution spectrum and save an XAS figure.
+    """畳み込みスペクトルを読み、XAS 図を保存する。
 
     Args:
-        argv: Optional command-line argument sequence.
+        argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
 
     Returns:
-        pathlib.Path: Path to the created figure.
+        pathlib.Path: 保存したファイルのパス。
     """
     parser = argparse.ArgumentParser(description="Plot a convolved XAS")
     parser.add_argument("name", nargs="?")

@@ -1,27 +1,28 @@
 #!/usr/bin/env python3
-"""Plot XAS and site-resolved LDOS as a vertically stacked figure."""
+"""``<Filout>.txt``、``*_conv.txt``、``*_sdN.txt`` などに由来する XAS と LDOS の数値配列を図にする。
 
+PlotFdmXasLdos は独立したエネルギー格子を保持して上下のパネルに描き、指定された ``*.pdf`` などに保存する。
+"""
 from . import _PlotFigure
 
 
 class PlotFdmXasLdos(_PlotFigure):
-    """Draw XAS and orbital-resolved LDOS using prepared numerical arrays."""
-
+    """``<Filout>.txt``・``*_conv.txt``・``*_sdN.txt`` に由来する数値配列を使い、XAS と LDOS の図を保存する。"""
     def plot(self, xas, orbital_spectra, output, *, fermi_position=None, fermi=False):
-        """Write an XAS + orbital LDOS figure.
+        """XAS と軌道別 LDOS を並べた図を保存する。
 
         Args:
-            xas: Tuple of energy and absorption arrays.
-            orbital_spectra: Iterable of (orbital, energy, LDOS) tuples.
-            output: Output file path.
-            fermi_position: Reference energy marker on every axis, when known.
-            fermi: Whether the energy axis is relative to the Fermi level.
+            xas: エネルギーと吸収強度の配列の組。
+            orbital_spectra: 軌道名、エネルギー、LDOS の組の並び。
+            output: 保存先ファイルのパス。拡張子で出力形式を指定する。
+            fermi_position: 表示に用いる基準でのフェルミ準位（eV）。縦線の位置に使う。
+            fermi: True の場合はフェルミ準位基準、False の場合は光子エネルギー基準。
 
         Returns:
-            pathlib.Path: Path to the generated figure.
+            pathlib.Path: 保存したファイルのパス。
 
         Raises:
-            ValueError: If no orbital spectra were supplied.
+            ValueError: 軌道スペクトルが空の場合。
         """
         import matplotlib.pyplot as plt
 
@@ -93,31 +94,29 @@ class PlotFdmXasLdos(_PlotFigure):
         xmin=None,
         xmax=None,
     ):
-        """Draw the SAE two-panel XAS, experiment, and LDOS comparison.
+        """SAE の計算・実験 XAS と LDOS を二段で比較する。
 
-        The upper panel contains p-LDOS. The lower panel contains
-        broadened XAS, raw XAS, and the Athena measurement. Each
-        spectrum retains its own energy grid.
+        上段は p-LDOS、下段は畳み込み XAS、生 XAS、Athena の測定値。各スペクトルはそれぞれの格子を使う。
 
         Args:
-            calculated_energy: Photon energies of broadened XAS.
-            calculated_absorption: Broadened absorption values.
-            raw_energy: Photon energies of unbroadened XAS.
-            raw_absorption: Unbroadened absorption values.
-            observed_energy: Experimental photon energies.
-            observed_absorption: Scaled and shifted experimental XAS.
-            ldos_energy: Photon energies corresponding to the LDOS grid.
-            ldos_density: p-orbital LDOS values.
-            fermi_energy: Fermi level in photon-energy coordinates.
-            output: Destination figure filename.
-            xmin: Optional lower photon-energy limit.
-            xmax: Optional upper photon-energy limit.
+            calculated_energy: 計算の光子エネルギー（eV）。
+            calculated_absorption: 計算の吸収強度。
+            raw_energy: 生 XAS の光子エネルギー。
+            raw_absorption: 生 XAS の吸収強度。
+            observed_energy: 実測の光子エネルギー（eV）。
+            observed_absorption: 実測の吸収強度。
+            ldos_energy: LDOS 格子に対応する光子エネルギー。
+            ldos_density: p 軌道の LDOS。
+            fermi_energy: エネルギー軸の基準に対応するフェルミエネルギー（eV）。
+            output: 保存先ファイルのパス。拡張子で出力形式を指定する。
+            xmin: 省略可能な横軸の下限。
+            xmax: 省略可能な横軸の上限。
 
         Returns:
-            pathlib.Path: Saved figure path.
+            pathlib.Path: 保存したファイルのパス。
 
         Raises:
-            ValueError: If a spectrum has mismatched axis/value lengths.
+            ValueError: スペクトルのエネルギー軸と強度配列の長さが異なる場合。
         """
         import matplotlib.pyplot as plt
 

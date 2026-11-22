@@ -116,23 +116,24 @@
 # fdm.write_fdmnes(atoms=atoms, MOL=MOL)
 # Copyright Kengo NAKADA; SAE class library.
 # ---- End of SAE original header ----
-"""Read and generate FDMNES calculation input files."""
+"""FDMNES の計算入力 ``*.inp`` を2016年形式で読む。
 
+FdmInp2016 はキーワードと結晶・分子などの構造節を読み、SAE のテンプレートで計算入力も書き出す。
+"""
 from pathlib import Path
 
 from .fdm_structure import FdmStructure
 
 
 class FdmInp2016:
-    """Read, inspect, and generate FDMNES calculation inputs.
+    """FDMNES の計算入力 `*.inp` を2016年形式で読み書きする。
 
-    An input file without a ``Crystal`` section is valid. The reader retains
-    the original text as well as the values associated with each keyword.
+    Crystal 節のない入力にも対応する。元の行とキーワードごとの値を保持する。
 
     Attributes:
-        path: Path to the input file.
-        lines: Original input lines without trailing newline characters.
-        tags: Mapping of recognized keywords to their associated values.
+        path: 対象ファイルのパス。
+        lines: 改行を除いた元の入力行。
+        tags: 認識したキーワードと各キーワードの値。
     """
 
     KEYWORDS = {
@@ -152,10 +153,10 @@ class FdmInp2016:
     }
 
     def __init__(self, filename="read_pdb.inp", *, _keywords=None):
-        """Read an input file and extract the supported keywords.
+        """計算入力から対応するキーワードと値を読む。
 
         Args:
-            filename: Path to the FDMNES input file.
+            filename: FDMNES 計算入力のパス。
         """
         self.path = Path(filename)
         self.lines = self.path.read_text(
@@ -203,14 +204,15 @@ class FdmInp2016:
 
     def _last_record(self, keyword):
         # SAE replaces the previous scalar value when a keyword is repeated.
+        """同じキーワードが複数ある場合に、最後の出現に対応するデータ行を返す。"""
         offset = self._last_record_offsets.get(keyword, 0)
         return self.tags.get(keyword, [])[offset:]
 
     def get_filout(self):
-        """Return the output-file prefix specified by ``Filout``.
+        """`Filout` の出力接頭辞を返す。
 
         Returns:
-            str: Output prefix, or an empty string when absent.
+            str: 出力接頭辞。指定がなければ空文字列。
         """
         values = self._last_record("filout")
         if values:
@@ -218,13 +220,13 @@ class FdmInp2016:
         return ""
 
     def get_absorber(self) -> int:
-        """Return the one-based absorber index, defaulting to the first atom.
+        """1始まりの吸収原子インデックスを返す。省略時は1。
 
         Returns:
-            The atom index specified by the Absorber keyword, or one.
+            Absorber で指定した原子インデックス。省略時は1。
 
         Raises:
-            ValueError: If the Absorber record is missing a positive integer.
+            ValueError: Absorber の値に正の整数が指定されていない場合。
         """
         if "absorber" not in self.tags:
             return 1
@@ -240,52 +242,52 @@ class FdmInp2016:
         return index
 
     def get_ispin(self):
-        """Return the number of spin channels indicated by the input.
+        """入力で指定したスピン数を返す。
 
         Returns:
-            int: Two when ``Spin`` or ``Magnetism`` is specified, otherwise one.
+            int: Spin または Magnetism があれば2、なければ1。
         """
         if "spin" in self.tags or "magnetism" in self.tags:
             return 2
         return 1
 
     def get_allsite(self):
-        """Determine whether all-site calculations were requested.
+        """全サイト計算の指定があるかを返す。
 
         Returns:
-            bool: True when ``Allsite`` is present.
+            bool: Allsite があれば True。
         """
         return "allsite" in self.tags
 
     def get_energygpho(self):
-        """Determine whether photon-energy input was requested.
+        """光子エネルギー基準で計算する指定があるかを返す。
 
         Returns:
-            bool: True when ``Energpho`` or ``Energygpho`` is present.
+            bool: Energpho または Energygpho があれば True。
         """
         return "energpho" in self.tags or "energygpho" in self.tags
 
     def get_nonexc(self):
-        """Determine whether ``Nonexc`` is specified.
+        """`Nonexc` が指定されているかを返す。
 
         Returns:
-            bool: True when the keyword is present.
+            bool: 対象のキーワードがあれば True。
         """
         return "nonexc" in self.tags
 
     def get_convolution(self):
-        """Determine whether convolution was requested.
+        """畳み込みの指定があるかを返す。
 
         Returns:
-            bool: True when ``Convolution`` is present.
+            bool: Convolution があれば True。
         """
         return "convolution" in self.tags
 
     def get_conv_out(self):
-        """Return the output filename specified by ``Conv_out``.
+        """`Conv_out` に指定されたファイル名を返す。
 
         Returns:
-            str: Convolution-output value, or an empty string.
+            str: 畳み込み出力の指定値。なければ空文字列。
         """
         values = self._last_record("conv_out")
         if values:
@@ -293,10 +295,10 @@ class FdmInp2016:
         return ""
 
     def get_calculation(self):
-        """Return the first filename in the last ``Calculation`` block.
+        """最後の `Calculation` ブロックの先頭ファイル名を返す。
 
         Returns:
-            str: Calculation value, or an empty string.
+            str: Calculation の値。なければ空文字列。
         """
         values = self._last_record("calculation")
         if values:
@@ -304,10 +306,10 @@ class FdmInp2016:
         return ""
 
     def get_cellparam(self):
-        """Return the first six numeric crystal-cell parameters, if present.
+        """結晶格子の数値があれば先頭6値を返す。
 
         Returns:
-            list[float] | None: The six cell parameters, or None when absent.
+            list[float] | None: 格子の6パラメーター。記録がなければ None。
         """
         entries = self.tags.get("crystal", [])
         for row in entries:
@@ -325,18 +327,16 @@ class FdmInp2016:
         return None
 
     def get_crystal_atoms(self):
-        """Build an ASE atomic structure from a FDMNES Crystal section.
+        """FDMNES の `Crystal` 節から ASE の周期構造を作る。
 
-        The first six values after ``Crystal`` define the cell lengths and
-        angles. Subsequent rows contain an atomic number and three fractional
-        coordinates. A new FDMNES keyword ends the structure section.
+        Crystal の次の6値は格子長と格子角。後続行は原子番号と分率座標3成分で、次のキーワードまでが構造節となる。
 
         Returns:
-            ase.Atoms: Periodic atomic structure with fractional positions.
+            ase.Atoms: 分率座標を持つ周期構造。
 
         Raises:
-            ValueError: If the Crystal section is absent or malformed.
-            ImportError: If ASE is not installed.
+            ValueError: Crystal 節がないか書式が不正な場合。
+            ImportError: ASE がインストールされていない場合。
         """
         crystal_lines = self._get_structure_lines("crystal")
         if not crystal_lines:
@@ -349,28 +349,27 @@ class FdmInp2016:
         return FdmStructure.crystal_atoms(cell_values, crystal_lines[1:])
 
     def get_molecule_atoms(self):
-        """Build an isolated ASE structure from an FDMNES Molecule block.
+        """FDMNES の `Molecule` 節から ASE の孤立構造を作る。
 
-        The scale record selects spherical (one value), cylindrical (two),
-        or fractional (six) coordinates as in the FDMNES manual.
+        FDMNES マニュアルに従い、尺度の値が1個なら球座標、2個なら円筒座標、6個なら分率座標として読む。
 
         Returns:
-            ase.Atoms: Atom positions in angstroms, with periodicity disabled.
+            ase.Atoms: Å 単位の原子位置を持つ非周期構造。
 
         Raises:
-            ValueError: If the scale or atomic-coordinate records are invalid.
-            ImportError: If ASE is not installed.
+            ValueError: 尺度または原子座標の記録が不正な場合。
+            ImportError: ASE がインストールされていない場合。
         """
         return FdmStructure.molecule_atoms(self._get_structure_lines("molecule"))
 
     def _get_structure_lines(self, section: str) -> list[str]:
-        """Collect the scale and atom rows following a structure keyword.
+        """構造キーワードの後に続く格子・原子座標の行を取り出す。
 
         Args:
-            section: Lowercase FDMNES structure keyword.
+            section: 小文字で指定する FDMNES の構造キーワード。
 
         Returns:
-            list[str]: Cell and atomic-coordinate records.
+            list[str]: 格子と原子座標の記録行。
         """
         lines = []
         in_section = False
@@ -414,22 +413,22 @@ class FdmInp2016:
         molecule: bool = False,
         structure_writer=None,
     ) -> str:
-        """Construct a complete FDMNES input file.
+        """構造節を含む FDMNES 計算入力を組み立てる。
 
         Args:
-            absorber: Absorber number in the FDMNES input.
-            fileout: Prefix for calculated output files.
-            energy_range: Energy mesh definition in electronvolts.
-            edge: Absorption edge, for example K or L3.
-            radius: Cluster radius in angstroms.
-            molecule: Select the Molecule keyword instead of Crystal.
-            structure_writer: Object providing the FDMNES structure section.
+            absorber: 1始まりの吸収原子インデックス。
+            fileout: 計算出力のファイル名の接頭辞。
+            energy_range: エネルギー格子の指定（eV）。
+            edge: K や L3 など、出力見出しで使う吸収端ラベル。
+            radius: 計算クラスタの半径（Å）。
+            molecule: True の場合は Crystal の代わりに Molecule を使う。
+            structure_writer: FDMNES 形式の構造節を生成するオブジェクト。
 
         Returns:
-            str: FDMNES input content including the structural section.
+            str: 構造節を含む FDMNES 入力の本文。
 
         Raises:
-            ValueError: If no structure writer is provided.
+            ValueError: 構造ライターが指定されていない場合。
         """
         if structure_writer is None:
             raise ValueError("A structure writer is required")
@@ -527,14 +526,14 @@ class FdmInp2016:
 
     @staticmethod
     def write(filename: str | Path = "read_pdb.inp", **kwargs) -> Path:
-        """Write a complete FDMNES calculation input.
+        """FDMNES の計算入力を書き出す。
 
         Args:
-            filename: Destination filename.
-            **kwargs: Calculation settings accepted by :meth:`render`.
+            filename: 対象ファイルのパス。
+            **kwargs: 対象のメソッドに渡す追加のキーワード引数。
 
         Returns:
-            Path: Destination of the written input file.
+            Path: 計算入力の保存先。
         """
         destination = Path(filename)
         content = FdmInp2016.render(**kwargs)

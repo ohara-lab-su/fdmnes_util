@@ -110,7 +110,10 @@
 #   print "NAME",name
 # Copyright Kengo NAKADA; SAE class library.
 # ---- End of SAE original header ----
-"""Read the column-ordered FDMNES 2016 SD output format."""
+"""FDMNES の状態密度出力 ``*_sdN.txt`` を2016年形式で読む。
+
+FdmSd2016 は列の並びと指定スピン数を使って、軌道の射影状態密度と積分値を取得する。
+"""
 # fmt: on
 
 import re
@@ -120,18 +123,18 @@ import numpy as np
 
 
 class FdmSd2016:
-    """Read DOS projections and spin channels from a 2016 SD file."""
+    """FDMNES の出力 `*_sdN.txt` を2016年形式で読み、軌道射影とスピンを取得する。"""
 
     def __init__(self, filename, *, ispin=1, weight=None):
-        """Load a 2016-format SD output.
+        """2016年形式の SD 出力を読み込む。
 
         Args:
-            filename: Path to an SD output file.
-            ispin: Number of spin channels (one or two).
-            weight: Optional normalization divisor.
+            filename: 対象ファイルのパス。
+            ispin: スピン数（1または2）。
+            weight: 密度列と積分列を規格化する除数。省略時は値を変更しない。
 
         Raises:
-            ValueError: If the input header or number of columns is invalid.
+            ValueError: 入力の見出しまたは列数が不正な場合。
         """
         self.path = Path(filename)
         lines = self.path.read_text(errors="replace").splitlines()
@@ -215,33 +218,33 @@ class FdmSd2016:
                 row += 1
 
     def get_densities(self):
-        """Return all density and integral columns in file order."""
+        """密度と積分の列をファイルの順番で返す。"""
         return self.values[:, 1:]
 
     def get_eng(self):
-        """Return the energy axis."""
+        """エネルギー軸を返す。"""
         return self.energy
 
     def get_lmax(self):
-        """Return the highest angular-momentum channel."""
+        """利用可能な最大軌道角運動量を返す。"""
         return self.lmax
 
     def get_ispin(self):
-        """Return the number of spin channels."""
+        """スピン数を返す。"""
         return self.ispin
 
     @staticmethod
     def _spin_index(spin):
-        """Translate the spin names accepted by the original SAE SD reader.
+        """SAE の SD リーダーに渡せるスピン名を列インデックスへ変換する。
 
         Args:
-            spin: Zero-based spin index or its SAE alias.
+            spin: 0始まりのスピン番号、または SAE の別名。
 
         Returns:
-            int: Zero-based spin index.
+            int: 0始まりのスピン番号。
 
         Raises:
-            KeyError: If the spin name is unrecognized.
+            KeyError: スピン名を認識できない場合。
         """
         if isinstance(spin, str):
             indices = {"up": 0, "non": 0, "nonmag": 0, "dn": 1, "down": 1}
@@ -249,55 +252,55 @@ class FdmSd2016:
         return spin
 
     def get_ldos(self, l=0, spin=0):
-        """Return the stored angular-momentum DOS channel.
+        """指定した角運動量の状態密度を返す。
 
         Args:
-            l: Angular momentum index or the orbital group name s, p, d, or f.
-            spin: Zero-based spin index or an SAE spin name, such as up or down.
+            l: 角運動量の番号、または s・p・d・f の軌道群名。
+            spin: 0始まりのスピン番号、または up・down など SAE のスピン名。
 
         Returns:
-            numpy.ndarray: One value per energy point.
+            numpy.ndarray: 各エネルギー点につき一つの値。
 
         Raises:
-            ValueError: If the orbital group name is invalid.
-            KeyError: If the requested orbital group or spin is unavailable.
+            ValueError: 軌道群名が不正な場合。
+            KeyError: 指定された軌道群またはスピン列がない場合。
         """
         if isinstance(l, str):
             l = "spdf".index(l)
         return self._ldos[(l, self._spin_index(spin))]
 
     def get_intldos(self, l=0, spin=0):
-        """Return the stored integral of an angular-momentum DOS channel.
+        """指定した角運動量の状態密度の積分値を返す。
 
         Args:
-            l: Angular momentum index or the orbital group name s, p, d, or f.
-            spin: Zero-based spin index or an SAE spin name, such as up or down.
+            l: 角運動量の番号、または s・p・d・f の軌道群名。
+            spin: 0始まりのスピン番号、または up・down など SAE のスピン名。
 
         Returns:
-            numpy.ndarray: One value per energy point.
+            numpy.ndarray: 各エネルギー点につき一つの値。
 
         Raises:
-            ValueError: If the orbital group name is invalid.
-            KeyError: If the requested orbital group or spin is unavailable.
+            ValueError: 軌道群名が不正な場合。
+            KeyError: 指定された軌道群またはスピン列がない場合。
         """
         if isinstance(l, str):
             l = "spdf".index(l)
         return self._intldos[(l, self._spin_index(spin))]
 
     def get_pdos(self, l=0, m=0, lm=None, spin=0):
-        """Return the density projected onto a single orbital and spin.
+        """指定軌道・スピンの射影状態密度を返す。
 
         Args:
-            l: Angular momentum index.
-            m: Magnetic quantum number.
-            lm: Optional orbital name overriding l and m.
-            spin: Zero-based spin index or an SAE spin name.
+            l: 角運動量量子数、または軌道群名。
+            m: 磁気量子数。
+            lm: l と m に優先して指定する軌道名。省略可能。
+            spin: 0始まりのスピン番号、または SAE のスピン名。
 
         Returns:
-            numpy.ndarray: Orbital densities on the file's energy grid.
+            numpy.ndarray: ファイルのエネルギー格子に対応する軌道別の状態密度。
 
         Raises:
-            KeyError: If the orbital or spin channel is unavailable.
+            KeyError: 指定された軌道またはスピン列がない場合。
         """
         orbitals = {
             "s": (0, 0),
@@ -317,29 +320,29 @@ class FdmSd2016:
         return self._partial[(l, m, self._spin_index(spin))]
 
     def get_tdos(self, spin=0):
-        """Return the sum of angular-momentum DOS channels for one spin.
+        """指定スピンの軌道群別状態密度を合計して返す。
 
         Args:
-            spin: Zero-based spin index or an SAE spin name.
+            spin: 0始まりのスピン番号、または SAE のスピン名。
 
         Returns:
-            numpy.ndarray: Total or integrated total at each energy point.
+            numpy.ndarray: 各エネルギー点の全状態密度またはその積分値。
 
         Raises:
-            KeyError: If the requested spin channel is unavailable.
+            KeyError: 指定されたスピン列がない場合。
         """
         return self._total[self._spin_index(spin)]
 
     def get_inttdos(self, spin=0):
-        """Return the SAE sum of the leading integral and per-group integrals.
+        """SAE に従い、先頭の積分列と軌道群別の積分列の合計を返す。
 
         Args:
-            spin: Zero-based spin index or an SAE spin name.
+            spin: 0始まりのスピン番号、または SAE のスピン名。
 
         Returns:
-            numpy.ndarray: Total or integrated total at each energy point.
+            numpy.ndarray: 各エネルギー点の全状態密度またはその積分値。
 
         Raises:
-            KeyError: If the requested spin channel is unavailable.
+            KeyError: 指定されたスピン列がない場合。
         """
         return self._integrated_total[self._spin_index(spin)]

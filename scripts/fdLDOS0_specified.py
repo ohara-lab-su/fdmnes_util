@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""Plot the p-orbital SD spectrum with the original axis-limit options."""
-
+"""``*.inp`` の Filout を使って ``*_sd0.txt`` を読み、p 軌道の LDOS 図を保存する。"""
 import argparse
 from pathlib import Path
 
@@ -17,16 +16,15 @@ __license__ = "MIT"
 
 
 def main(argv=None):
-    """Generate LDOS figures using file and plot classes.
+    """ファイルクラスと描画クラスを組み合わせて LDOS 図を生成する。
 
-    The original SAE script had a hard-coded ``Pd6/Pd6`` prefix. This
-    command instead resolves ``Filout`` from the selected FDMNES input file.
+    SAE 原版の接頭辞は Pd6/Pd6 固定。この例では指定入力の Filout を使う。
 
     Args:
-        argv: Optional CLI argument sequence, for programmatic use.
+        argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
 
     Returns:
-        list[pathlib.Path]: Files written in the requested formats.
+        list[pathlib.Path]: 指定形式で保存したファイルのパスの並び。
     """
     parser = argparse.ArgumentParser(description="Plot p-orbital FDMNES LDOS")
     parser.add_argument("-i", "--input")

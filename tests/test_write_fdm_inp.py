@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify full FDMNES input generation with an isolated structure provider."""
+"""独立した構造データ提供元を使って FDMNES 入力全体の生成を検証する。"""
 
 import numpy as np
 
@@ -8,23 +8,23 @@ from fdmnes_util.fdm_structure import FdmStructure
 
 
 class ExampleStructure:
-    """Provide structural data through the same public reader interface."""
+    """公開リーダーと同じ I/F で構造データを提供する。"""
 
     def get_lattice_vectors(self):
-        """Return a cubic cell."""
+        """立方格子を返す。"""
         return np.diag([3.0, 3.0, 3.0])
 
     def get_direct_positions(self):
-        """Return one fractional atomic position."""
+        """原子一つの分率座標を返す。"""
         return np.array([[0.0, 0.0, 0.0]])
 
     def get_symbols(self):
-        """Return the atomic symbol."""
+        """元素記号を返す。"""
         return ["Fe"]
 
 
 def test_full_input_contains_calculation_keywords_and_structure(tmp_path):
-    """Check that the calculation template and structure are both written."""
+    """計算条件のテンプレートと構造節の両方を出力することを検証する。"""
     structure_writer = FdmStructure(ExampleStructure())
     input_writer = FdmInp
     destination = tmp_path / "read_pdb.inp"
@@ -46,7 +46,7 @@ def test_full_input_contains_calculation_keywords_and_structure(tmp_path):
 
 
 def test_molecule_keyword(tmp_path):
-    """Confirm that the structure writer receives the molecule option."""
+    """構造ライターに分子指定が伝わることを検証する。"""
     content = FdmInp.render(
         molecule=True, structure_writer=FdmStructure(ExampleStructure())
     )

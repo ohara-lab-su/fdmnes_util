@@ -11,31 +11,32 @@
 # 2015.05.18 startup
 # ---- End of original SAE header ----
 # Original author: Kengo NAKADA; Copyright 2015, MIT.
-"""Read a PDB structure for conversion to a FDMNES structure section."""
+"""FDMNES の構造入力に使う ``*.pdb`` を ASE で読む。
 
+Pdb は CRYST1 の有無から結晶と分子を区別し、FdmStructure に渡せる原子座標と格子を返す。
+"""
 from pathlib import Path
 
 
 class Pdb:
-    """Represent the atomic structure and cell information in a PDB file.
+    """構造入力の `*.pdb` から原子座標と単位胞情報を読む。
 
-    SAE distinguished molecular and crystal PDB input by the presence of a
-    CRYST1 record. Atomic coordinates are loaded with ASE, as in the original.
+    SAE と同じく CRYST1 の有無で結晶と分子を判定し、ASE で原子座標を読む。
 
     Attributes:
-        path: Path to the PDB input file.
-        molecule: Whether the PDB has no CRYST1 record.
+        path: 対象ファイルのパス。
+        molecule: PDB に CRYST1 がなく分子として扱うか。
     """
 
     def __init__(self, path: str | Path) -> None:
-        """Read the input file and classify its structural representation.
+        """PDB を読み込み、結晶か分子かを判定する。
 
         Args:
-            path: Input PDB filename.
+            path: 対象ファイルのパス。
 
         Raises:
-            FileNotFoundError: If the input file does not exist.
-            ImportError: If the optional ASE package is unavailable.
+            FileNotFoundError: 入力ファイルが存在しない場合。
+            ImportError: 任意依存の ASE がインストールされていない場合。
         """
         self.path = Path(path)
         if not self.path.is_file():
@@ -54,18 +55,18 @@ class Pdb:
         self.atoms = read(str(self.path), format="proteindatabank")
 
     def get_symbols(self) -> list[str]:
-        """Return atomic symbols in the input order.
+        """入力の原子順で元素記号を返す。
 
         Returns:
-            list[str]: Chemical symbols.
+            list[str]: 元素記号の並び。
         """
         return list(self.atoms.get_chemical_symbols())
 
     def get_cartesian_positions(self) -> list[tuple[float, float, float]]:
-        """Return atomic positions in angstroms.
+        """原子位置を Å 単位で返す。
 
         Returns:
-            list[tuple[float, float, float]]: Cartesian coordinates.
+            list[tuple[float, float, float]]: 直交座標。
         """
         positions = []
         for row in self.atoms.get_positions():
@@ -73,17 +74,17 @@ class Pdb:
         return positions
 
     def get_lattice_vectors(self):
-        """Return the lattice vectors used for crystalline structures.
+        """結晶構造に使う格子ベクトルを返す。
 
         Returns:
-            numpy.ndarray: Three lattice vectors in angstroms.
+            numpy.ndarray: Å 単位の3本の格子ベクトル。
         """
         return self.atoms.cell.array
 
     def get_direct_positions(self):
-        """Return fractional atomic coordinates for a crystal.
+        """結晶の原子位置を分率座標で返す。
 
         Returns:
-            numpy.ndarray: Fractional atomic coordinates.
+            numpy.ndarray: 原子の分率座標。
         """
         return self.atoms.get_scaled_positions()

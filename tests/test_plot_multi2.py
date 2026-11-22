@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for the SAE two-panel experiment comparison."""
+"""SAE の二段の実験・計算比較図を回帰検証する。"""
 
 import numpy as np
 import pytest
@@ -8,7 +8,7 @@ from fdmnes_util.plot.plot_fdm_xas_ldos import PlotFdmXasLdos
 
 
 def test_plot_experiment_ldos(tmp_path):
-    """Write the two-panel PDF using independent energy grids."""
+    """独立したエネルギー格子で二段の PDF を保存することを検証する。"""
     pytest.importorskip("matplotlib")
     output = tmp_path / "comparison.pdf"
     plotter = PlotFdmXasLdos()
@@ -29,7 +29,7 @@ def test_plot_experiment_ldos(tmp_path):
 
 
 def test_plot_experiment_ldos_rejects_mismatched_grid(tmp_path):
-    """Reject data when one energy axis has the wrong length."""
+    """エネルギー軸の長さが合わない場合に拒否することを検証する。"""
     pytest.importorskip("matplotlib")
     plotter = PlotFdmXasLdos()
     values = np.array([1.0, 2.0])

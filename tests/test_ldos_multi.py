@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test the three-site LDOS plotting example."""
+"""3サイトの LDOS の描画例を検証する。"""
 
 from pathlib import Path
 
@@ -10,21 +10,21 @@ from fdmnes_util.plot.plot_fdm_dos import PlotFdmDos
 
 
 class ExampleSd:
-    """Supply a minimal SD reader for the plotting contract."""
+    """描画処理が受け取る最小限の SD リーダーを提供する。"""
 
     def get_eng(self):
-        """Return a short energy axis."""
+        """短いエネルギー軸を返す。"""
         return np.array([-1.0, 0.0, 1.0])
 
     def get_ldos(self, orbital):
-        """Return an orbital-resolved density array."""
+        """軌道別の密度配列を返す。"""
         if orbital != "p":
             raise ValueError("This fixture only supplies p orbitals")
         return np.array([0.1, 0.5, 0.2])
 
 
 def test_plot_three_sites(tmp_path):
-    """Save a three-panel PDF with a shared photon-energy axis."""
+    """共通の光子エネルギー軸で三段の PDF を保存することを検証する。"""
     pytest.importorskip("matplotlib")
     readers = [ExampleSd(), ExampleSd(), ExampleSd()]
     labels = ["sd0", "sd1", "sd2"]
@@ -45,7 +45,7 @@ def test_plot_three_sites(tmp_path):
 
 
 def test_plot_requires_three_sites(tmp_path):
-    """Reject missing SD sites rather than silently plotting fewer panels."""
+    """SD のサイトが不足する場合に拒否することを検証する。"""
     with pytest.raises(ValueError):
         PlotFdmDos().plot_multiple_sites(
             [ExampleSd()],
@@ -57,7 +57,7 @@ def test_plot_requires_three_sites(tmp_path):
 
 
 def test_plot_three_sites_all_formats(tmp_path):
-    """Write all three image types used by the SAE plotting script."""
+    """SAE の描画スクリプトが使う3種類の図を保存することを検証する。"""
     pytest.importorskip("matplotlib")
     readers = [ExampleSd(), ExampleSd(), ExampleSd()]
     labels = ["sd0", "sd1", "sd2"]
@@ -78,7 +78,7 @@ def test_plot_three_sites_all_formats(tmp_path):
 
 
 def test_plot_rejects_unsupported_format(tmp_path):
-    """Reject invalid formats before generating any files."""
+    """ファイル生成前に不正な形式を拒否することを検証する。"""
     with pytest.raises(ValueError, match="Unsupported format"):
         PlotFdmDos().save_multiple_formats(
             [ExampleSd(), ExampleSd(), ExampleSd()],

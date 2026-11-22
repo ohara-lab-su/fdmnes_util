@@ -1,5 +1,7 @@
-"""FDMNES 入力の形式を選び、対応する実装に委譲する。"""
+"""FDMNES の計算・畳み込み入力 ``*.inp`` を読み書きする共通の入口。
 
+FdmInp は明示した形式年で処理を選び、指定がなければ2016年形式を使う。ブロック編集と POSCAR からの入力作成は2026年形式の実装に委譲する。
+"""
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -8,8 +10,7 @@ from .fdm_inp_2026 import FdmInp2026
 
 
 class FdmInp:
-    """FDMNES 計算入力を読み書きする共通の入口。"""
-
+    """FDMNES の計算入力 `*.inp` を読み書きし、指定された形式の実装へ委譲する。"""
     KEYWORDS = FdmInp2016.KEYWORDS
 
     def __init__(self, filename="read_pdb.inp", *, format_year=2016):
@@ -22,6 +23,7 @@ class FdmInp:
 
     @staticmethod
     def _reader_class(format_year):
+        """指定された入力形式を担当する年別クラスを返す。"""
         if format_year == 2016:
             return FdmInp2016
         if format_year == 2026:
@@ -31,6 +33,49 @@ class FdmInp:
     def select_reader(self):
         """選んだ年別リーダーを返す。"""
         return self._reader
+
+    @classmethod
+    def from_text(cls, text):
+        """テキストを編集可能な2026形式の計算入力として開く。"""
+        inp = cls(None, format_year=2026)
+        inp._reader._set_text(text)
+        return inp
+
+    @classmethod
+    def from_poscar(cls, filename, *, molecule=False):
+        """POSCAR の構造を使って2026形式の計算入力を作る。"""
+        inp = cls(None, format_year=2026)
+        inp._reader._set_poscar(filename, molecule=molecule)
+        return inp
+
+    def _editable_reader(self):
+        """編集メソッドの委譲先である2026年形式の入力リーダーを返す。"""
+        if self.format_year != 2026:
+            raise ValueError("Editing the input requires format_year=2026")
+        return self._reader
+
+    def set_block(self, keyword, *rows, old_rows=None):
+        """データ行を追加または置換する。可変長の置換では old_rows を指定する。"""
+        self._editable_reader()._set_block(keyword, *rows, old_rows=old_rows)
+        return self
+
+    def remove_block(self, keyword, *, old_rows=None):
+        """指定した入力ブロックを取り除く。"""
+        self._editable_reader()._remove_block(keyword, old_rows=old_rows)
+        return self
+
+    def set_radius(self, radius, *changes):
+        """半径（Å）と、切替エネルギー（eV）・切替後の半径の組を指定する。"""
+        self._editable_reader()._set_radius(radius, *changes)
+        return self
+
+    def render_input(self):
+        """現在の入力本文を返す。"""
+        return self._editable_reader()._render_input()
+
+    def save(self, filename, *, overwrite=False):
+        """編集中の入力を保存する。既存ファイルの上書きは明示指定する。"""
+        return self._editable_reader()._save_input(filename, overwrite=overwrite)
 
     def get_absorber(self) -> int:
         """先頭の吸収サイトを返す。"""

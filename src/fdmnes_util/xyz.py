@@ -10,26 +10,27 @@
 # SAE source for XYZ output: sae/commands/FDbav2xyz.py.
 # 2015.06.24 startup
 # 2018.08.21 Python2/3 両対応
-"""Read and write standard XYZ atomic coordinates.
+"""BAV からの構造書き出しや FDMNES 入力の作成に使う標準 ``*.xyz`` を読み書きする。
 
-SAE used ``ReadMd`` and ``AseInputOperations`` for the conversion. This
-module handles standard XYZ files only; OpenMX MD input is not interpreted.
+Xyz は原子数、元素記号、Å 単位の直交座標を扱う。座標だけから FDMNES の構造節を作る処理は FdmStructure が担当する。
+
+SAE の変換では ReadMd と AseInputOperations を使用していた。このモジュールの対象は標準 XYZ。
 """
 
 from pathlib import Path
 
 
 class Xyz:
-    """Read and write element symbols and Cartesian coordinates in XYZ format."""
+    """構造入出力の `*.xyz` を扱い、元素記号と直交座標を読み書きする。"""
 
     def __init__(self, filename: str | Path) -> None:
-        """Read an XYZ file.
+        """XYZ ファイルを読み込む。
 
         Args:
-            filename: Path to a standard XYZ coordinate file.
+            filename: 対象ファイルのパス。
 
         Raises:
-            ValueError: If the atom count or coordinate records are invalid.
+            ValueError: 原子数または座標の記録が不正な場合。
         """
         self.filename = Path(filename)
         self.symbols: list[str] = []
@@ -37,10 +38,10 @@ class Xyz:
         self.read()
 
     def read(self) -> None:
-        """Parse the atom count and Cartesian coordinate records.
+        """原子数と各原子の直交座標の行を解釈する。
 
         Raises:
-            ValueError: If the input is not a valid standard XYZ file.
+            ValueError: 入力が正しい標準 XYZ ではない場合。
         """
         lines = self.filename.read_text(encoding="utf-8").splitlines()
         if len(lines) < 2:
@@ -81,21 +82,19 @@ class Xyz:
 
     @staticmethod
     def render(symbols, positions) -> str:
-        """Serialize Cartesian positions with the precision used by FDbav2xyz.
+        """FDbav2xyz が使う精度で直交座標をテキスト化する。
 
-        The first line contains the number of atoms, followed by an empty
-        comment line and one element/coordinate record for each atom.
+        先頭行に原子数、その次に空のコメント行、以降に元素と座標を1原子につき1行ずつ書く。
 
         Args:
-            symbols: Chemical symbols in the desired output order.
-            positions: Cartesian positions in angstroms, each with three values.
+            symbols: 原子順の元素記号。
+            positions: Å 単位の原子座標。各行が1原子の3成分。
 
         Returns:
-            Complete XYZ text, including its trailing newline.
+            末尾の改行まで含めた XYZ 本文。
 
         Raises:
-            ValueError: If the number of symbols and positions differs, or
-                if any position does not contain three coordinates.
+            ValueError: 元素記号と原子位置の件数が異なるか、座標が3成分でない場合。
         """
         atom_symbols = list(symbols)
         atom_positions = list(positions)
@@ -124,19 +123,19 @@ class Xyz:
 
     @classmethod
     def write(cls, symbols, positions, filename) -> Path:
-        """Write an XYZ file containing the supplied atomic coordinates.
+        """指定した原子座標を XYZ ファイルに保存する。
 
         Args:
-            symbols: Chemical symbols in the desired output order.
-            positions: Cartesian positions in angstroms, each with three values.
-            filename: Destination filename or path.
+            symbols: 原子順の元素記号。
+            positions: Å 単位の原子座標。各行が1原子の3成分。
+            filename: 対象ファイルのパス。
 
         Returns:
-            Path of the written XYZ file.
+            保存したファイルのパス。
 
         Raises:
-            ValueError: If the symbols and positions are inconsistent.
-            OSError: If the destination cannot be written.
+            ValueError: 元素記号と原子位置の対応が不正な場合。
+            OSError: 保存先に書き込めない場合。
         """
         output_path = Path(filename)
         output_path.write_text(cls.render(symbols, positions), encoding="utf-8")

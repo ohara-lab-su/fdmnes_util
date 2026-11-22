@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check SAE composite plotting through its editable sample entry points."""
+"""SAE の複合描画を編集用サンプルの入口から検証する。"""
 
 from pathlib import Path
 
@@ -14,7 +14,7 @@ from test_commands import load_script, prepare
 
 @pytest.fixture
 def capture_figures(monkeypatch):
-    """Record live Matplotlib figures while still writing all requested files."""
+    """指定ファイルを全て保存しつつ Matplotlib の図を記録する。"""
     pytest.importorskip("matplotlib")
     from matplotlib.figure import Figure
 
@@ -22,7 +22,7 @@ def capture_figures(monkeypatch):
     savefig = Figure.savefig
 
     def capture(figure, filename, *args, **kwargs):
-        """Keep the figure and delegate to the real format writer."""
+        """図を保持し、実際の形式別保存処理に委譲する。"""
         outputs[Path(filename)] = figure
         return savefig(figure, filename, *args, **kwargs)
 
@@ -31,7 +31,7 @@ def capture_figures(monkeypatch):
 
 
 def test_xas_experiment_and_site_average(tmp_path, monkeypatch, capture_figures):
-    """Compare averaged XAS and DOS arrays, panel order, and three file formats."""
+    """平均 XAS・DOS 配列、パネル順、3種類の保存形式を比較する。"""
     prepare(tmp_path)
     monkeypatch.chdir(tmp_path)
     for site, scale in ((1, 1), (3, 2)):
@@ -95,7 +95,7 @@ def test_xas_experiment_and_site_average(tmp_path, monkeypatch, capture_figures)
 def test_ldos_projection_integral_and_raw_overlay(
     tmp_path, monkeypatch, capture_figures
 ):
-    """Use a real 2020 SD file and compare the plot with its stored columns."""
+    """2020年の SD 実ファイルの列と描画値を比較する。"""
     prepare(tmp_path)
     monkeypatch.chdir(tmp_path)
     sample = load_script("FDplot_LDOS.py")
@@ -140,7 +140,7 @@ def test_ldos_projection_integral_and_raw_overlay(
 
 
 def test_pdos_orbital_blocks(tmp_path, monkeypatch, capture_figures):
-    """Check that plotted groups and projection magnitudes follow the SAE PDOS layout."""
+    """軌道群と射影値が SAE の PDOS 配置に従うことを検証する。"""
     prepare(tmp_path)
     monkeypatch.chdir(tmp_path)
     output = load_script("FDplot_PDOS.py").main(
@@ -160,7 +160,7 @@ def test_pdos_orbital_blocks(tmp_path, monkeypatch, capture_figures):
 
 
 def test_magnetic_ldos_inverts_down_axis(tmp_path, monkeypatch, capture_figures):
-    """Preserve positive spin-down densities while reversing its visual axis."""
+    """下向きスピンの密度は正値のまま表示軸を反転することを検証する。"""
     monkeypatch.chdir(tmp_path)
     Path("read_pdb.inp").write_text("Filout Fe\nMagnetism\nEnd\n")
     Path("Fe.txt").write_text("7112 26 -5 = E_edge Z E_Fermi\nEnergy XAS\n-4 1\n-2 2\n")
@@ -181,7 +181,7 @@ def test_magnetic_ldos_inverts_down_axis(tmp_path, monkeypatch, capture_figures)
     "sample", ["FDplot_XAS.py", "FDplot_LDOS.py", "FDplot_PDOS.py"]
 )
 def test_display_policy(sample, tmp_path, monkeypatch):
-    """Call show after saving by default, and omit it for --nw."""
+    """既定では保存後に表示し、--nw では省略することを検証する。"""
     prepare(tmp_path)
     monkeypatch.chdir(tmp_path)
     plt = pytest.importorskip("matplotlib.pyplot")
@@ -189,7 +189,7 @@ def test_display_policy(sample, tmp_path, monkeypatch):
     saved_before_show = []
 
     def show():
-        """Record whether the figure is already on disk."""
+        """図がすでにディスクに保存されているかを記録する。"""
         saved_before_show.append(Path("display.pdf").is_file())
 
     monkeypatch.setattr(plt, "show", show)
@@ -202,7 +202,7 @@ def test_display_policy(sample, tmp_path, monkeypatch):
 def test_named_l23_columns_preserve_the_raw_grid(
     tmp_path, monkeypatch, capture_figures
 ):
-    """Plot both explicitly labeled edge columns from the same raw file."""
+    """同じ生 XAS ファイルから明示した両吸収端の列を描くことを検証する。"""
     monkeypatch.chdir(tmp_path)
     Path("read_pdb.inp").write_text("Filout Fe\nEnd\n")
     Path("Fe.txt").write_text(
@@ -217,7 +217,7 @@ def test_named_l23_columns_preserve_the_raw_grid(
 def test_photon_energy_input_shifts_dos_and_xas_to_fermi(
     tmp_path, monkeypatch, capture_figures
 ):
-    """Correct the SAE photon-to-Fermi offset on each independent grid."""
+    """各独立格子で光子エネルギーからフェルミ基準への移動量を検証する。"""
     prepare(tmp_path)
     monkeypatch.chdir(tmp_path)
     Path("read_pdb.inp").write_text("Filout Fe\nEnergpho\nEnd\n")
@@ -237,7 +237,7 @@ def test_photon_energy_input_shifts_dos_and_xas_to_fermi(
 
 
 def test_l_edge_spin_columns(tmp_path, monkeypatch, capture_figures):
-    """Use both spin columns for the selected raw edge without mixing edges."""
+    """異なる吸収端を混ぜず、選んだ吸収端の両スピン列を使うことを検証する。"""
     monkeypatch.chdir(tmp_path)
     Path("read_pdb.inp").write_text("Filout Fe\nEnd\n")
     Path("Fe.txt").write_text(
@@ -253,7 +253,7 @@ def test_l_edge_spin_columns(tmp_path, monkeypatch, capture_figures):
 
 
 def test_xas_site_grid_mismatch_does_not_write_averages(tmp_path, monkeypatch):
-    """Reject incompatible grids within one spectrum family before saving outputs."""
+    """同種スペクトルの格子が一致しないときは保存前に拒否することを検証する。"""
     monkeypatch.chdir(tmp_path)
     Path("read_pdb.inp").write_text("Filout Fe\nEnd\n")
     for site in (1, 2):
