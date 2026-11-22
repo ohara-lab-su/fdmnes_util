@@ -1,107 +1,51 @@
-#!/usr/bin/env python3
-#
-# SAE原本: sae/fdmnes/conv.py
-# 以下はSAE原本の冒頭コメントを原文のまま保存したものです。
-# 原本に記された旧仕様・旧クラス名は現在のAPI仕様を意味しません。
-# ---- SAE original header (verbatim) ----
-# -*- coding: utf-8 -*-
-###############################################################################
-# K.NAKADA, kengo.nakada@gmail.com
-#
-# FDMNES
-# *_conv.txt ファイル( pw.x 入力ファイル 読み込み)
-#
-###############################################################################
-#
-# 2018.08.15
-#  Python2/3 両対応
-#
-# 2015.07.22
-#  入力ファイル名にsuffixを付けても、つけなくても(別オプションでsuffix指定)
-#  どちらでも動作するように変更。
-#
-# 2015.07.01
-#  平均化ルーチンで重み(平均する際に割る数)を引数に追加
-#
-# 2015.06.30
-#   == Noneo --> is None
-#
-# 2015.05.21 startup
-#
-###############################################################################
-# トップディレクトリ関係のエラーは ImportError ではキャッチ出来ない
-###############################################################################
-# import gzip
-# import re
-# sys.path.append('../..')
-# import SpaceGroupEnvironment as SGE
-###############################################################################
-###############################################################################
-# ラベル等のフォントサイズ
-# レジェンドのフォントサイズ
-# 軸の太さを設定。目盛りは変わらない
-# for portrait
-###############################################################################
-###############################################################################
-#   print name,suffix
-#   plot_fdm_xas(eng,xas)
-#   print "NAME",name
-# Copyright Kengo NAKADA; SAE class library.
-# ---- End of SAE original header ----
-"""Read the convolved XAS spectrum written to ``*_conv.txt`` by FDMNES."""
+"""畳み込み XAS の形式を選び、対応するリーダーに委譲する。"""
 
 from pathlib import Path
 
-import numpy as np
+from .fdm_conv_2016 import FdmConv2016
+from .fdm_conv_2026 import FdmConv2026
 
 
 class FdmConv:
-    """Retain the energy axis and all absorption columns of one output file."""
+    """畳み込み XAS の共通の入口。"""
 
-    def __init__(self, filename):
-        """Read a convolved XAS file.
-
-        Args:
-            filename: Path to the FDMNES output file.
-
-        Raises:
-            ValueError: If the input has too few numerical columns.
-        """
+    def __init__(self, filename, *, format_year=None):
+        """2026年の改訂行で始まる出力を検出する。形式を明示指定することもできる。"""
         self.path = Path(filename)
+        if format_year is None:
+            format_year = 2016
+            with self.path.open(encoding="utf-8", errors="replace") as stream:
+                if stream.readline().strip() == FdmConv2026.REVISION_HEADER:
+                    format_year = 2026
+        if format_year == 2016:
+            self._reader = FdmConv2016(self.path)
+        elif format_year == 2026:
+            self._reader = FdmConv2026(self.path)
+        else:
+            raise ValueError(f"Unverified convolution layout: {format_year}")
 
-        with self.path.open(encoding="utf-8", errors="replace") as file:
-            self.header = file.readline().strip()
-            self.values = np.loadtxt(file, ndmin=2)
+        self.format_year = format_year
+        self.header = self._reader.header
+        self.values = self._reader.values
+        self.energy = self._reader.energy
+        self.xas = self._reader.xas
+        self.preamble = getattr(self._reader, "preamble", [])
+        self.parameters = getattr(self._reader, "parameters", {})
+        self.shifts = getattr(self._reader, "shifts", ())
 
-        if self.values.shape[1] < 2:
-            raise ValueError("FDMNES convolution output requires an XAS column")
-
-        self.energy = self.values[:, 0]
-        self.xas = self.values[:, 1:]
+    def select_reader(self):
+        """選んだ年別リーダーを返す。"""
+        return self._reader
 
     def get_eng(self):
-        """Return the energy axis in the file-defined reference frame."""
-        return self.energy
+        """出力のエネルギー軸を返す。"""
+        return self._reader.get_eng()
 
     def get_xas(self, spin=0):
-        """Return the requested absorption column.
-
-        Args:
-            spin: Zero-based index of the absorption column.
-
-        Returns:
-            numpy.ndarray: Absorption intensity values.
-        """
-        return self.xas[:, spin]
+        """指定した吸収強度列を返す。"""
+        return self._reader.get_xas(spin=spin)
 
     @staticmethod
     def write_spectrum(filename, spectrum):
-        """Write the SAE two-column convolved average.
-
-        Args:
-            filename: Destination convolution filename.
-            spectrum: Energy and intensity arrays in the original reference.
-        """
-        with Path(filename).open("w", encoding="utf-8") as stream:
-            stream.write("\n")
-            np.savetxt(stream, np.column_stack(spectrum), fmt="  %14.8f %14.8f")
+        """平均スペクトルは共通の SAE 書式で保存する。"""
+        return FdmConv2016.write_spectrum(filename, spectrum)

@@ -12,9 +12,11 @@ Parameters with `=` have defaults. Parameters after `*` are keyword-only. `__ini
 
 Read, inspect, and generate FDMNES calculation inputs.
 
+Input files have no revision line. Use `FdmInp(filename, format_year=2026)` for extended input. The default is 2016. `get_absorbers()` returns site indices, and `get_calculations()` returns (filename, weight, shift, cutoff) records. `FdmInp.write(..., format_year=2026)` accepts `absorber=[1, 2]`, `density_complex=True`, and `lmax_dosout=3`. `FdmInp.write_convolution(filename, calculations, *, output, format_year=2026, header=False, energy_step=None, per_atom=False)` writes a combined convolution input. Each calculation is a (raw XAS path, weight, shift in eV) tuple.
+
 | Method and parameter defaults | Parameter meanings | Return value |
 | --- | --- | --- |
-| `__init__(filename='read_pdb.inp')` | `filename` Path to the FDMNES input file. | None. |
+| `__init__(filename='read_pdb.inp', *, format_year=2016)` | `filename` Path to the FDMNES input file. | None. |
 | `get_filout()` | — | str: Last `Filout` or `File_out` value, or an empty string when absent. |
 | `get_absorber()` | — | int. One-based absorber index from the last `Absorber` record. Defaults to 1 when absent. An invalid index raises ValueError. |
 | `get_ispin()` | — | int: Two when `Spin` or `Magnetism` is specified, otherwise one. |
@@ -94,9 +96,11 @@ edge = raw.get_eedge()
 
 Retain the energy axis and all absorption columns of one output file.
 
+Use `FdmConv(filename, format_year=None)` to detect the November 5, 2026 revision line output by `Header`. Ordinary output uses the 2016 layout. Set `format_year=2016` or `2026` to choose explicitly. With the 2026 layout, `preamble`, `parameters`, and `shifts` expose the extra header data.
+
 | Method and parameter defaults | Parameter meanings | Return value |
 | --- | --- | --- |
-| `__init__(filename)` | `filename` Path to the FDMNES output file. | None. |
+| `__init__(filename, *, format_year=None)` | `filename` Path to the FDMNES output file. | None. |
 | `get_eng()` | — | ndarray. Energy axis in the reference frame stored in the file. |
 | `get_xas(spin=0)` | `spin` Zero-based index of the absorption column. | numpy.ndarray: Absorption intensity values. |
 | `write_spectrum(filename, spectrum)` (static) | `filename` Destination convolution filename. `spectrum` Energy and intensity arrays in the original reference. | None. Writes the two-column spectrum. |
@@ -156,8 +160,8 @@ Select the format-specific parser for a site-resolved DOS file. For files such a
 
 | Method and parameter defaults | Parameter meanings | Return value |
 | --- | --- | --- |
-| `__init__(filename, *, format_year, ispin=1, weight=None)` | `filename` Path to the FDMNES site-resolved DOS file. `format_year` Supported SD layout year (2016 or 2020), or None to inspect the SD column names. `ispin` Number of spin channels for the 2016 layout. `weight` Optional divisor for density and integral columns. | None. |
-| `select_reader()` | — | FdmSd2016 \| FdmSd2020: Parser for the selected SD format. |
+| `__init__(filename, *, format_year, ispin=1, weight=None)` | `filename` Path to the FDMNES site-resolved DOS file. `format_year` Supported SD layout year (2016, 2020 or 2026), or None to inspect the SD column names. `ispin` Number of spin channels for the 2016 layout. `weight` Optional divisor for density and integral columns. | None. |
+| `select_reader()` | — | FdmSd2016, FdmSd2020, or FdmSd2026. |
 | `format_from_bav(filename)` (static) | `filename` Path to the companion BAV file. This legacy method estimates the layout from the revision. | int: Supported SD layout year. |
 | `write_table(filename, columns, grid, densities)` (static) | `filename` Destination SD filename. `columns` Column names, beginning with the energy label. `grid` Original energy grid in eV. `densities` Averaged density and integral columns, without energy. | None. Writes the SD table. |
 
@@ -227,23 +231,30 @@ sd = FdmSd2020("Fe_sd0.txt")
 energy, pz_pdos = sd.get_eng(), sd.get_pdos(lm="p_z")
 ```
 
+### `FdmSd2026`
+
+This reader supports complex and f-orbital projections. Use `FdmSd(filename, format_year=None)` to detect the layout from the columns, or choose `format_year=2026`. For example, `get_pdos(l=3, m=0)` reads a complex projection, `get_pdos(lm="fxyz")` reads a real f projection, and `get_ldos(l=3)` reads the f group. Ordinary s, p, and d columns from the 2026 binary use the existing reader.
+
 ### `FdmBav`
 
 `from fdmnes_util.fdm_bav import FdmBav`
 
 Inspect a `_bav.txt` header and select its version-specific parser.
 
+Each version reader parses its own BAV records. `FdmBav` selects the reader from the revision line and forwards the 13 common methods, such as `get_edge()`, to their counterparts. Direct calls reuse the reader selected on the first call.
+
 | Method and parameter defaults | Parameter meanings | Return value |
 | --- | --- | --- |
 | `__init__(filename)` | `filename` Calculation-log filename. | None. |
-| `select_reader()` | — | FdmBav2016 \| FdmBav2020: Reader for the supported revision. |
+| `select_reader()` | — | FdmBav2016 through 2016, FdmBav2020 for 2017–2021, and FdmBav2026 for November 5, 2026. Other revisions from 2022 onward raise ValueError. |
+| `get_scf_history()` | — | list[tuple[int, float \| None]]. Cycle numbers and total energies (eV) for the 2026 release. A missing energy is None. An unavailable history is an empty list. |
 
 **Example**
 
 ```python
 from fdmnes_util.fdm_bav import FdmBav
 bav = FdmBav("Fe_bav.txt")
-print(bav.year, bav.select_reader().get_edge())
+print(bav.year, bav.get_edge())
 ```
 
 ### `FdmBav2016`
@@ -306,6 +317,18 @@ Extract calculation information from a 2020-format `_bav.txt` file.
 from fdmnes_util.fdm_bav_2020 import FdmBav2020
 log = FdmBav2020("Fe_bav.txt")
 symbols, positions = log.get_atoms_index_j(), log.get_position()
+```
+
+### `FdmBav2026`
+
+`from fdmnes_util.fdm_bav_2026 import FdmBav2026`
+
+Read BAV reports from the November 5, 2026 release. The public reader methods match `FdmBav2016` and `FdmBav2020`. Use the common `FdmBav` entry point to read total energies by cycle.
+
+```python
+from fdmnes_util.fdm_bav import FdmBav
+log = FdmBav("Fe_SCF_bav.txt")
+history = log.get_scf_history()
 ```
 
 ## Structure I/O
