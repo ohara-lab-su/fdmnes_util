@@ -11,7 +11,8 @@ from fdmnes_util.fdm_structure import FdmStructure
 from test_commands import load_script
 
 
-def test_vasp_sample_calls_external_reader_directly(monkeypatch, tmp_path):
+@pytest.mark.parametrize("option", ["-i", "--ipput", None])
+def test_vasp_sample_calls_external_reader_directly(monkeypatch, tmp_path, option):
     """POSCAR 変換コマンドが vasp_util の公開 API を直接使う。"""
     filenames = []
 
@@ -42,7 +43,11 @@ def test_vasp_sample_calls_external_reader_directly(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
     poscar = tmp_path / "POSCAR"
     poscar.touch()
-    monkeypatch.setattr(sys, "argv", ["FDvasp2fdm.py", "-i", str(poscar)])
+    argv = ["FDvasp2fdm.py"]
+    if option is not None:
+        argv.append(option)
+    argv.append(str(poscar))
+    monkeypatch.setattr(sys, "argv", argv)
     assert load_script("FDvasp2fdm.py").main() == 0
     assert filenames == [str(poscar)]
     assert "   26" in (tmp_path / "POSCAR.fdmnes").read_text()

@@ -21,12 +21,13 @@ def main() -> int:
         int: Zero when conversion succeeds.
     """
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("-i", "--input", default="POSCAR")
+    parser.add_argument("name", nargs="?")
+    parser.add_argument("-i", "--input", "--ipput", default="POSCAR")
     parser.add_argument("-m", "--mol", action="store_true")
     parser.add_argument("-o", "--output", default=None)
     args = parser.parse_args()
 
-    input_path = Path(args.input)
+    input_path = Path(args.name or args.input)
     if not input_path.is_file():
         alternative_path = Path(str(input_path) + ".vasp")
         if alternative_path.is_file():
