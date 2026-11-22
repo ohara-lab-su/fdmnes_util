@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test CIF loading and FDMNES structural conversion."""
+"""CIF の読み取りと FDMNES 構造への変換を検証する。"""
 
 from pathlib import Path
 
@@ -10,13 +10,13 @@ from fdmnes_util.fdm_structure import FdmStructure
 
 
 def test_cif_missing_file(tmp_path: Path) -> None:
-    """Reject an input path that does not exist."""
+    """存在しない入力パスを拒否することを検証する。"""
     with pytest.raises(FileNotFoundError):
         Cif(tmp_path / "absent.cif")
 
 
 def test_cif_crystal_and_molecule(tmp_path: Path) -> None:
-    """Render both crystal and molecule structures from a minimal CIF."""
+    """最小の CIF から結晶用・分子用の構造節を生成することを検証する。"""
     pytest.importorskip("ase")
     from ase import Atoms
     from ase.io import write

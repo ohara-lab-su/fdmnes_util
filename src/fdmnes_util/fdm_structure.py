@@ -88,8 +88,10 @@
 ##
 # Copyright Kengo NAKADA; SAE class library.
 # ---- End of SAE original header ----
-"""FDMNES の構造表現と元素表。"""
+"""``*.inp`` の Crystal・Molecule 節、POSCAR、および構造リーダーから得た原子座標を変換する。
 
+FdmStructure は FdmInp や vasp_util を使って構造を読み、FDMNES の構造節として書ける。ElementTable は同梱の ``atomic_symbols.list`` で元素記号を原子番号に変換する。
+"""
 import math
 from functools import cache
 from importlib.resources import files
@@ -97,11 +99,11 @@ from pathlib import Path
 
 
 class ElementTable:
-    """SAE の sae/structure/elements.py に対応する元素番号と記号の対応表。"""
-
+    """同梱の `atomic_symbols.list` を参照し、元素記号と原子番号を対応づける。"""
     @staticmethod
     @cache
     def _read():
+        """同梱の元素記号一覧を読み込む。"""
         rows = files("fdmnes_util").joinpath("atomic_symbols.list")
         symbols = {}
         for row in rows.read_text(encoding="utf-8").splitlines():
@@ -124,14 +126,13 @@ class ElementTable:
 
 
 class FdmStructure:
-    """FDMNES の Crystal・Molecule と原子構造を相互に変換する。"""
+    """``*.inp`` の構造節と POSCAR などの構造データを相互に変換する。"""
 
     def __init__(self, structure) -> None:
         """構造リーダーを受け取る。
 
         Args:
-            structure: vasp_util の VaspPoscar、または格子・元素記号・
-                分率座標を取得できる CIF・PDB などのリーダー。
+            structure: vasp_util の VaspPoscar、または格子・元素記号・ 分率座標を取得できる CIF・PDB などのリーダー。
         """
         self.structure = structure
 
@@ -290,13 +291,13 @@ class FdmStructure:
         return Atoms(numbers=numbers, positions=positions)
 
     def _cell_parameters(self) -> list[float]:
-        """Calculate cell lengths and angles from the lattice matrix.
+        """格子行列から格子長と格子角を計算する。
 
         Returns:
-            list[float]: a, b, c, alpha, beta and gamma in degrees.
+            list[float]: 格子長 a・b・c と格子角 alpha・beta・gamma（度）。
 
         Raises:
-            ValueError: If a lattice vector has zero length.
+            ValueError: 長さが0の格子ベクトルがある場合。
         """
         import numpy as np
 
@@ -321,17 +322,17 @@ class FdmStructure:
         return lengths + angles
 
     def render(self, molecule: bool = False) -> str:
-        """Create a FDMNES structure section.
+        """FDMNES の計算入力に含める構造節を作る。
 
         Args:
-            molecule: Write the ``Molecule`` keyword instead of ``Crystal``.
+            molecule: True の場合は Crystal の代わりに Molecule を使う。
 
         Returns:
-            str: Formatted FDMNES structure section.
+            str: FDMNES 書式の構造節。
 
         Raises:
-            ValueError: If the structure has inconsistent symbol and position counts.
-            KeyError: If an element symbol cannot be converted to an atomic number.
+            ValueError: 元素記号と座標の件数が一致しない場合。
+            KeyError: 元素記号を原子番号に変換できない場合。
         """
         parameters = self._cell_parameters()
         lines = []
@@ -368,21 +369,19 @@ class FdmStructure:
         symbols: list[str],
         positions: list[tuple[float, float, float]],
     ) -> str:
-        """Render SAE-compatible molecular coordinates from an XYZ file.
+        """XYZ の分子座標を SAE 互換の構造節に変換する。
 
-        The SAE ``FDxyz2fdm.py`` script used a unit cubic cell and Cartesian
-        coordinates in a ``molecule`` section, rather than fractional crystal
-        coordinates.
+        SAE の FDxyz2fdm.py は、分子節に単位立方格子と直交座標を出力する。
 
         Args:
-            symbols: Chemical symbols in atom order.
-            positions: Cartesian positions in angstroms.
+            symbols: 原子順の元素記号。
+            positions: Å 単位の原子座標。各行が1原子の3成分。
 
         Returns:
-            FDMNES molecule section with the original SAE coordinate format.
+            SAE と同じ座標書式の FDMNES 分子節。
 
         Raises:
-            ValueError: If atom counts differ or a symbol is unknown.
+            ValueError: 原子数が一致しないか、元素記号が未知の場合。
         """
         if len(symbols) != len(positions):
             raise ValueError("Atom/coordinate count mismatch")
@@ -398,14 +397,14 @@ class FdmStructure:
         return "\n".join(lines) + "\n"
 
     def write(self, filename: str | Path, molecule: bool = False) -> Path:
-        """Write the FDMNES structural section to a file.
+        """FDMNES の構造節をファイルに書き出す。
 
         Args:
-            filename: Destination filename.
-            molecule: Whether to use the Molecule keyword.
+            filename: 対象ファイルのパス。
+            molecule: True の場合は Crystal の代わりに Molecule を使う。
 
         Returns:
-            Path: Written file path.
+            Path: 保存したファイルのパス。
         """
         destination = Path(filename)
         content = self.render(molecule=molecule)

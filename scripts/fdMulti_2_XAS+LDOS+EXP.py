@@ -36,11 +36,9 @@
 # __copyright__ = "Copyright 2015, Kengo NAKADA"
 # __license__ = "MIT"
 # ---- End of original SAE header ----
-"""Compare FDMNES XAS, Athena experiment, and p-LDOS in two panels.
+"""``<Filout>.txt``、``*_conv.txt``、``*_sdN.txt``、``*.nor`` を読み、計算・実験 XAS と p-LDOS の二段図を保存する。
 
-This editable example generalizes the original Cu-specific SAE script.
-The original experiment scaling (1/39) and vertical offset (0.015)
-are configurable, as is the calculated photon-energy offset (4.5 eV).
+Cu 専用だった SAE の例を一般化した。実測強度係数 1/39、縦軸移動量 0.015、計算光子エネルギーの移動量 4.5 eV を指定で変更できる。
 """
 
 import argparse
@@ -54,7 +52,7 @@ from fdmnes_util.plot.plot_fdm_xas_ldos import PlotFdmXasLdos
 
 
 def main() -> None:
-    """Read four source files and write a combined XAS/LDOS figure."""
+    """四つの入力を読み、XAS と LDOS の比較図を保存する。"""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--conv", type=Path, default=Path("Cu_conv.txt"))
     parser.add_argument("--txt", type=Path, default=Path("Cu.txt"))

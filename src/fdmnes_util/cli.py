@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Manage editable example scripts distributed with fdmnes_util.
+"""同梱の例 ``scripts/*.py`` を作業フォルダへコピーする。
 
-The installed command copies complete Python examples into a researcher's
-working directory. After copying, each script is independent of the package's
-installation location and can be edited to suit individual experiments.
+ScriptInstaller が配布先または開発ツリーからサンプルを探す。コマンドの実行時に計算データは読み込まない。
+
+配布コマンドは編集可能な Python スクリプトを作業フォルダにコピーする。コピー後はパッケージのインストール先を意識せず、計算ごとに編集できる。
 """
 
 import argparse
@@ -14,29 +14,27 @@ from typing import Optional, Sequence
 
 
 class ScriptInstaller:
-    """配布された編集用サンプルを作業ディレクトリに展開する。"""
+    """配布用の Python サンプル ``scripts/*.py`` を作業フォルダへコピーする。"""
 
     @staticmethod
     def install_scripts(
         directory: Path,
         overwrite: bool = False,
     ) -> tuple[list[Path], list[Path]]:
-        """Copy packaged example scripts to a user-selected directory.
+        """同梱サンプルを指定フォルダへコピーする。
 
-        Existing files are preserved unless ``overwrite`` is explicitly enabled.
-        The examples are ordinary Python source files, not console entry points.
+        overwrite を明示した場合にだけ既存ファイルを上書きする。サンプルは通常の Python ソースとして保存する。
 
         Args:
-            directory: Destination directory
-            usually the current directory.
-            overwrite: Replace existing script files when set to True.
+            directory: 対象ディレクトリ。通常は作業ディレクトリ。
+            overwrite: True の場合は既存スクリプトを置き換える。
 
         Returns:
-            tuple[list[Path], list[Path]]: Copied paths and skipped paths.
+            tuple[list[Path], list[Path]]: コピーしたファイルのパスと、スキップしたパス。
 
         Raises:
-            FileNotFoundError: When the package does not contain its examples.
-            NotADirectoryError: When the destination is not a directory.
+            FileNotFoundError: パッケージのサンプルが存在しない場合。
+            NotADirectoryError: 保存先がディレクトリではない場合。
         """
         destination = Path(directory)
         if not destination.is_dir():
@@ -80,13 +78,13 @@ install_scripts = ScriptInstaller.install_scripts
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    """Run the ``fdmnes_util`` management command.
+    """`fdmnes_util` 管理コマンドを実行する。
 
     Args:
-        argv: Optional command arguments, excluding the executable name.
+        argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
 
     Returns:
-        int: Zero on successful command execution.
+        int: 正常終了時は0。
     """
     parser = argparse.ArgumentParser(
         prog="fdmnes_util",

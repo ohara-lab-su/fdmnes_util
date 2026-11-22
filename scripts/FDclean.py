@@ -21,11 +21,11 @@
 ################################################################################
 ################################################################################
 # ---- End of SAE original header ----
-"""Remove the generated FDMNES files belonging to the selected calculation.
+"""``*.inp`` の Filout から計算出力を特定して削除する。
 
-The input file is preserved. This script illustrates how to combine the
-input-file reader and the result-file manager. Modify the parameters to suit
-your calculation directory before using it in a research workflow.
+入力を省略した場合は ``fdmfile.txt`` の先頭ジョブまたは ``read_pdb.inp`` を使う。対象は生 XAS ``<Filout>.txt``、``*_bav.txt``、``*_conv.txt``、``*_sdN.txt`` など。
+
+計算入力は残す。入力リーダーと結果管理クラスを組み合わせる例。削除対象は計算フォルダと入力の Filout で指定する。
 """
 
 import argparse
@@ -36,10 +36,10 @@ from fdmnes_util.fdmfile import Fdmfile
 
 
 def main(argv=None):
-    """Remove the output files corresponding to ``Filout``.
+    """`Filout` に対応する出力ファイルを削除する。
 
     Args:
-        argv: Optional command-line argument sequence.
+        argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
     """
     parser = argparse.ArgumentParser(description="Remove FDMNES result files")
     parser.add_argument("-i", "--input")

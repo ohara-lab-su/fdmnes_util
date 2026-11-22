@@ -13,10 +13,9 @@
 #
 # 2015.05.21 startup
 # ---- End of original SAE history ----
-"""Compare FDMNES XAS with an Athena normalized experimental spectrum.
+"""生 XAS ``<Filout>.txt``、``*_conv.txt``、Athena の ``*.nor`` を読み、計算と実験の比較図を保存する。
 
-The original SAE script used fixed Au filenames and energy limits. This
-editable example accepts the same types of files as command-line arguments.
+SAE 原版は Au のファイル名と軸範囲を固定していた。この例では対象ファイルをコマンドライン引数で指定できる。
 """
 
 import argparse
@@ -36,7 +35,7 @@ __license__ = "MIT"
 
 
 def main() -> None:
-    """Read FDMNES and Athena files and save a comparison figure."""
+    """FDMNES と Athena のファイルを読み、比較図を保存する。"""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("-i", "--input", type=Path, default=Path("Au_conv.txt"))
     parser.add_argument("--txt", type=Path, default=Path("Au.txt"))

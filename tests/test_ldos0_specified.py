@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test selected-orbital LDOS plotting from real FDMNES output."""
+"""FDMNES の実出力から指定軌道の LDOS を描く処理を検証する。"""
 
 from pathlib import Path
 
@@ -14,13 +14,13 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 
 def test_single_orbital_matches_reader(tmp_path):
-    """Use the SD reader's p-channel without changing its values."""
+    """SD リーダーが返す p 軌道の値をそのまま使うことを検証する。"""
     reader = FdmSd2020(FIXTURES / "Fe_sd0.txt")
     assert len(reader.get_eng()) == len(reader.get_ldos("p"))
 
 
 def test_cli_uses_input_filout_and_writes_selected_format(tmp_path):
-    """Resolve Fe_sd0.txt from Filout and save a selected plot."""
+    """Filout から Fe_sd0.txt を特定して指定軌道の図を保存することを検証する。"""
     pytest.importorskip("matplotlib")
 
     (tmp_path / "Fe_sd0.txt").write_bytes((FIXTURES / "Fe_sd0.txt").read_bytes())
@@ -52,6 +52,6 @@ def test_cli_uses_input_filout_and_writes_selected_format(tmp_path):
 
 
 def test_2022_format_is_not_automatically_assumed(tmp_path):
-    """Do not interpret unverified 2022 output as a 2020 layout."""
+    """未検証の2022年出力を2020年形式として解釈しないことを検証する。"""
     with pytest.raises(SystemExit):
         main(["--year", "2022"])

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for the SAE orbital grouping modes."""
+"""SAE の軌道グループ指定を回帰検証する。"""
 
 import matplotlib
 import numpy as np
@@ -11,7 +11,7 @@ matplotlib.use("Agg")
 
 
 def test_grouped_orbitals_share_a_panel(tmp_path, monkeypatch):
-    """Group s and p orbitals into two panels instead of three."""
+    """s・p 軌道を三段ではなく二段へ割り当てることを検証する。"""
     from matplotlib.figure import Figure
 
     savefig = Figure.savefig
@@ -40,7 +40,7 @@ def test_grouped_orbitals_share_a_panel(tmp_path, monkeypatch):
 
 
 def test_overlapping_orbital_groups_are_rejected(tmp_path):
-    """Reject a grouping that would display the same orbital twice."""
+    """同じ軌道を二度描く指定を拒否することを検証する。"""
     energy = np.array([0.0, 1.0])
     curves = [("0-s", energy, energy)]
     with pytest.raises(ValueError, match="overlap"):

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for the experimental XAS comparison plot."""
+"""実験・計算 XAS の比較図を回帰検証する。"""
 
 import matplotlib
 import numpy as np
@@ -8,7 +8,7 @@ from fdmnes_util.plot.plot_fdm_xas import PlotFdmXas
 
 
 def test_comparison_plot_creates_pdf(tmp_path):
-    """Save calculated and experimental spectra to one PDF figure."""
+    """実験・計算スペクトルを同じ PDF に保存することを検証する。"""
     matplotlib.use("Agg")
     energies = np.array([11900.0, 11910.0, 11920.0])
     calculated = np.array([0.1, 0.4, 0.8])

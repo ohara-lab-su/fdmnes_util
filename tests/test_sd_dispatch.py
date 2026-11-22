@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check explicit dispatch to year-specific FDMNES SD parsers."""
+"""年別の FDMNES SD リーダーの選択を検証する。"""
 
 from inspect import getmembers, isroutine, signature
 from unittest.mock import patch
@@ -32,7 +32,7 @@ def test_sd_reader_public_methods_have_the_same_signatures(tmp_path):
 
 
 def test_2016_dispatch_preserves_spin_and_weight():
-    """Forward 2016-specific arguments to the 2016 parser."""
+    """2016形式固有の引数を2016年リーダーに渡すことを検証する。"""
     with patch("fdmnes_util.fdm_sd.FdmSd2016") as reader_class:
         selector = FdmSd("example_sd0.txt", format_year=2016, ispin=2, weight=3)
         result = selector.select_reader()
@@ -46,7 +46,7 @@ def test_2016_dispatch_preserves_spin_and_weight():
 
 
 def test_2020_dispatch_uses_2020_parser():
-    """Use the 2020 layout without passing unsupported spin arguments."""
+    """不要なスピン引数を渡さずに2020年リーダーを使うことを検証する。"""
     with patch("fdmnes_util.fdm_sd.FdmSd2020") as reader_class:
         selector = FdmSd("example_sd0.txt", format_year=2020, weight=2)
         result = selector.select_reader()
@@ -56,7 +56,7 @@ def test_2020_dispatch_uses_2020_parser():
 
 
 def test_unverified_format_is_rejected():
-    """Do not silently treat 2022 output as the 2020 layout."""
+    """2022年形式を暗黙に2020年形式として扱わないことを検証する。"""
     with pytest.raises(ValueError, match="Unverified SD layout"):
         FdmSd("example_sd0.txt", format_year=2022)
 
@@ -69,7 +69,7 @@ def test_unverified_format_is_rejected():
     ],
 )
 def test_auto_dispatch_uses_sd_header(tmp_path, header, row, reader_type):
-    """Determine the format without a companion BAV or a revision year."""
+    """対応する BAV や改訂年を使わず SD の形式を選べることを検証する。"""
     path = tmp_path / "example_sd0.txt"
     path.write_text(f"{header}\n{row}\n", encoding="utf-8")
     reader = FdmSd(path, format_year=None).select_reader()
@@ -77,7 +77,7 @@ def test_auto_dispatch_uses_sd_header(tmp_path, header, row, reader_type):
 
 
 def test_magnetic_2020_sd_columns(tmp_path):
-    """Use the 31 columns recorded in the 2021 and 2026 Ni calculations."""
+    """2021年版と2026年版の Ni 出力で確認した31列の読み取りを検証する。"""
     header = (
         "Energy s_up Int(s)_up s_dn Int(s)_dn px_up px_dn py_up py_dn "
         "pz_up pz_dn p_up Int(p)_up p_dn Int(p)_dn dx2-y2_up dx2-y2_dn "

@@ -81,10 +81,11 @@
 #   print "NAME",name
 # Copyright Kengo NAKADA; SAE class library.
 # ---- End of SAE original header ----
-"""Select the FDMNES SD parser for an explicitly specified format year.
+"""FDMNES のサイト別状態密度 ``*_sdN.txt`` を列構成または明示指定で年別リーダーへ渡す。
 
-The 2016 and 2020 layouts are separate formats. A numerical year is not
-sufficient evidence that another FDMNES release uses the same layout.
+FdmSd は2016・2020・2026の列形式を扱う。平均表を保存するときはエネルギー、状態密度、積分の元の列順を保持する。
+
+SD の列構成は版によって異なる。改訂年だけでは書式を決められない。
 """
 
 from functools import cached_property
@@ -98,30 +99,28 @@ from .fdm_sd_2026 import FdmSd2026
 
 
 class FdmSd:
-    """Select the format-specific parser for a site-resolved DOS file.
+    """FDMNES の出力 `*_sdN.txt` を列構成に応じて年別リーダーへ委譲する。
 
-    This class is responsible for SD format selection. The actual file
-    parsing remains the responsibility of the year-specific classes.
+    このクラスは形式を選ぶ。数値列の解釈は年別リーダーに委譲する。
 
     Attributes:
-        path: Path to the SD output file.
-        format_year: Supported file format year, or None to inspect the header.
-        ispin: Spin channel used for the 2016 layout.
-        weight: Optional site-averaging weight.
+        path: 対象ファイルのパス。
+        format_year: 対応する形式年。None なら列名で判定する。
+        ispin: 2016年形式を読む場合のスピン数。
+        weight: 密度列と積分列を規格化する除数。省略時は値を変更しない。
     """
 
     def __init__(self, filename, *, format_year, ispin=1, weight=None):
-        """Store the requested file and validate the SD format.
+        """ファイル名を保持し、指定された SD 形式を検証する。
 
         Args:
-            filename: Path to the FDMNES site-resolved DOS file.
-            format_year: Supported SD layout year (2016, 2020 or 2026), or None to
-                select by SD column names.
-            ispin: Spin channel for the 2016 layout.
-            weight: Optional weighting factor passed to the parser.
+            filename: サイト別状態密度の出力パス。
+            format_year: 対応する形式年。None なら列名で判定する。
+            ispin: 2016年形式を読む場合のスピン数。
+            weight: 密度列と積分列を規格化する除数。省略時は値を変更しない。
 
         Raises:
-            ValueError: If the requested SD format is not verified.
+            ValueError: 指定した SD 形式が未検証の場合。
         """
         if format_year not in (None, 2016, 2020, 2026):
             raise ValueError(
@@ -135,13 +134,14 @@ class FdmSd:
         self.weight = weight
 
     def select_reader(self):
-        """Construct the parser corresponding to the requested layout.
+        """指定または判定した SD 形式のリーダーを作る。
 
         Returns:
-            FdmSd2016 | FdmSd2020 | FdmSd2026: Parser for the selected SD format.
+            FdmSd2016 | FdmSd2020 | FdmSd2026: 選択した SD 形式に対応するリーダー。
         """
         year = self.format_year
         if year is None:
+            # FDMNES 本体の改訂年と SD の列形式は一致するとは限らない。
             with self.path.open(encoding="utf-8", errors="replace") as stream:
                 columns = stream.readline().split()
             old_total = {"Int_t", "Int_t(u)", "Int_t(d)"}.intersection(columns)
@@ -151,6 +151,7 @@ class FdmSd:
                 and any(name.startswith("n(0,0") for name in columns)
             ):
                 year = 2016
+            # f 軌道付きの実基底は通常の s・p・d 列も持つため、先に判定する。
             elif FdmSd2026._matches_header(columns):
                 year = 2026
             elif {"Energy", "s", "Int(s)", "total", "Int(total)"}.issubset(columns):
@@ -173,6 +174,7 @@ class FdmSd:
 
     @cached_property
     def _reader(self):
+        """直接呼び出された取得メソッドが共有する年別リーダーを返す。"""
         return self.select_reader()
 
     def get_densities(self):
@@ -213,19 +215,18 @@ class FdmSd:
 
     @staticmethod
     def format_from_bav(filename):
-        """Return the historical SD layout estimate based on a BAV revision.
+        """従来の BAV 改訂年による SD 形式の推定結果を返す。
 
-        Construct ``FdmSd`` with ``format_year=None`` to identify the layout
-        from the actual SD columns instead.
+        SD 自体の列名で判定するには FdmSd に format_year=None を渡す。
 
         Args:
-            filename: Path to the companion BAV file.
+            filename: 対応する BAV のパス。
 
         Returns:
-            int: Supported SD layout year.
+            int: 対応する SD 形式年。
 
         Raises:
-            ValueError: If the BAV revision is missing or unverified.
+            ValueError: BAV の改訂行がないか、その版が未検証の場合。
         """
         from .fdm_bav import FdmBav
 
@@ -238,13 +239,13 @@ class FdmSd:
 
     @staticmethod
     def write_table(filename, columns, grid, densities):
-        """Write an averaged SD file with all original density columns.
+        """元の密度列を全て保持した平均 SD 表を書き出す。
 
         Args:
-            filename: Destination SD filename.
-            columns: Column names, beginning with the energy label.
-            grid: Original energy grid in eV.
-            densities: Averaged density and integral columns, without energy.
+            filename: 対象ファイルのパス。
+            columns: 元の順序の列名。先頭はエネルギー列。
+            grid: 元のエネルギー格子（eV）。
+            densities: エネルギーを除いた密度・積分列。
         """
         np.savetxt(
             filename,

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check that VASP parsing is delegated to the installed vasp_util module."""
+"""VASP の読み取りをインストール済みの vasp_util に委譲することを検証する。"""
 
 import sys
 import types
@@ -17,21 +17,21 @@ def test_vasp_sample_calls_external_reader_directly(monkeypatch, tmp_path, optio
     filenames = []
 
     class FakeVaspPoscar:
-        """Implement the subset of the provided vasp_util public API."""
+        """テストに必要な vasp_util の公開 I/F を模擬する。"""
 
         def __init__(self, filename):
             filenames.append(filename)
 
         def get_lattice_vectors(self):
-            """Return an orthorhombic test cell."""
+            """テスト用の直方格子を返す。"""
             return np.diag([3.0, 4.0, 5.0])
 
         def get_coords_direct(self):
-            """Return fractional positions."""
+            """分率座標を返す。"""
             return np.array([[0.0, 0.0, 0.0]])
 
         def get_atom_indices(self):
-            """Return the chemical symbols."""
+            """元素記号を返す。"""
             return ["Fe"]
 
     package = types.ModuleType("vasp_util")

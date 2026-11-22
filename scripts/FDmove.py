@@ -17,8 +17,10 @@
 ################################################################################
 ################################################################################
 # ---- End of SAE original header ----
-"""Rename the Filout prefix of FDMNES results or archive the files."""
+"""``*.inp`` の Filout で特定した ``<Filout>.txt``、``*_bav.txt``、``*_conv.txt``、``*_sdN.txt`` などを移動する。
 
+出力の接頭辞を変更するか、元の名前で別フォルダへ移す。
+"""
 import argparse
 
 from fdmnes_util.fdm_result_files import FdmResultFiles
@@ -27,10 +29,10 @@ from fdmnes_util.fdmfile import Fdmfile
 
 
 def main(argv=None):
-    """Move files belonging to the selected Filout prefix.
+    """指定された Filout 接頭辞に属するファイルを移動する。
 
     Args:
-        argv: Optional command-line argument sequence.
+        argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
     """
     parser = argparse.ArgumentParser(description="Rename or archive FDMNES results")
     parser.add_argument("-i", "--input", help="Input providing the source Filout")

@@ -48,24 +48,26 @@
 #   print "NAME",name
 # Copyright Kengo NAKADA; SAE class library.
 # ---- End of SAE original header ----
-"""Read the convolved XAS spectrum written to ``*_conv.txt`` by FDMNES."""
+"""FDMNES の畳み込み XAS 出力 ``*_conv.txt`` を2016年形式で読む。
 
+FdmConv2016 は先頭行に続くエネルギーと吸収強度を読み、平均スペクトルを SAE の二列書式で保存できる。
+"""
 from pathlib import Path
 
 import numpy as np
 
 
 class FdmConv2016:
-    """Retain the energy axis and all absorption columns of one output file."""
+    """FDMNES の出力 `*_conv.txt` を2016年形式で読み、エネルギー軸と全吸収列を保持する。"""
 
     def __init__(self, filename):
-        """Read a convolved XAS file.
+        """畳み込み XAS ファイルを読み込む。
 
         Args:
-            filename: Path to the FDMNES output file.
+            filename: 対象ファイルのパス。
 
         Raises:
-            ValueError: If the input has too few numerical columns.
+            ValueError: 入力の数値列が不足している場合。
         """
         self.path = Path(filename)
 
@@ -80,27 +82,27 @@ class FdmConv2016:
         self.xas = self.values[:, 1:]
 
     def get_eng(self):
-        """Return the energy axis in the file-defined reference frame."""
+        """ファイルで定義された基準のエネルギー軸を返す。"""
         return self.energy
 
     def get_xas(self, spin=0):
-        """Return the requested absorption column.
+        """指定した吸収強度列を返す。
 
         Args:
-            spin: Zero-based index of the absorption column.
+            spin: 0始まりの吸収強度列の番号。
 
         Returns:
-            numpy.ndarray: Absorption intensity values.
+            numpy.ndarray: 吸収強度の配列。
         """
         return self.xas[:, spin]
 
     @staticmethod
     def write_spectrum(filename, spectrum):
-        """Write the SAE two-column convolved average.
+        """畳み込み XAS の平均を SAE の二列書式で保存する。
 
         Args:
-            filename: Destination convolution filename.
-            spectrum: Energy and intensity arrays in the original reference.
+            filename: 対象ファイルのパス。
+            spectrum: ファイルのエネルギー基準でのエネルギーと強度の配列。
         """
         with Path(filename).open("w", encoding="utf-8") as stream:
             stream.write("\n")

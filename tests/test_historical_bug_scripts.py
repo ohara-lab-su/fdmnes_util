@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for the frozen historical SAE conversion scripts."""
+"""変換を停止した SAE の旧スクリプトを回帰検証する。"""
 
 import subprocess
 import sys
@@ -16,11 +16,11 @@ import pytest
     ],
 )
 def test_historical_bug_scripts_do_not_convert(tmp_path, script_name):
-    """Ensure the historical bug versions never produce conversion files.
+    """バグのあった旧版が変換ファイルを出さないことを検証する。
 
     Args:
-        tmp_path: Temporary directory supplied by pytest.
-        script_name: Name of the original frozen SAE script.
+        tmp_path: pytest が用意する一時ディレクトリ。
+        script_name: 変換を停止した SAE 旧版のスクリプト名。
     """
     script = Path(__file__).resolve().parents[1] / "scripts" / script_name
     (tmp_path / "POSCAR").write_text("placeholder\n")

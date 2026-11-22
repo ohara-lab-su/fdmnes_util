@@ -15,10 +15,9 @@
 # 2015.05.18 startup
 # ---- End of original SAE header ----
 # Original author: Kengo NAKADA; Copyright 2015, MIT.
-"""Convert CIF atomic structures to editable FDMNES structure sections.
+"""``*.cif`` を読み、FDMNES の Crystal または Molecule 節を ``*.fdmnes`` などへ書き出す。
 
-The original SAE script stopped at ``bug version`` after loading the CIF.
-This example completes the conversion using the public library classes.
+SAE 原版は CIF 読み込み後に bug version と表示して終了した。この例では公開クラスを使って構造節まで生成する。
 """
 
 import argparse
@@ -29,7 +28,7 @@ from fdmnes_util.fdm_structure import FdmStructure
 
 
 def main() -> None:
-    """Read a CIF file and save a FDMNES structural section."""
+    """CIF ファイルを読み、FDMNES 構造節として保存する。"""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", nargs="?", type=Path)
     parser.add_argument("-i", "--ipput", dest="input_option", type=Path)

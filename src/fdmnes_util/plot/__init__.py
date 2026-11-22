@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Plotting classes for FDMNES spectra and density of states."""
+"""FDMNES データの描画と、``*.pdf``・``*.eps``・``*.png`` などへの図の保存を扱う。
 
+各描画クラスは上位処理から数値配列やリーダーを受け取る。ここにある共通処理は Matplotlib の図を保存・表示し、終了時に閉じる。
+"""
 from pathlib import Path
 
 
 class _PlotFigure:
-    """Matplotlib で作った図の保存・表示・終了を担当する。"""
-
+    """Matplotlib の図を ``*.pdf``・``*.eps``・``*.png`` などに保存し、表示と終了を管理する。"""
     @staticmethod
     def _save_figure(
         figure,
@@ -16,17 +17,17 @@ class _PlotFigure:
         extra_outputs=(),
         show=False,
     ):
-        """Save a figure, optionally display it, and release its resources.
+        """図を保存し、必要に応じて表示して描画リソースを解放する。
 
         Args:
-            figure: Matplotlib figure to save.
-            output: Main output path, whose extension selects the format.
-            extra_formats: Also save PDF, EPS, and PNG with the same basename.
-            extra_outputs: Additional destination paths in save order.
-            show: Open the figure with the currently selected interactive backend.
+            figure: 保存する Matplotlib の図。
+            output: 保存先ファイルのパス。拡張子で出力形式を指定する。
+            extra_formats: 同じ図を PDF・EPS・PNG でも保存する指定。
+            extra_outputs: 同じ図を追加保存するパスの並び。
+            show: 保存後に描画バックエンドで図を表示する指定。
 
         Returns:
-            Path: Main output path.
+            Path: 保存したファイルのパス。
         """
         import matplotlib.pyplot as plt
 

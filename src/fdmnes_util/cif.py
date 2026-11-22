@@ -15,33 +15,33 @@
 # 2015.05.18 startup
 # ---- End of original SAE header ----
 # Original author: Kengo NAKADA; Copyright 2015, MIT.
-"""Represent a CIF crystal structure using ASE.
+"""FDMNES の構造入力に使う ``*.cif`` を ASE で読む。
 
-The SAE command ``FDcif2fdm.py`` reads CIF with ASE but terminates with
-``bug version``. This class provides the missing structure accessors without
-copying ASE's CIF parser.
+Cif は元素記号、格子、原子座標を返す。FDMNES の Crystal 節の生成には FdmStructure を使う。
+
+SAE の FDcif2fdm.py は ASE で CIF を読み込んだ後に bug version と表示して終了する。このクラスは ASE が読んだ構造を提供する。
 """
 
 from pathlib import Path
 
 
 class Cif:
-    """Provide FDMNES structure conversion with CIF-backed atomic data.
+    """構造入力の `*.cif` を読み、FDMNES 用の構造変換に渡す。
 
     Attributes:
-        path: Input CIF file path.
-        atoms: Atomic structure returned by ASE.
+        path: 対象ファイルのパス。
+        atoms: ASE が返した原子構造。
     """
 
     def __init__(self, path: str | Path) -> None:
-        """Load a CIF file.
+        """CIF ファイルを読み込む。
 
         Args:
-            path: Input CIF file path.
+            path: 対象ファイルのパス。
 
         Raises:
-            FileNotFoundError: If the input file is absent.
-            ImportError: If ASE is not installed.
+            FileNotFoundError: 入力ファイルが存在しない場合。
+            ImportError: ASE がインストールされていない場合。
         """
         self.path = Path(path)
         if not self.path.is_file():
@@ -53,33 +53,33 @@ class Cif:
         self.atoms = read(str(self.path), format="cif")
 
     def get_symbols(self) -> list[str]:
-        """Return atomic symbols in the order supplied by ASE.
+        """ASE が返した順に元素記号を返す。
 
         Returns:
-            list[str]: Atomic symbols.
+            list[str]: 原子の元素記号。
         """
         return list(self.atoms.get_chemical_symbols())
 
     def get_lattice_vectors(self):
-        """Return the three cell vectors in angstroms.
+        """3本の格子ベクトルを Å 単位で返す。
 
         Returns:
-            numpy.ndarray: A 3-by-3 array of lattice vectors.
+            numpy.ndarray: 3×3 の格子ベクトル配列。
         """
         return self.atoms.cell.array
 
     def get_direct_positions(self):
-        """Return fractional coordinates in the CIF unit cell.
+        """CIF 単位胞内の分率座標を返す。
 
         Returns:
-            numpy.ndarray: Atomic positions in fractional coordinates.
+            numpy.ndarray: 分率座標での原子位置。
         """
         return self.atoms.get_scaled_positions()
 
     def get_cartesian_positions(self):
-        """Return Cartesian coordinates in angstroms.
+        """直交座標を Å 単位で返す。
 
         Returns:
-            numpy.ndarray: Cartesian atomic positions.
+            numpy.ndarray: 直交座標での原子位置。
         """
         return self.atoms.get_positions()

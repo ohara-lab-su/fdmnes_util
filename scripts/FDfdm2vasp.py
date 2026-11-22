@@ -20,11 +20,9 @@
 ################################################################################
 ################################################################################
 # ---- End of SAE original header ----
-"""Convert a FDMNES Crystal or Molecule input file into a VASP POSCAR.
+"""FDMNES の計算入力 ``*.inp`` の Crystal または Molecule 節を読んで POSCAR に変換する。
 
-This sample uses the file-oriented FdmInp class for FDMNES parsing.
-ASE writes the VASP file. For a molecule, it builds a cell with vacuum
-padding around the positions obtained from the FDMNES coordinate scale.
+FdmInp が計算入力を読み、ASE が POSCAR を書き出す。分子の場合は座標尺度を使って原子位置を求め、真空層を設けたセルを作る。
 """
 
 import argparse
@@ -34,7 +32,7 @@ from fdmnes_util.fdm_structure import FdmStructure
 
 
 def main() -> None:
-    """Convert the selected structure and write it to a POSCAR file."""
+    """指定した構造を変換して POSCAR に保存する。"""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", nargs="?")
     parser.add_argument(

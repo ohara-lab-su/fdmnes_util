@@ -11,33 +11,34 @@
 #   Python2/3 両対応
 #
 # This class is a new file-format writer extracted from the original command.
-"""Write a two-column FDMNES convolution spectrum in photon-energy units."""
+"""光子エネルギーへ変換済みの畳み込み XAS を ``*_conv_photoe.txt`` に保存する。
 
+FdmPhotoenergy は変換済みの数値配列を検証して二列で書き出す。元の ``*_conv.txt`` の読み取りとエネルギー変換は別のクラスが担当する。
+"""
 from pathlib import Path
 
 import numpy as np
 
 
 class FdmPhotoenergy:
-    """Represent the ``*_conv_photoe.txt`` output file format.
+    """解析の派生出力 `*_conv_photoe.txt` に光子エネルギーと吸収強度を保存する。
 
-    The energy conversion itself belongs to ``AnalyzeFdmXas``. This class
-    only validates and writes the converted energy and absorption columns.
+    軸の変換は AnalyzeFdmXas が担当する。このクラスでは変換後のエネルギー列と吸収強度列を検証して保存する。
     """
 
     def write(self, energy, intensity, filename):
-        """Write converted energy and absorption values to a text file.
+        """変換済みのエネルギーと吸収強度をテキストに保存する。
 
         Args:
-            energy: One-dimensional photon-energy values in eV.
-            intensity: One-dimensional absorption values at those energies.
-            filename: Destination path for the converted spectrum.
+            energy: エネルギー値の配列（eV）。
+            intensity: エネルギー各点に対応する一次元の吸収強度。
+            filename: 対象ファイルのパス。
 
         Returns:
-            pathlib.Path: Path to the generated text file.
+            pathlib.Path: 保存したファイルのパス。
 
         Raises:
-            ValueError: If arrays have different lengths or dimensions.
+            ValueError: 配列の長さまたは次元が一致しない場合。
         """
         energy_values = np.asarray(energy)
         intensity_values = np.asarray(intensity)

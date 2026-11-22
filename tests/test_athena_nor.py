@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for Athena files and the original -o command option."""
+"""Athena ファイルと SAE の -o オプションを回帰検証する。"""
 
 from pathlib import Path
 
@@ -13,7 +13,7 @@ main = load_script("FDplot_XASs.py").main
 
 
 def test_read_athena_nor(tmp_path):
-    """Read E0 and the first two columns of a normalized file."""
+    """規格化ファイルの E0 と先頭2列を読むことを検証する。"""
     source = tmp_path / "sample.nor"
     source.write_text("# Athena E0=7112.3\n7100 0.25\n7101 0.75\n")
 
@@ -25,7 +25,7 @@ def test_read_athena_nor(tmp_path):
 
 
 def test_original_observed_option_creates_plot(tmp_path):
-    """The original -o flag requests an observed spectrum overlay."""
+    """原版の -o で実験スペクトルを重ねることを検証する。"""
     pytest.importorskip("matplotlib")
 
     input_file = tmp_path / "read_pdb.inp"

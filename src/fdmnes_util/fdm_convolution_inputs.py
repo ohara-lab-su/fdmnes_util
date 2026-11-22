@@ -3,8 +3,10 @@
 # SAE: K.NAKADA, kengo.nakada@gmail.com
 # SAE: 2018.08.17 - Python2/3 両対応
 # SAE: 2015.06.30 startup
-"""Generate FDMNES convolution inputs for all calculated sites."""
+"""生 XAS ``<Filout>_N.txt`` を参照する ``conv_N.inp`` と ``fdmfile.txt`` を生成する。
 
+FdmConvolutionInputs は番号付きのスペクトルをファイル名順に探し、各サイトの畳み込み入力を SAE 由来の書式で組み立てる。
+"""
 from glob import escape
 from os.path import relpath
 from pathlib import Path
@@ -14,25 +16,22 @@ from .fdmfile import Fdmfile
 
 
 class FdmConvolutionInputs:
-    """Create one convolution input per numbered all-site XAS spectrum."""
-
+    """生 XAS ``<Filout>_N.txt`` を参照して、``conv_N.inp`` と ``fdmfile.txt`` を生成する。"""
     def write(self, filout, output_dir="."):
-        """Generate site-specific convolution jobs and a job-list file.
+        """サイト別の畳み込み入力とジョブ一覧を生成する。
 
-        The source spectra must follow ``<Filout>_<number>.txt``. Other
-        matching files, including already convolved results, are excluded.
+        生スペクトルは `<Filout>_<number>.txt` の名前を使う。畳み込み済みの結果や、番号以外が付いたファイルは対象外。
 
         Args:
-            filout: FDMNES output prefix, optionally including a directory.
-            output_dir: Directory receiving the jobs and serving as the
-                working directory when FDMNES runs them.
+            filout: ディレクトリを含められる出力ファイルの接頭辞。
+            output_dir: 生成した入力を保存し、FDMNES を実行するディレクトリ。
 
         Returns:
-            list[str]: Input filenames in lexicographic order of source spectra.
+            list[str]: 元のスペクトル名を辞書順に並べた順序での入力ファイル名。
 
         Raises:
-            ValueError: If Filout has no filename component.
-            OSError: If the input or job-list files cannot be written.
+            ValueError: Filout にファイル名の部分がない場合。
+            OSError: 計算入力またはジョブ一覧を書き出せない場合。
         """
         prefix_path = Path(filout)
         source_directory = prefix_path.parent

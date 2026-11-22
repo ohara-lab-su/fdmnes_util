@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Regression tests for all-site convolution job generation."""
+"""全サイト用の畳み込みジョブ生成を回帰検証する。"""
 
 from fdmnes_util.fdm_convolution_inputs import FdmConvolutionInputs
 
 
 def test_allsite_convolution_inputs(tmp_path):
-    """Create jobs only for numbered spectra and retain their names."""
+    """番号付きスペクトルだけから元の名前を保ってジョブを生成することを検証する。"""
     (tmp_path / "Fe_1.txt").write_text("sample", encoding="utf-8")
     (tmp_path / "Fe_2.txt").write_text("sample", encoding="utf-8")
     (tmp_path / "Fe_conv.txt").write_text("sample", encoding="utf-8")
@@ -23,7 +23,7 @@ def test_allsite_convolution_inputs(tmp_path):
 
 
 def test_jobs_resolve_numbered_spectra_from_job_directory(tmp_path):
-    """Keep paths valid when results and convolution jobs are in different directories."""
+    """結果と畳み込みジョブのフォルダが異なっても参照できることを検証する。"""
     from fdmnes_util.fdm_inp import FdmInp
 
     spectra = tmp_path / "spectra"

@@ -60,24 +60,25 @@
 #   print "NAME",name
 # Copyright Kengo NAKADA; SAE class library.
 # ---- End of SAE original header ----
-"""Read the non-convolved XANES spectrum written to ``*.txt`` by FDMNES."""
+"""FDMNES の生 XAS 出力 ``<Filout>.txt`` とサイト別の ``<Filout>_N.txt`` を読む。
 
+FdmTxt は見出しの吸収端・フェルミ準位と数値列を保持する。生 XAS の平均を保存する場合は、最初のサイトのメタデータを使う。
+"""
 from pathlib import Path
 
 import numpy as np
 
 
 class FdmTxt:
-    """Read one XAS output, including edge and Fermi-energy metadata."""
-
+    """生 XAS 出力 ``<Filout>.txt`` または ``<Filout>_N.txt`` を読み、吸収強度とエネルギーのメタデータを取り出す。"""
     def __init__(self, filename):
-        """Read a non-convolved XAS file.
+        """未畳み込みの XAS ファイルを読み込む。
 
         Args:
-            filename: Path to the FDMNES output file.
+            filename: 対象ファイルのパス。
 
         Raises:
-            ValueError: If the input has too few numerical columns.
+            ValueError: 入力の数値列が不足している場合。
         """
         self.path = Path(filename)
         lines = self.path.read_text(
@@ -141,36 +142,36 @@ class FdmTxt:
         self.fermi_energy = self.parameters.get("E_Fermi", 0.0)
 
     def get_eng(self):
-        """Return the energy axis in the file-defined reference frame."""
+        """ファイルで定義された基準のエネルギー軸を返す。"""
         return self.energy
 
     def get_xas(self, spin=0):
-        """Return the requested absorption column.
+        """指定した吸収強度列を返す。
 
         Args:
-            spin: Zero-based index of the absorption column.
+            spin: 0始まりの吸収強度列の番号。
 
         Returns:
-            numpy.ndarray: Absorption intensity values.
+            numpy.ndarray: 吸収強度の配列。
         """
         return self.xas[:, spin]
 
     def get_xas_all(self):
-        """Return the absorption matrix, with one row per energy point."""
+        """各行がエネルギー点に対応する吸収強度行列を返す。"""
         return self.xas
 
     def get_edge_xas(self, edge, spin=0):
-        """Select the spin-indexed XAS column for a named absorption edge.
+        """吸収端ラベルとスピン順で生 XAS の吸収強度列を選ぶ。
 
         Args:
-            edge: Edge label as used in the output header, such as L2 or L3.
-            spin: Zero-based index among columns for the selected edge.
+            edge: K や L3 など、出力見出しで使う吸収端ラベル。
+            spin: 指定吸収端の吸収列内での0始まりの番号。
 
         Returns:
-            numpy.ndarray: The matching absorption intensities.
+            numpy.ndarray: 選択した吸収強度。
 
         Raises:
-            ValueError: If the selected edge or spin column is absent.
+            ValueError: 指定した吸収端またはスピンの列がない場合。
         """
         indices = []
         for index, column in enumerate(self.header[1:]):
@@ -184,21 +185,21 @@ class FdmTxt:
         return self.get_xas(indices[spin])
 
     def get_eedge(self):
-        """Return the absorption-edge energy in eV, or None if unavailable."""
+        """吸収端エネルギーを eV 単位で返す。記録がなければ None。"""
         return self.edge_energy
 
     def get_efermi(self):
-        """Return the Fermi energy in eV, defaulting to zero as in SAE."""
+        """フェルミエネルギーを eV 単位で返す。記録がなければ SAE の既定値 0。"""
         return self.fermi_energy
 
     @staticmethod
     def write_spectrum(filename, metadata, spectrum):
-        """Write the SAE two-column average with the first site's metadata.
+        """最初のサイトのメタデータを付け、SAE の二列書式で平均を保存する。
 
         Args:
-            filename: Destination raw XAS filename.
-            metadata: First-line parameters from the corresponding raw file.
-            spectrum: Energy and intensity arrays in the original reference.
+            filename: 対象ファイルのパス。
+            metadata: 対応する生 XAS の1行目にあるパラメーター。
+            spectrum: ファイルのエネルギー基準でのエネルギーと強度の配列。
         """
         np.savetxt(
             filename,

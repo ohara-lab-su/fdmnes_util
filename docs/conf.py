@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Configure the Japanese and English fdmnes_util documentation builds."""
+"""fdmnes_util の日英ドキュメントのビルドを設定する。"""
 
 import os
 import sys
@@ -24,12 +24,12 @@ autodoc_default_options = {"inherited-members": True}
 
 
 def _language_links(app, docname, source):
-    """Render the cross-edition badge as a link to the sibling HTML build.
+    """日英の HTML を相互に移動するためのバッジを生成する。
 
     Args:
-        app: Sphinx application for this edition.
-        docname: Sphinx document identifier.
-        source: Mutable one-element list containing the source Markdown.
+        app: 対象言語版を構成する Sphinx アプリケーション。
+        docname: Sphinx のドキュメント識別子。
+        source: Markdown 原文を含む、変更可能な1要素リスト。
     """
     if docname != "index":
         return
@@ -54,9 +54,9 @@ def _language_links(app, docname, source):
 
 
 def setup(app):
-    """Register the language link hook.
+    """言語切替リンクの生成処理を登録する。
 
     Args:
-        app: Sphinx application being configured.
+        app: 対象言語版を構成する Sphinx アプリケーション。
     """
     app.connect("source-read", _language_links)

@@ -105,7 +105,10 @@
 #   print "NAME",name
 # Copyright Kengo NAKADA; SAE class library.
 # ---- End of SAE original header ----
-"""Read the 2020 FDMNES SD layout with named DOS columns."""
+"""FDMNES の状態密度出力 ``*_sdN.txt`` を2020年形式で読む。
+
+FdmSd2020 は列名から非磁性・磁性の形式を選び、元の列順を保ったまま軌道ごとの密度と積分値を取得する。
+"""
 # fmt: on
 
 from pathlib import Path
@@ -114,19 +117,17 @@ import numpy as np
 
 
 class FdmSd2020:
-    """Read orbital-resolved density of states from a 2020-format SD file.
+    """FDMNES の出力 `*_sdN.txt` を2020年形式で読み、軌道別の状態密度を取得する。
 
-    The first line contains orbital column names. The numerical columns are
-    retained without reordering, so the integrated columns remain associated
-    with the same orbitals as in the original output.
+    先頭行は軌道列名。数値列の順序を保持して元の軌道と積分列の対応を保つ。
 
     Attributes:
-        path: Path of the SD output file.
-        columns: Column labels in their original order.
-        values: Numerical data, including the energy column.
-        energy: Energy axis in electronvolts.
-        lmax: Largest available orbital angular momentum index.
-        ispin: Number of spin channels in this format.
+        path: 対象ファイルのパス。
+        columns: 元の順序の列名。先頭はエネルギー列。
+        values: 数値データの配列。
+        energy: エネルギー値の配列（eV）。
+        lmax: 利用できる最大軌道角運動量。
+        ispin: スピン数。
     """
 
     # total と Int(total) は磁性出力でも全スピン共通の一列。
@@ -166,14 +167,14 @@ class FdmSd2020:
     }
 
     def __init__(self, filename, *, weight=None):
-        """Read a 2020-format density-of-states file.
+        """2020年形式の SD 出力を読み込む。
 
         Args:
-            filename: Path to the SD file, including its suffix.
-            weight: Optional divisor for all density and integrated columns.
+            filename: 対象ファイルのパス。
+            weight: 密度列と積分列を規格化する除数。省略時は値を変更しない。
 
         Raises:
-            ValueError: If the header or column count is inconsistent.
+            ValueError: 見出しと列数が一致しない場合。
         """
         self.path = Path(filename)
         lines = self.path.read_text(errors="replace").splitlines()
@@ -235,24 +236,25 @@ class FdmSd2020:
 
     @staticmethod
     def _magnetic_header(columns):
+        """確認済みの磁性 SD の列数と両スピンの s 軌道列を照合する。"""
         return len(columns) == 31 and {"s_up", "s_dn"}.issubset(columns)
 
     def get_densities(self):
-        """Return all density and integral columns in file order."""
+        """密度と積分の列をファイルの順番で返す。"""
         if self.columns[0] == "Energy":
             return self.values[:, 1:]
         return np.delete(self.values, self.columns.index("Energy"), axis=1)
 
     def get_eng(self):
-        """Return the energy axis (eV)."""
+        """エネルギー軸を eV 単位で返す。"""
         return self.energy
 
     def get_lmax(self):
-        """Return the maximum available orbital angular momentum."""
+        """利用可能な最大軌道角運動量を返す。"""
         return self.lmax
 
     def get_ispin(self):
-        """Return the number of spin channels."""
+        """スピン数を返す。"""
         return self.ispin
 
     def _spin_suffix(self, spin):
@@ -268,19 +270,19 @@ class FdmSd2020:
         raise ValueError(f"Unknown SD spin channel: {spin}")
 
     def get_ldos(self, l=0, spin=0):
-        """Return the l-resolved DOS for the requested orbital.
+        """指定軌道群の状態密度を返す。
 
         Args:
-            l: Orbital angular momentum index or the name s, p, or d.
+            l: 角運動量量子数、または軌道群名。
             spin: スピン番号、または up・dn・down。
 
         Returns:
-            numpy.ndarray: Density values for the requested orbital.
+            numpy.ndarray: 指定した軌道の状態密度。
 
         Raises:
-            ValueError: If spin selects an unavailable channel.
-            IndexError: If a numerical angular momentum is out of range.
-            KeyError: If the orbital column is absent.
+            ValueError: 指定されたスピン列がない場合。
+            IndexError: 数値で指定した角運動量が範囲外の場合。
+            KeyError: 対象の軌道列が存在しない場合。
         """
         suffix = self._spin_suffix(spin)
         if isinstance(l, int):
@@ -290,19 +292,19 @@ class FdmSd2020:
         return self._fields[f"{key}{suffix}"]
 
     def get_intldos(self, l=0, spin=0):
-        """Return the stored integral of an angular-momentum DOS channel.
+        """指定した角運動量の状態密度の積分値を返す。
 
         Args:
-            l: Angular momentum index or group name s, p, or d.
+            l: 角運動量量子数、または軌道群名。
             spin: スピン番号、または up・dn・down。
 
         Returns:
-            numpy.ndarray: Integrated densities on the file's energy grid.
+            numpy.ndarray: ファイルのエネルギー格子に対応する積分状態密度。
 
         Raises:
-            ValueError: If spin selects an unavailable channel.
-            IndexError: If a numerical angular momentum is out of range.
-            KeyError: If the integrated orbital column is absent.
+            ValueError: 指定されたスピン列がない場合。
+            IndexError: 数値で指定した角運動量が範囲外の場合。
+            KeyError: 対象の軌道の積分列が存在しない場合。
         """
         suffix = self._spin_suffix(spin)
         if isinstance(l, int):
@@ -312,20 +314,20 @@ class FdmSd2020:
         return self._fields[f"Int({key}){suffix}"]
 
     def get_pdos(self, l=0, m=0, lm=None, spin=0):
-        """Return an (l, m)-resolved orbital contribution.
+        """角運動量量子数 l と磁気量子数 m で指定した軌道の射影状態密度を返す。
 
         Args:
-            l: Orbital angular momentum index.
-            m: Magnetic quantum number.
-            lm: Optional orbital name, such as ``dxy`` or ``p_x``.
+            l: 角運動量量子数、または軌道群名。
+            m: 磁気量子数。
+            lm: l と m に優先して指定する軌道名。省略可能。
             spin: スピン番号、または up・dn・down。
 
         Returns:
-            numpy.ndarray: Partial density values.
+            numpy.ndarray: 射影状態密度の配列。
 
         Raises:
-            KeyError: If the orbital column does not exist.
-            ValueError: If spin selects an unavailable channel.
+            KeyError: 対象の軌道列が存在しない場合。
+            ValueError: 指定されたスピン列がない場合。
         """
         suffix = self._spin_suffix(spin)
         if lm is not None:
@@ -343,31 +345,31 @@ class FdmSd2020:
         return self._fields[f"{key}{suffix}"]
 
     def get_tdos(self, spin=0):
-        """Return the total DOS column written by FDMNES.
+        """FDMNES が出力した全状態密度の列を返す。
 
         Args:
             spin: スピン指定の有効性を検査する。戻り値は全スピン共通。
 
         Returns:
-            numpy.ndarray: One value per energy point.
+            numpy.ndarray: 各エネルギー点につき一つの値。
 
         Raises:
-            ValueError: If spin selects an unavailable channel.
+            ValueError: 指定されたスピン列がない場合。
         """
         self._spin_suffix(spin)
         return self._fields["total"]
 
     def get_inttdos(self, spin=0):
-        """Return the integrated total DOS column written by FDMNES.
+        """FDMNES が出力した全状態密度の積分列を返す。
 
         Args:
             spin: スピン指定の有効性を検査する。戻り値は全スピン共通。
 
         Returns:
-            numpy.ndarray: One value per energy point.
+            numpy.ndarray: 各エネルギー点につき一つの値。
 
         Raises:
-            ValueError: If spin selects an unavailable channel.
+            ValueError: 指定されたスピン列がない場合。
         """
         self._spin_suffix(spin)
         return self._fields["Int(total)"]

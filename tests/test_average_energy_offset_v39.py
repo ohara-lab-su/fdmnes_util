@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check consistent energy-axis shifts in the averaged DOS/XAS plot."""
+"""平均 DOS・XAS 図でエネルギー軸が一貫して移動することを検証する。"""
 
 import numpy as np
 import pytest
@@ -8,14 +8,14 @@ from fdmnes_util.plot.plot_fdm_average import PlotFdmAverage
 
 
 def test_energy_offset_applies_to_every_panel(tmp_path, monkeypatch):
-    """Shift DOS, broadened XAS, and raw XAS by the same offset."""
+    """DOS、畳み込み XAS、生 XAS に同じ移動量を適用することを検証する。"""
     import matplotlib.axes
 
     recorded = []
     original_plot = matplotlib.axes.Axes.plot
 
     def capture_plot(self, x, y, *args, **kwargs):
-        """Record the energy values passed to Matplotlib."""
+        """Matplotlib に渡されるエネルギー値を記録する。"""
         recorded.append(np.asarray(x).copy())
         return original_plot(self, x, y, *args, **kwargs)
 
@@ -39,7 +39,7 @@ def test_energy_offset_applies_to_every_panel(tmp_path, monkeypatch):
 
 
 def test_energy_offset_rejects_nonfinite(tmp_path):
-    """Reject undefined energy shifts before creating a figure."""
+    """未定義のエネルギー移動量を描画前に拒否することを検証する。"""
     with pytest.raises(ValueError, match="energy_offset"):
         PlotFdmAverage().plot(
             [("p", [0.0, 1.0], [1.0, 2.0])],

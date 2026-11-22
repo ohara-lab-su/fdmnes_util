@@ -1,37 +1,32 @@
 #!/usr/bin/env python3
-"""Average corresponding FDMNES spectra without changing their energy grids.
+"""``*_sdN.txt`` や ``*_conv.txt`` から読み込んだスペクトルを平均する。
 
-SAE source: ``sae/commands/fdPDOS_XAS_av.py`` (2015-09-09; Python 2/3
-update 2018-08-17). The original script averages three calculations.
-This module extracts that numerical operation into a reusable class.
+AnalyzeFdmAverage はリーダーから数値配列を受け取り、格子が一致することを確認して平均する。必要なエネルギー基準は ``*.inp`` と生 XAS ``<Filout>.txt`` のリーダーから得る。ファイルの読み書きは呼び出し側が担当する。
+
+SAE の ``sae/commands/fdPDOS_XAS_av.py`` から、三つの計算の平均処理を取り出した。
+SAE 原版の日付は2015年9月9日で、2018年8月17日に Python 2/3 に対応した。
 """
 
 import numpy as np
 
 
 class AnalyzeFdmAverage:
-    """Average data from independent calculations on a shared energy grid."""
-
+    """``*_sdN.txt`` や ``*_conv.txt`` を読んだリーダーから値を取得して平均する。"""
     def energy_reference(self, input_file, spectrum, fermi=False):
-        """Determine the shared energy shift used by the SAE average plot.
+        """SAE の平均図に使う共通のエネルギー移動量を決める。
 
-        The source script distinguishes FDMNES Fermi-relative and photon-energy
-        calculation modes. Its photon-energy-to-Fermi branch contains a
-        subtraction without assignment; this implementation corrects that
-        specific defect rather than reproducing an undefined offset.
+        SAE 原版はフェルミ準位基準と光子エネルギー基準を区別する。光子エネルギーから変換する分岐では、原版で未代入だった差分を移動量として使う。
 
         Args:
-            input_file: FdmInp instance describing the calculation mode.
-            spectrum: FdmTxt instance containing edge and Fermi energies.
-            fermi: If True, use the Fermi-relative energy reference.
-                Otherwise, use photon energy.
+            input_file: 計算条件とエネルギー基準を読む FdmInp。
+            spectrum: 吸収端とフェルミエネルギーを保持する FdmTxt。
+            fermi: True の場合はフェルミ準位基準、False の場合は光子エネルギー基準。
 
         Returns:
-            tuple[float, float]: Energy-axis shift and absolute Fermi
-            position in the photon-energy reference, both in eV.
+            tuple[float, float]: エネルギー軸の移動量と光子エネルギー基準のフェルミ準位。両方とも eV。
 
         Raises:
-            ValueError: If the required energy metadata is not finite.
+            ValueError: 必要なエネルギーのメタデータが非有限の場合。
         """
         edge_energy = float(spectrum.get_eedge())
         fermi_energy = float(spectrum.get_efermi())
@@ -58,22 +53,20 @@ class AnalyzeFdmAverage:
         return energy_shift, absolute_fermi
 
     def average(self, readers, value_method, *, divisor=None, **kwargs):
-        """Return the common energy axis and arithmetic mean of a quantity.
+        """共通のエネルギー軸と指定データの算術平均を返す。
 
         Args:
-            readers: Nonempty sequence of FDMNES output objects.
-            value_method: Name of the data access method on each object.
-            divisor: Optional positive divisor for the sum, used for SAE's
-                per-atom normalization. Defaults to the number of readers.
-            **kwargs: Arguments passed to the selected data access method.
+            readers: FDMNES 出力のリーダーを一つ以上並べたもの。
+            value_method: 各リーダーから値を取得するメソッド名。
+            divisor: 原子あたりの規格化などで合計を割る正の値。省略時はリーダーの件数。
+            **kwargs: 対象のメソッドに渡す追加のキーワード引数。
 
         Returns:
-            tuple[numpy.ndarray, numpy.ndarray]: Energy and mean values.
+            tuple[numpy.ndarray, numpy.ndarray]: エネルギー軸と平均値。
 
         Raises:
-            ValueError: If readers are missing, grids disagree, or numerical
-                values are non-finite or have inconsistent dimensions.
-            AttributeError: If the requested accessor is unavailable.
+            ValueError: リーダーが空、格子が異なる、または数値が非有限か配列の次元が不一致の場合。
+            AttributeError: 指定の取得メソッドがない場合。
         """
         if not readers:
             raise ValueError("At least one calculation is required")

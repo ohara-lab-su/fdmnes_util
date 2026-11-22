@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""Input and option handling shared by the editable LDOS and PDOS samples."""
+"""``*.inp``・``fdmfile.txt`` から ``*_sdN.txt`` と対応する XAS のパスを解決する描画サンプル用モジュール。
 
+DosPlotSample は ``<Filout>.txt`` や ``*_conv.txt`` を各リーダーに渡し、指定された軌道・スピン・エネルギー基準で図を組み立てる。保存は描画クラスに委譲する。
+"""
 import argparse
 from pathlib import Path
 
@@ -13,7 +15,7 @@ from .fdmfile import Fdmfile
 
 
 class DosPlotSample:
-    """LDOS・PDOS サンプルのコマンド入力と描画データを組み立てる。"""
+    """``*.inp``・``fdmfile.txt`` を手掛かりに ``*_sdN.txt``、生 XAS ``<Filout>.txt``、必要に応じて ``*_conv.txt`` を選び、描画に渡す。"""
 
     def __init__(self, *, projected, shade_occupied=False):
         """軌道の描画方法と占有領域の塗り分けを指定する。
@@ -29,10 +31,10 @@ class DosPlotSample:
             self._kind = "PDOS"
 
     def build_parser(self):
-        """Build the shared SAE option parser for a DOS sample.
+        """DOS サンプル用の SAE 共通オプションを定義する。
 
         Returns:
-            argparse.ArgumentParser: Parser with the original option spellings.
+            argparse.ArgumentParser: 原版のオプション名を採用したパーサー。
         """
         parser = argparse.ArgumentParser(description=f"Plot FDMNES {self._kind}")
         parser.add_argument(
@@ -88,17 +90,17 @@ class DosPlotSample:
         return parser
 
     def plot(self, plotter, options):
-        """Resolve a DOS sample's files and pass its data to the composite renderer.
+        """DOS サンプルの入力ファイルを決定して複合図を描く。
 
         Args:
-            plotter: PlotFdmDos instance used for figure generation.
-            options: Namespace returned by build_parser.
+            plotter: 図を作る PlotFdmDos インスタンス。
+            options: オプション解析で得た Namespace。
 
         Returns:
-            pathlib.Path: Main figure path.
+            pathlib.Path: 保存したファイルのパス。
 
         Raises:
-            ValueError: If a requested spin or file format cannot be used.
+            ValueError: 指定されたスピンまたはファイル形式に対応できない場合。
         """
         input_path = options.source or options.input_file
         if (
@@ -251,17 +253,17 @@ class DosPlotSample:
 
     @staticmethod
     def _divide(values, weight):
-        """Apply the SAE intensity divisor while preserving the energy grid.
+        """エネルギー格子を保持したまま SAE の係数で強度を割る。
 
         Args:
-            values: Spectrum intensity array.
-            weight: Positive divisor, or None to leave the intensity unchanged.
+            values: 数値データの配列。
+            weight: 正の除数。省略時は値を変更しない。
 
         Returns:
-            numpy.ndarray: Scaled intensities.
+            numpy.ndarray: 換算後の強度。
 
         Raises:
-            ValueError: If the divisor is nonpositive or nonfinite.
+            ValueError: 除数が正の有限値ではない場合。
         """
         from math import isfinite
 
@@ -273,13 +275,13 @@ class DosPlotSample:
 
     @staticmethod
     def _is_sd_table(filename):
-        """Distinguish an SD table from a positional SAE input ending in .txt.
+        """位置引数の `.txt` が SD 表か SAE の計算入力かを判別する。
 
         Args:
-            filename: Path provided as the first positional argument.
+            filename: 対象ファイルのパス。
 
         Returns:
-            bool: True when the first record is an SD energy header.
+            bool: 先頭行が SD のエネルギー見出しなら True。
         """
         with Path(filename).open(encoding="utf-8", errors="replace") as stream:
             header = stream.readline().lower().split()
