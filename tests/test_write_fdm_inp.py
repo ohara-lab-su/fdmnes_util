@@ -52,3 +52,22 @@ def test_molecule_keyword(tmp_path):
     )
     assert " Molecule" in content
     assert " Crystal" not in content
+
+
+def test_density_output_options(tmp_path):
+    structure = FdmStructure(ExampleStructure())
+    assert FdmInp.render(structure_writer=structure, format_year=2026) == FdmInp.render(
+        structure_writer=structure,
+    )
+    path = FdmInp.write(
+        tmp_path / "Au.inp",
+        absorber=[1, 2],
+        format_year=2026,
+        structure_writer=structure,
+        density_complex=True,
+        lmax_dosout=3,
+    )
+    inp = FdmInp(path, format_year=2026)
+    assert "density_comp" in inp.tags
+    assert inp.tags["lmax_dosout"] == ["3"]
+    assert inp.get_absorbers() == [1, 2]

@@ -120,6 +120,62 @@ def test_xas_and_conversion(tmp_path):
     assert np.loadtxt(out).shape[0] == len(energy)
 
 
+def test_convolution_header_keeps_parameters_and_column_names(tmp_path):
+    path = tmp_path / "Fe_conv.txt"
+    path.write_text(
+        "# FDMNES program, Revision 5th of November 2026\n"
+        "# 7112.0 1.25 10.0 -0.66631 = E_edge, Gamma_hole, Gamma_max, E_cut\n"
+        "# 0.76830 -0.2 = Shifts\n"
+        "    Energy    <xanes>\n"
+        " -2.00000  3.4835903E-04\n"
+    )
+    reader = FdmConv(path)
+    assert reader.format_year == 2026
+    assert reader.header == "Energy    <xanes>"
+    assert reader.parameters["E_edge"] == 7112.0
+    assert reader.shifts == (0.76830, -0.2)
+    assert reader.get_eng().tolist() == [-2]
+    assert reader.get_xas().tolist() == [3.4835903e-4]
+
+    ordinary = FdmConv(F / "Fe_conv.txt")
+    assert ordinary.format_year == 2016
+    np.testing.assert_array_equal(
+        ordinary.get_eng(), ordinary.select_reader().get_eng()
+    )
+
+
+def test_combined_input_round_trip(tmp_path):
+    path = FdmInp.write_convolution(
+        tmp_path / "conv.inp",
+        [("Fe_sites_1", 1, 0.2), ("Fe_sites_2", 1, -0.2)],
+        output="weighted_conv.txt",
+        format_year=2026,
+        header=True,
+        energy_step=0.25,
+        per_atom=True,
+    )
+    reader = FdmInp(path, format_year=2026)
+    assert reader.get_calculation() == "Fe_sites_1"
+    assert reader.get_calculations() == [
+        ("Fe_sites_1", 1.0, 0.2, None),
+        ("Fe_sites_2", 1.0, -0.2, None),
+    ]
+    assert reader.get_conv_out() == "weighted_conv.txt"
+    assert "header" in reader.tags
+    assert reader.tags["e_step_conv"] == ["0.25"]
+    assert "per_atom" in reader.tags
+
+
+def test_read_multi_absorber_last_record(tmp_path):
+    path = tmp_path / "sites.inp"
+    path.write_text("Absorber 4\nAbsorber\n2 5\nDensity\nEND\n")
+    reader = FdmInp(path, format_year=2026)
+    assert reader.get_absorber() == 2
+    assert reader.get_absorbers() == [2, 5]
+    with pytest.raises(ValueError):
+        FdmInp(path).get_absorber()
+
+
 def test_input_missing_crystal(tmp_path):
     """test_input_missing_crystalの処理を実行する。
 

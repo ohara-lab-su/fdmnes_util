@@ -8,6 +8,16 @@ SAE の命名では、大文字の `FD*.py` は汎用コマンド、小文字の
 
 下表の原本は提供された `sae_original.zip` 内の `sae/commands/<同名ファイル>` です。引数、既定値、図の見た目まで同じとは限りません。原本と共通しないオプションや検証範囲は [コマンド監査](https://github.com/ohara-lab-su/fdmnes_util/blob/main/.PROGRESS/COMMAND_AUDIT.md) を参照してください。
 
+## 2026年版の出力と計算の実行
+
+```console
+python FDrun.py read_pdb.inp --executable /path/to/fdmnes
+python FDplot_SD.py Au_sd0.txt --orbital '(3,0)' --nw -o Au_f.pdf
+python FDplot_SCF.py Fe_bav.txt --nw -o Fe_scf.pdf
+python FDconv_sites.py --site Fe_1.txt 1 0.2 --site Fe_2.txt 1 -0.2 --header --energy-step 0.25 --per-atom
+python FDrun.py conv.inp
+```
+
 ## POSCAR 読み込みと vasp_util 原本
 
 SAE の `FDvasp2fdm.py` は ASE で POSCAR を読み、`AseInputOperations` で FDMNES 用の構造を整えていました。現行の `FDvasp2fdm.py` では 外部ライブラリの `vasp_util.vasp_poscar.VaspPoscar` を直接使い、`get_lattice_vectors()`、`get_coords_direct()`、`get_atom_indices()` で格子・分率座標・原子順の元素記号を取得します。これらの読み取りメソッドは `vasp_util_original.zip` 内の `vasp_util/vasp_poscar.py` で確認できます。FDMNES の構造節と入力の生成は現行の `FdmStructure` と `FdmInp` が担当します。逆方向の `FDfdm2vasp.py` は FDMNES 入力の構造を ASE に渡し、ASE で POSCAR を書き出します。

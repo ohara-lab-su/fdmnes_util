@@ -87,12 +87,14 @@ The 2016 and 2020 layouts are separate formats. A numerical year is not
 sufficient evidence that another FDMNES release uses the same layout.
 """
 
+from functools import cached_property
 from pathlib import Path
 
 import numpy as np
 
 from .fdm_sd_2016 import FdmSd2016
 from .fdm_sd_2020 import FdmSd2020
+from .fdm_sd_2026 import FdmSd2026
 
 
 class FdmSd:
@@ -113,7 +115,7 @@ class FdmSd:
 
         Args:
             filename: Path to the FDMNES site-resolved DOS file.
-            format_year: Supported SD layout year (2016 or 2020), or None to
+            format_year: Supported SD layout year (2016, 2020 or 2026), or None to
                 select by SD column names.
             ispin: Spin channel for the 2016 layout.
             weight: Optional weighting factor passed to the parser.
@@ -121,7 +123,7 @@ class FdmSd:
         Raises:
             ValueError: If the requested SD format is not verified.
         """
-        if format_year not in (None, 2016, 2020):
+        if format_year not in (None, 2016, 2020, 2026):
             raise ValueError(
                 f"Unverified SD layout for year {format_year}; "
                 "explicitly choose a tested format"
@@ -136,17 +138,21 @@ class FdmSd:
         """Construct the parser corresponding to the requested layout.
 
         Returns:
-            FdmSd2016 | FdmSd2020: Parser for the selected SD format.
+            FdmSd2016 | FdmSd2020 | FdmSd2026: Parser for the selected SD format.
         """
         year = self.format_year
         if year is None:
             with self.path.open(encoding="utf-8", errors="replace") as stream:
                 columns = stream.readline().split()
             old_total = {"Int_t", "Int_t(u)", "Int_t(d)"}.intersection(columns)
-            if "Energy" in columns and old_total and any(
-                name.startswith("n(0,0") for name in columns
+            if (
+                "Energy" in columns
+                and old_total
+                and any(name.startswith("n(0,0") for name in columns)
             ):
                 year = 2016
+            elif FdmSd2026._matches_header(columns):
+                year = 2026
             elif {"Energy", "s", "Int(s)", "total", "Int(total)"}.issubset(columns):
                 year = 2020
             elif FdmSd2020._magnetic_header(columns):
@@ -161,7 +167,49 @@ class FdmSd:
                 weight=self.weight,
             )
 
+        if year == 2026:
+            return FdmSd2026(self.path, weight=self.weight)
         return FdmSd2020(self.path, weight=self.weight)
+
+    @cached_property
+    def _reader(self):
+        return self.select_reader()
+
+    def get_densities(self):
+        """出力順の密度列を返す。"""
+        return self._reader.get_densities()
+
+    def get_eng(self):
+        """エネルギー軸を返す。"""
+        return self._reader.get_eng()
+
+    def get_lmax(self):
+        """最大角運動量を返す。"""
+        return self._reader.get_lmax()
+
+    def get_ispin(self):
+        """スピン数を返す。"""
+        return self._reader.get_ispin()
+
+    def get_tdos(self, spin=0):
+        """全状態密度を返す。"""
+        return self._reader.get_tdos(spin=spin)
+
+    def get_inttdos(self, spin=0):
+        """積分全状態密度を返す。"""
+        return self._reader.get_inttdos(spin=spin)
+
+    def get_ldos(self, l=0, spin=0):
+        """軌道群の状態密度を返す。"""
+        return self._reader.get_ldos(l=l, spin=spin)
+
+    def get_intldos(self, l=0, spin=0):
+        """軌道群の積分状態密度を返す。"""
+        return self._reader.get_intldos(l=l, spin=spin)
+
+    def get_pdos(self, l=0, m=0, lm=None, spin=0):
+        """軌道射影の状態密度を返す。"""
+        return self._reader.get_pdos(l=l, m=m, lm=lm, spin=spin)
 
     @staticmethod
     def format_from_bav(filename):
