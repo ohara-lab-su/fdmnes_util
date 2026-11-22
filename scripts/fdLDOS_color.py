@@ -31,7 +31,7 @@ def main(argv=None):
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", help="Path to the FDMNES *_sd*.txt file")
-    parser.add_argument("--year", type=int, required=True)
+    parser.add_argument("--year", type=int)
     parser.add_argument("--orbital", default="p")
     parser.add_argument("--edge-offset", type=float, default=0.0)
     parser.add_argument("--fermi", type=float, default=0.0)

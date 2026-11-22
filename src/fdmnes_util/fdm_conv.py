@@ -71,8 +71,8 @@ class FdmConv:
 
         with self.path.open(encoding="utf-8", errors="replace") as file:
             self.header = file.readline().strip()
+            self.values = np.loadtxt(file, ndmin=2)
 
-        self.values = np.loadtxt(self.path, skiprows=1, ndmin=2)
         if self.values.shape[1] < 2:
             raise ValueError("FDMNES convolution output requires an XAS column")
 
@@ -102,10 +102,6 @@ class FdmConv:
             filename: Destination convolution filename.
             spectrum: Energy and intensity arrays in the original reference.
         """
-        np.savetxt(
-            filename,
-            np.column_stack(spectrum),
-            fmt="  %14.8f %14.8f",
-            header=" ",
-            comments="",
-        )
+        with Path(filename).open("w", encoding="utf-8") as stream:
+            stream.write("\n")
+            np.savetxt(stream, np.column_stack(spectrum), fmt="  %14.8f %14.8f")

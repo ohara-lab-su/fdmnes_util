@@ -3,6 +3,8 @@
 
 from pathlib import Path
 
+from ._figure import save_figure
+
 
 class PlotFdmDos:
     """Create density-of-states figures without parsing an SD file."""
@@ -58,9 +60,7 @@ class PlotFdmDos:
 
         axis.legend(loc="upper right")
         figure.tight_layout()
-        figure.savefig(output)
-        plt.close(figure)
-        return Path(output)
+        return save_figure(figure, output)
 
     def plot_occupied_ldos(
         self,
@@ -127,9 +127,7 @@ class PlotFdmDos:
 
         axis.legend(loc="upper right")
         figure.tight_layout()
-        figure.savefig(output)
-        plt.close(figure)
-        return Path(output)
+        return save_figure(figure, output)
 
     def plot(self, reader, output, orbitals=("s", "p", "d"), *, integrated=False):
         """Plot orbital-resolved density-of-states curves.
@@ -169,9 +167,7 @@ class PlotFdmDos:
         axis.set_ylabel("DOS")
         axis.legend()
         figure.tight_layout()
-        figure.savefig(output)
-        plt.close(figure)
-        return Path(output)
+        return save_figure(figure, output)
 
     def save_multiple_formats(
         self,
@@ -211,9 +207,6 @@ class PlotFdmDos:
                 includes an unsupported output format.
         """
         supported_formats = {"eps", "pdf", "png"}
-        if not formats:
-            raise ValueError("At least one output format is required")
-
         output_paths = []
         used_formats = set()
         for image_format in formats:
@@ -223,20 +216,23 @@ class PlotFdmDos:
             if normalized_format in used_formats:
                 raise ValueError(f"Duplicate format: {image_format}")
             used_formats.add(normalized_format)
-
             destination = Path(output_prefix).with_suffix(f".{normalized_format}")
-            self.plot_multiple_sites(
-                readers,
-                labels,
-                destination,
-                edge_energy=edge_energy,
-                fermi_energy=fermi_energy,
-                orbital=orbital,
-                emin=emin,
-                emax=emax,
-            )
             output_paths.append(destination)
 
+        if not output_paths:
+            raise ValueError("At least one output format is required")
+
+        # SAE の fdLDOSmulti.py と同様、同じ図を指定の各形式に保存する。
+        figure = self._multiple_sites_figure(
+            readers,
+            labels,
+            edge_energy=edge_energy,
+            fermi_energy=fermi_energy,
+            orbital=orbital,
+            emin=emin,
+            emax=emax,
+        )
+        save_figure(figure, output_paths[0], extra_outputs=output_paths[1:])
         return output_paths
 
     def plot_multiple_sites(
@@ -273,6 +269,28 @@ class PlotFdmDos:
         Raises:
             ValueError: If exactly three readers and labels are not supplied.
         """
+        figure = self._multiple_sites_figure(
+            readers,
+            labels,
+            edge_energy=edge_energy,
+            fermi_energy=fermi_energy,
+            orbital=orbital,
+            emin=emin,
+            emax=emax,
+        )
+        return save_figure(figure, output)
+
+    @staticmethod
+    def _multiple_sites_figure(
+        readers,
+        labels,
+        *,
+        edge_energy,
+        fermi_energy,
+        orbital,
+        emin,
+        emax,
+    ):
         if len(readers) != 3:
             raise ValueError("Exactly three SD readers are required")
         if len(labels) != 3:
@@ -319,9 +337,7 @@ class PlotFdmDos:
             axes[-1].set_xlim(right=emax)
 
         figure.tight_layout()
-        figure.savefig(output)
-        plt.close(figure)
-        return Path(output)
+        return figure
 
     def plot_three_calculations(
         self,
@@ -403,9 +419,7 @@ class PlotFdmDos:
 
         axes[-1].set_xlabel("Energy relative to Fermi level [eV]")
         figure.tight_layout()
-        figure.savefig(output)
-        plt.close(figure)
-        return Path(output)
+        return save_figure(figure, output)
 
     def plot_composite(
         self,
@@ -460,8 +474,6 @@ class PlotFdmDos:
                 requested for magnetic-sublevel projections.
         """
         import matplotlib.pyplot as plt
-
-        from ._figure import save_figure
 
         if not groups or not spins:
             raise ValueError("At least one DOS group and spin are required")

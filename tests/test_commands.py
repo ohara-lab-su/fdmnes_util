@@ -135,8 +135,8 @@ def test_bav2xyz_real_data(tmp_path, capsys):
     xyz = tmp_path / "Fe.xyz"
     assert xyz.exists()
     lines = xyz.read_text().splitlines()
-    assert lines[2].startswith("Fe ")
-    assert lines[3].startswith("O ")
+    assert lines[2].startswith(" Fe ")
+    assert lines[3].startswith(" O ")
 
 
 def test_convolution_allsite(tmp_path, monkeypatch):

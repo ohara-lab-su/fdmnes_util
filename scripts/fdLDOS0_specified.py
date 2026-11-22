@@ -23,7 +23,7 @@ def main(argv=None):
     """
     parser = argparse.ArgumentParser(description="Plot p-orbital FDMNES LDOS")
     parser.add_argument("-i", "--input", default="read_pdb.inp")
-    parser.add_argument("--year", type=int, choices=(2016, 2020), required=True)
+    parser.add_argument("--year", type=int, choices=(2016, 2020))
     parser.add_argument("--emin", type=float)
     parser.add_argument("--emax", type=float)
     parser.add_argument("--dmax", type=float)

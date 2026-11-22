@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Extract cluster coordinates from FDMNES calculation logs."""
 
-from importlib.resources import files
+from functools import cached_property
 
 import numpy as np
+
+from ._elements import SYMBOLS_BY_NUMBER
 
 
 class AnalyzeFdmLog:
@@ -26,15 +28,16 @@ class AnalyzeFdmLog:
         Raises:
             ValueError: If the cluster section is absent or has no atom rows.
         """
-        table = files("fdmnes_util").joinpath("atomic_symbols.list")
-        periodic = {}
-        for row in table.read_text(encoding="utf-8").splitlines():
-            atomic_number, symbol = row.split()[:2]
-            periodic[int(atomic_number)] = symbol
+        # SAE と同様に座標表を一度だけ解析する。返した値の変更は内部に反映しない。
+        symbols, positions = self._cluster
+        return symbols.copy(), positions.copy()
 
-        source = iter(self.reader.lines)
-        for line in source:
-            if "Cluster: atom positions in order" in line:
+    @cached_property
+    def _cluster(self):
+        lines = self.reader.lines
+        # SAE replaces the stored cluster whenever another table is found.
+        for index in range(len(lines) - 1, -1, -1):
+            if "Cluster: atom positions in order" in lines[index]:
                 break
         else:
             raise ValueError("Cluster: atom positions section is missing")
@@ -43,12 +46,12 @@ class AnalyzeFdmLog:
         # Fortran D exponents. Skip headings and stop after the final atom row.
         symbols = []
         positions = []
-        for line in source:
+        for line in lines[index + 1 :]:
             parts = line.split()
             try:
                 if len(parts) < 4:
                     raise ValueError("Incomplete cluster row")
-                symbol = periodic[int(parts[0])]
+                symbol = SYMBOLS_BY_NUMBER[int(parts[0])]
                 point = [float(value.replace("D", "E")) for value in parts[1:4]]
             except (ValueError, KeyError):
                 if symbols:

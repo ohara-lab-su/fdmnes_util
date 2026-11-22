@@ -56,8 +56,8 @@ class FdmXyz:
 
             # Preserve the ten-decimal-place coordinate representation.
             atom_line = (
-                f"{symbol} {x_coordinate:.10f} "
-                f"{y_coordinate:.10f} {z_coordinate:.10f}"
+                f" {symbol} {x_coordinate:14.10f} "
+                f"{y_coordinate:14.10f} {z_coordinate:14.10f}"
             )
             lines.append(atom_line)
 

@@ -238,11 +238,11 @@ With `Filout=Fe`, the calculation input, `Fe.txt`, `Fe_conv.txt`, and `Fe_sd0.tx
 **Example**
 
 ```bash
-python FDplot_XAS_LDOS.py -i read_pdb.inp -a 0 --year 2020
+python FDplot_XAS_LDOS.py -i read_pdb.inp -a 0
 ```
 
 **Changes from SAE**
-The current version requires `--year` and draws the available s, p, and d groups. Orbital-selection aliases `--orbit` and `-l` belong to the original.
+The current version detects the SD format from the column names and draws the available s, p, and d groups. Use `--year` to select a layout explicitly. Orbital-selection aliases `--orbit` and `-l` belong to the original.
 
 ### `FDplot_XASs.py`
 

@@ -163,6 +163,7 @@ class FdmInp:
         ).splitlines()
 
         self.tags = {}
+        self._last_record_offsets = {}
         current_keyword = None
 
         for line in self.lines:
@@ -176,23 +177,30 @@ class FdmInp:
 
             words = content.split()
             keyword = words[0].lower()
+            if keyword in ("fileout", "file_out", "fil_out"):
+                keyword = "filout"
 
             if keyword == "end":
                 break
 
             if keyword in self.KEYWORDS:
                 current_keyword = keyword
-                if keyword not in self.tags:
-                    self.tags[keyword] = []
+                values = self.tags.setdefault(keyword, [])
+                self._last_record_offsets[keyword] = len(values)
 
                 if len(words) > 1:
                     value = " ".join(words[1:])
-                    self.tags[keyword].append(value)
+                    values.append(value)
                 continue
 
             # Values on subsequent lines belong to the preceding keyword.
             if current_keyword is not None:
                 self.tags[current_keyword].append(content)
+
+    def _last_record(self, keyword):
+        # SAE replaces the previous scalar value when a keyword is repeated.
+        offset = self._last_record_offsets.get(keyword, 0)
+        return self.tags.get(keyword, [])[offset:]
 
     def get_filout(self):
         """Return the output-file prefix specified by ``Filout``.
@@ -200,7 +208,7 @@ class FdmInp:
         Returns:
             str: Output prefix, or an empty string when absent.
         """
-        values = self.tags.get("filout", [])
+        values = self._last_record("filout")
         if values:
             return values[0]
         return ""
@@ -216,7 +224,7 @@ class FdmInp:
         """
         if "absorber" not in self.tags:
             return 1
-        values = self.tags["absorber"]
+        values = self._last_record("absorber")
         if not values:
             raise ValueError("Absorber requires a positive atom index")
         try:
@@ -275,7 +283,7 @@ class FdmInp:
         Returns:
             str: Convolution-output value, or an empty string.
         """
-        values = self.tags.get("conv_out", [])
+        values = self._last_record("conv_out")
         if values:
             return values[0]
         return ""
@@ -286,7 +294,7 @@ class FdmInp:
         Returns:
             str: Calculation value, or an empty string.
         """
-        values = self.tags.get("calculation", [])
+        values = self._last_record("calculation")
         if values:
             return values[0]
         return ""

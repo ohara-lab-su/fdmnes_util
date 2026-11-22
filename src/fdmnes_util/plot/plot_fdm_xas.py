@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Plot XAS spectra. File parsing and energy conversion belong elsewhere."""
 
-from pathlib import Path
+from ._figure import save_figure
 
 
 class PlotFdmXas:
@@ -59,9 +59,7 @@ class PlotFdmXas:
             axis.legend()
 
         figure.tight_layout()
-        figure.savefig(output)
-        plt.close(figure)
-        return Path(output)
+        return save_figure(figure, output)
 
     def plot_sites(
         self,
@@ -143,9 +141,7 @@ class PlotFdmXas:
             top.set_visible(False)
 
         figure.tight_layout()
-        figure.savefig(output)
-        plt.close(figure)
-        return Path(output)
+        return save_figure(figure, output)
 
     def plot_experiment_comparison(
         self,
@@ -205,9 +201,7 @@ class PlotFdmXas:
         axis.set_ylim(bottom=ymin, top=ymax)
         axis.legend(loc="lower right")
         figure.tight_layout()
-        figure.savefig(output)
-        plt.close(figure)
-        return Path(output)
+        return save_figure(figure, output)
 
     def plot_composite(
         self,
@@ -247,8 +241,6 @@ class PlotFdmXas:
             pathlib.Path: Main figure path.
         """
         import matplotlib.pyplot as plt
-
-        from ._figure import save_figure
 
         with plt.rc_context(
             {"font.size": 16, "legend.fontsize": 14, "axes.linewidth": 1.5}

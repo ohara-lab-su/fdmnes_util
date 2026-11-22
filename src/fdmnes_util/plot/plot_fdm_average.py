@@ -5,7 +5,7 @@ SAE source: ``sae/commands/fdPDOS_XAS_av.py``. The original program
 uses a portrait layout with orbital blocks and an optional XAS panel.
 """
 
-from pathlib import Path
+from ._figure import save_figure
 
 
 class PlotFdmAverage:
@@ -24,6 +24,7 @@ class PlotFdmAverage:
         ymax=None,
         energy_offset=0.0,
         orbital_groups=None,
+        fermi_position=None,
     ):
         """Save a stacked plot of orbital projections and optional XAS.
 
@@ -39,6 +40,7 @@ class PlotFdmAverage:
             energy_offset: Energy shift in eV applied to every plotted curve.
             orbital_groups: Optional orbital-name groups. Each group is
                 plotted in one panel, following the SAE orbital block layout.
+            fermi_position: Fermi level in the displayed energy reference, in eV.
 
         Returns:
             pathlib.Path: Path to the generated figure.
@@ -135,13 +137,16 @@ class PlotFdmAverage:
                     linewidth=1.0,
                     label="XAS (without broadening)",
                 )
-                axis.legend(loc="lower right")
+            axis.legend(loc="lower right")
             axis.set_ylabel("XAS [arb. unit]")
             if ymax is not None:
                 axis.set_ylim(top=ymax)
 
         for axis_row in axes:
             axis = axis_row[0]
+            # SAE の平均図と同じく、全パネルにフェルミ準位を示す。
+            if fermi_position is not None:
+                axis.axvline(fermi_position, color="black", linewidth=1)
             if emin is not None:
                 axis.set_xlim(left=emin)
             if emax is not None:
@@ -149,6 +154,4 @@ class PlotFdmAverage:
 
         axes[-1, 0].set_xlabel("Energy [eV]")
         figure.tight_layout()
-        figure.savefig(output)
-        plt.close(figure)
-        return Path(output)
+        return save_figure(figure, output)

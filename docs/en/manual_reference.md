@@ -15,15 +15,15 @@ Read, inspect, and generate FDMNES calculation inputs.
 | Method and parameter defaults | Parameter meanings | Return value |
 | --- | --- | --- |
 | `__init__(filename='read_pdb.inp')` | `filename` Path to the FDMNES input file. | None. |
-| `get_filout()` | — | str: Output prefix, or an empty string when absent. |
-| `get_absorber()` | — | int. One-based absorber index. Defaults to 1 when absent. An invalid index raises ValueError. |
+| `get_filout()` | — | str: Last `Filout` or `File_out` value, or an empty string when absent. |
+| `get_absorber()` | — | int. One-based absorber index from the last `Absorber` record. Defaults to 1 when absent. An invalid index raises ValueError. |
 | `get_ispin()` | — | int: Two when `Spin` or `Magnetism` is specified, otherwise one. |
 | `get_allsite()` | — | bool: True when `Allsite` is present. |
 | `get_energygpho()` | — | bool: True when `Energpho` or `Energygpho` is present. |
 | `get_nonexc()` | — | bool: True when the keyword is present. |
 | `get_convolution()` | — | bool: True when `Convolution` is present. |
 | `get_conv_out()` | — | str: Convolution-output value, or an empty string. |
-| `get_calculation()` | — | str: Calculation value, or an empty string. |
+| `get_calculation()` | — | str: Last `Calculation` value, or an empty string. |
 | `get_cellparam()` | — | list[float] \| None: The six cell parameters, or None when absent. |
 | `get_crystal_atoms()` | — | ase.Atoms: Periodic atomic structure with fractional positions. |
 | `get_molecule_atoms()` | — | ase.Atoms: Atom positions in angstroms, with periodicity disabled. |
@@ -152,21 +152,20 @@ output = FdmPhotoenergy().write([7112.0, 7113.0], [0.2, 0.5], "Fe_conv_photoe.tx
 
 `from fdmnes_util.fdm_sd import FdmSd`
 
-Select the format-specific parser for a site-resolved DOS file.
+Select the format-specific parser for a site-resolved DOS file. For files such as the 2019 Cu output, the BAV revision does not identify the SD layout. Pass `format_year=None` to inspect the SD column names.
 
 | Method and parameter defaults | Parameter meanings | Return value |
 | --- | --- | --- |
-| `__init__(filename, *, format_year, ispin=1, weight=None)` | `filename` Path to the FDMNES site-resolved DOS file. `format_year` Supported SD layout year (2016 or 2020). `ispin` Number of spin channels for the 2016 layout. `weight` Optional divisor for density and integral columns. | None. |
+| `__init__(filename, *, format_year, ispin=1, weight=None)` | `filename` Path to the FDMNES site-resolved DOS file. `format_year` Supported SD layout year (2016 or 2020), or None to inspect the SD column names. `ispin` Number of spin channels for the 2016 layout. `weight` Optional divisor for density and integral columns. | None. |
 | `select_reader()` | — | FdmSd2016 \| FdmSd2020: Parser for the selected SD format. |
-| `format_from_bav(filename)` (static) | `filename` Path to the companion BAV file. | int: Supported SD layout year. |
+| `format_from_bav(filename)` (static) | `filename` Path to the companion BAV file. This legacy method estimates the layout from the revision. | int: Supported SD layout year. |
 | `write_table(filename, columns, grid, densities)` (static) | `filename` Destination SD filename. `columns` Column names, beginning with the energy label. `grid` Original energy grid in eV. `densities` Averaged density and integral columns, without energy. | None. Writes the SD table. |
 
 **Example**
 
 ```python
 from fdmnes_util.fdm_sd import FdmSd
-year = FdmSd.format_from_bav("Fe_bav.txt")
-sd = FdmSd("Fe_sd0.txt", format_year=year).select_reader()
+sd = FdmSd("Fe_sd0.txt", format_year=None).select_reader()
 energy, p_ldos = sd.get_eng(), sd.get_ldos("p")
 ```
 
@@ -307,6 +306,26 @@ Extract calculation information from a 2020-format `_bav.txt` file.
 from fdmnes_util.fdm_bav_2020 import FdmBav2020
 log = FdmBav2020("Fe_bav.txt")
 symbols, positions = log.get_atoms_index_j(), log.get_position()
+```
+
+### `FdmBav2026`
+
+`from fdmnes_util.fdm_bav_2026 import FdmBav2026`
+
+This subclass reads SCF records of the form `Cycle n, Fermi energy = ...` and `Total energy = ... eV, Delta energy = ...` verified in FDMNES 2026.11.05 BAV output. Instantiate it with a log path. Common methods such as cluster coordinates and edge information retain the behavior documented under `FdmBav2020`.
+
+| Method and parameter defaults | Parameter meanings | Return value |
+| --- | --- | --- |
+| `__init__(filename)` (inherited) | BAV file path. | `None`. |
+| `get_n_scf_loop()` | No parameters. | `int`. Last reported SCF cycle, or `0` if absent. |
+| `get_scf_toten()` | No parameters. | `list[float]`. SCF total energies in eV and in log order, or an empty list if absent. |
+
+```python
+from fdmnes_util.fdm_bav_2026 import FdmBav2026
+
+log = FdmBav2026("Fe_SCF_bav.txt")
+print(log.get_n_scf_loop())
+print(log.get_scf_toten())
 ```
 
 ## Structure I/O
@@ -612,7 +631,7 @@ Draw averaged FDMNES orbital projections and absorption spectra.
 
 | Method and parameter defaults | Parameter meanings | Return value |
 | --- | --- | --- |
-| `plot(orbital_data, output, *, xas_data=None, raw_xas_data=None, emin=None, emax=None, dmax=None, ymax=None, energy_offset=0.0, orbital_groups=None)` | `orbital_data` Sequence of (label, energy, DOS) records. `output` Destination image filename. `xas_data` Optional (energy, absorption) pair after broadening. `raw_xas_data` Optional (energy, absorption) pair before broadening. `emin` Optional minimum energy. `emax` Optional maximum energy. `dmax` Optional upper bound for each PDOS panel. `ymax` Optional upper bound for the XAS panel. `energy_offset` Energy shift in eV applied to every plotted curve. `orbital_groups` Optional orbital-name groups. Each group is plotted in one panel, following the SAE orbital block layout. | pathlib.Path: Path to the generated figure. |
+| `plot(orbital_data, output, *, xas_data=None, raw_xas_data=None, emin=None, emax=None, dmax=None, ymax=None, energy_offset=0.0, orbital_groups=None, fermi_position=None)` | `orbital_data` Sequence of (label, energy, DOS) records. `output` Destination image filename. `xas_data` Optional (energy, absorption) pair after broadening. `raw_xas_data` Optional (energy, absorption) pair before broadening. `emin` Optional minimum energy. `emax` Optional maximum energy. `dmax` Optional upper bound for each PDOS panel. `ymax` Optional upper bound for the XAS panel. `energy_offset` Energy shift in eV applied to every plotted curve. `orbital_groups` Optional orbital-name groups. Each group is plotted in one panel, following the SAE orbital block layout. `fermi_position` Fermi level in the displayed energy reference (eV), drawn on every panel when supplied. | pathlib.Path: Path to the generated figure. |
 
 **Example**
 
@@ -678,8 +697,7 @@ print(results.outputs())
 ```python
 from fdmnes_util.fdm_sd import FdmSd
 
-year = FdmSd.format_from_bav("Fe_bav.txt")
-sd = FdmSd("Fe_sd0.txt", format_year=year).select_reader()
+sd = FdmSd("Fe_sd0.txt", format_year=None).select_reader()
 energy = sd.get_eng()
 p_ldos = sd.get_ldos("p")
 pz_pdos = sd.get_pdos(lm="p_z")

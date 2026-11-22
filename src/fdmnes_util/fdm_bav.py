@@ -69,15 +69,19 @@ class FdmBav:
         self.lines = self.path.read_text(errors="replace").splitlines()
         self.revision = None
         for line in self.lines:
-            if "FDMNES program," in line:
+            if re.search(r"FDMNES.*program,", line):
                 self.revision = line.strip()
                 break
         if self.revision is None:
             raise ValueError("Missing FDMNES revision line")
         years = re.findall(r"\b(?:19|20)\d{2}\b", self.revision)
-        if not years:
+        if years:
+            self.year = int(years[-1])
+        elif self.revision == "FDMNES II program, Revision 1st of September 20":
+            # 2016年9月1日版の main.f90 は50文字固定長で、年の末尾を切り落とす。
+            self.year = 2016
+        else:
             raise ValueError(f"Unknown FDMNES version: {self.revision}")
-        self.year = int(years[-1])
 
     def select_reader(self):
         """Return the implementation selected by the revision year.
@@ -92,10 +96,11 @@ class FdmBav:
         if self.year >= 2022:
             raise ValueError(f"Unverified BAV layout for revision {self.year}")
 
+        # SAE と同様、版の判定に使った本文を選択先に渡す。
         if self.year <= 2016:
             from .fdm_bav_2016 import FdmBav2016
 
-            return FdmBav2016(self.path)
+            return FdmBav2016(self.path, _lines=self.lines)
         from .fdm_bav_2020 import FdmBav2020
 
-        return FdmBav2020(self.path)
+        return FdmBav2020(self.path, _lines=self.lines)

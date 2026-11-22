@@ -19,7 +19,7 @@ def test_allsite_convolution_inputs(tmp_path):
     assert "Fe_1.txt" in first_input
     assert "Fe_1_conv.txt" in first_input
     job_list = (tmp_path / "fdmfile.txt").read_text(encoding="utf-8")
-    assert "2\nconv_1.inp\nconv_2.inp" in job_list
+    assert job_list == "\n 2\nconv_1.inp\nconv_2.inp\n"
 
 
 def test_jobs_resolve_numbered_spectra_from_job_directory(tmp_path):

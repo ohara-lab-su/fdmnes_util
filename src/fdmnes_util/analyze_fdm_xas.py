@@ -200,18 +200,24 @@ class AnalyzeFdmXas:
                 raise ValueError(f"Invalid absorbing-site number: {index!r}")
 
             prefix = Path(f"{base_name}_{index}")
+            raw_path = Path(f"{prefix}.txt")
             if convolved:
                 output_path = Path(f"{prefix}_conv.txt")
                 reader = FdmConv(output_path)
             else:
-                output_path = Path(f"{prefix}.txt")
-                reader = FdmTxt(output_path)
+                reader = FdmTxt(raw_path)
 
-            energy = reader.get_eng().copy()
+            energy = reader.get_eng()
             intensity = reader.get_xas().copy()
 
-            if input_is_photon is not None:
-                raw_xas = FdmTxt(Path(f"{prefix}.txt"))
+            if input_is_photon is None:
+                energy = energy.copy()
+            else:
+                if convolved:
+                    raw_xas = FdmTxt(raw_path)
+                else:
+                    # 生スペクトルでは同じ reader が強度と吸収端を保持している。
+                    raw_xas = reader
                 energy = cls.energy_reference(
                     energy,
                     raw_xas,

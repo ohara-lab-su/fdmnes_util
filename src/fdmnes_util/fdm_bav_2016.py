@@ -51,27 +51,33 @@ from pathlib import Path
 
 import numpy as np
 
+from .analyze_fdm_log import AnalyzeFdmLog
+
 
 class FdmBav2016:
     """Extract calculation information from a 2016-format ``_bav.txt`` file."""
 
-    def __init__(self, filename):
+    def __init__(self, filename, *, _lines=None):
         """Load the log file.
 
         Args:
             filename: Path to the FDMNES calculation log.
         """
         self.path = Path(filename)
-        self.lines = self.path.read_text(errors="replace").splitlines()
+        if _lines is None:
+            self.lines = self.path.read_text(errors="replace").splitlines()
+        else:
+            self.lines = _lines.copy()
+        self._analyzer = AnalyzeFdmLog(self)
         self.revision = ""
         for line in self.lines:
-            if "FDMNES program," in line:
+            if re.search(r"FDMNES.*program,", line):
                 self.revision = line.strip()
                 break
 
     def get_edge(self):
         """Return the absorption-edge label in the log."""
-        for line in self.lines:
+        for line in reversed(self.lines):
             if "Threshold:" in line:
                 return line.partition("Threshold:")[2].strip()
         return ""
@@ -89,7 +95,7 @@ class FdmBav2016:
 
     def get_max_scf_iterations(self) -> int | None:
         """Return the reported SCF iteration limit, or None when absent."""
-        for line in self.lines:
+        for line in reversed(self.lines):
             match = re.search(r"Maximum number of iterations?\s*[:=]?\s*(\d+)", line)
             if match:
                 return int(match.group(1))
@@ -121,18 +127,12 @@ class FdmBav2016:
 
     def get_position(self):
         """Return Cartesian atomic positions from the log's cluster section."""
-        from .analyze_fdm_log import AnalyzeFdmLog
-
-        analyzer = AnalyzeFdmLog(self)
-        positions = analyzer.positions()
+        positions = self._analyzer.positions()
         return positions[1]
 
     def get_atoms_index_j(self):
         """Return chemical symbols in the order recorded in the cluster."""
-        from .analyze_fdm_log import AnalyzeFdmLog
-
-        analyzer = AnalyzeFdmLog(self)
-        positions = analyzer.positions()
+        positions = self._analyzer.positions()
         return positions[0]
 
     def get_natom(self):
@@ -142,7 +142,7 @@ class FdmBav2016:
 
     def get_e_edge(self):
         """Return the numeric absorption-edge energy, if present."""
-        for line in self.lines:
+        for line in reversed(self.lines):
             if not line.lstrip().startswith("E_edge"):
                 continue
             parts = line.split()
@@ -156,7 +156,7 @@ class FdmBav2016:
 
     def get_ngroup(self):
         """Return the number of atom groups, if recorded."""
-        for line in self.lines:
+        for line in reversed(self.lines):
             if re.match(r"^\s*ngroup\s*=", line):
                 match = re.search(r"ngroup\s*=\s*(\d+)", line)
                 if match is not None:
@@ -165,12 +165,12 @@ class FdmBav2016:
 
     def get_t(self):
         """Return the 3-by-3 crystal-basis transformation matrix."""
-        index = None
-        for current_index, line in enumerate(self.lines):
+        # SAE retains the last matrix when the log contains multiple tables.
+        for index in range(len(self.lines) - 1, -1, -1):
+            line = self.lines[index]
             if "Transformation Crystal Bases" in line and "Bases R2" in line:
-                index = current_index
                 break
-        if index is None:
+        else:
             return None
         rows = []
         for line in self.lines[index + 1 : index + 4]:
@@ -182,12 +182,10 @@ class FdmBav2016:
 
     def get_lmax(self):
         """Return the maximum angular-momentum index in the atom listing."""
-        begin = None
-        for index, line in enumerate(self.lines):
-            if line.lstrip().startswith("Excited atom,"):
-                begin = index
+        for begin in range(len(self.lines) - 1, -1, -1):
+            if self.lines[begin].lstrip().startswith("Excited atom,"):
                 break
-        if begin is None:
+        else:
             return None
         levels = []
         for line in self.lines[begin + 2 :]:

@@ -18,7 +18,7 @@ def main(argv=None):
     """
     parser = argparse.ArgumentParser(description="Plot FDMNES LDOS")
     parser.add_argument("-i", "--input", required=True)
-    parser.add_argument("--year", type=int, required=True)
+    parser.add_argument("--year", type=int)
     parser.add_argument("-o", "--output", default="LDOS.pdf")
     parser.add_argument("--intdos", action="store_true")
     options = parser.parse_args(argv)

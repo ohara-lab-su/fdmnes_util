@@ -91,10 +91,9 @@
 """Write the Crystal or Molecule section of a FDMNES input file."""
 
 from pathlib import Path
-from importlib.resources import files
-from pathlib import Path
 import math
 
+from ._elements import NUMBERS_BY_SYMBOL
 from fdmnes_util.vasp_poscar import VaspPoscarFile
 
 
@@ -157,15 +156,6 @@ class FdmStructure:
             ValueError: If the structure has inconsistent symbol and position counts.
             KeyError: If an element symbol cannot be converted to an atomic number.
         """
-        # Element numbers are FDMNES output data, not VASP parsing logic.
-        atomic_numbers = {}
-        symbols_path = files("fdmnes_util").joinpath("atomic_symbols.list")
-        for line in symbols_path.read_text(encoding="utf-8").splitlines():
-            columns = line.split()
-            if len(columns) < 2:
-                continue
-            atomic_numbers[columns[1]] = int(columns[0])
-
         parameters = self._cell_parameters()
         lines = []
         if molecule:
@@ -182,7 +172,8 @@ class FdmStructure:
             raise ValueError("Atom symbols and positions have different lengths")
 
         for symbol, position in zip(symbols, positions):
-            atomic_number = atomic_numbers[symbol]
+            # Element numbers are FDMNES output data, not VASP parsing logic.
+            atomic_number = NUMBERS_BY_SYMBOL[symbol]
             atom_line = (
                 f"   {atomic_number:2d} "
                 f"{position[0]:8.4f} {position[1]:8.4f} {position[2]:8.4f}"
@@ -216,19 +207,11 @@ class FdmStructure:
         if len(symbols) != len(positions):
             raise ValueError("Atom/coordinate count mismatch")
 
-        atomic_numbers: dict[str, int] = {}
-        symbols_path = files("fdmnes_util").joinpath("atomic_symbols.list")
-        for line in symbols_path.read_text(encoding="utf-8").splitlines():
-            columns = line.split()
-            if len(columns) < 2:
-                continue
-            atomic_numbers[columns[1]] = int(columns[0])
-
         lines = [" molecule", "      1.0 1.0 1.0 90.0 90.0 90.0"]
         for symbol, position in zip(symbols, positions):
-            if symbol not in atomic_numbers:
+            if symbol not in NUMBERS_BY_SYMBOL:
                 raise ValueError(f"Unknown atomic symbol: {symbol}")
-            number = atomic_numbers[symbol]
+            number = NUMBERS_BY_SYMBOL[symbol]
             x, y, z = position
             lines.append(f"   {number:2d} {x:12.6f} {y:12.6f} {z:12.6f}    ! {symbol}")
         return "\n".join(lines) + "\n"

@@ -364,16 +364,12 @@ def _dos_curves(average, options, input_file, filout, raw):
     Returns:
         list[tuple]: LDOS energy grids, density arrays, and curve labels.
     """
-    year = options.year
-    if year is None:
-        bav = options.bav or input_file.get_filout() or filout
-        year = FdmSd.format_from_bav(bav.removesuffix("_bav.txt") + "_bav.txt")
     prefix = options.name or options.sd or filout
     ispin = input_file.get_ispin()
     if options.spin or options.dn:
         ispin = 2
     readers = [
-        FdmSd(path, format_year=year, ispin=ispin).select_reader()
+        FdmSd(path, format_year=options.year, ispin=ispin).select_reader()
         for path in _spectrum_paths(prefix, "_sd0.txt", options.absorber)
     ]
 
