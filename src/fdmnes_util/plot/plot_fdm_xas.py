@@ -1,11 +1,53 @@
 #!/usr/bin/env python3
 """Plot XAS spectra. File parsing and energy conversion belong elsewhere."""
 
-from ._figure import save_figure
+from . import _PlotFigure
 
 
-class PlotFdmXas:
+class PlotFdmXas(_PlotFigure):
     """Matplotlib visualizations for FDMNES XAS."""
+
+    def plot_convolved(self, eng, xas, output, *, specified=False):
+        """SAE の fdXAS.py または fdXAS_specified.py の配置で描く。
+
+        Args:
+            eng: フェルミ準位を基準としたエネルギー。
+            xas: 畳み込み後の吸収強度。
+            output: 保存先のパス。
+            specified: fdXAS_specified.py の目盛り・凡例を使う。
+
+        Returns:
+            保存した図のパス。
+        """
+        import matplotlib.pyplot as plt
+
+        # SAE の設定をこの図に限定し、同じプロセスの別の描画へ波及させない。
+        with plt.rc_context():
+            plt.rcParams["font.family"] = "Times New Roman"
+            # ラベル等のフォントサイズ
+            plt.rcParams["font.size"] = 16
+            # レジェンドのフォントサイズ
+            plt.rcParams["legend.fontsize"] = 14
+            # 軸の太さを設定。目盛りは変わらない
+            plt.rcParams["axes.linewidth"] = 1.5
+            # for portrait
+            figure = plt.figure(figsize=(7.0, 9.89))
+            orgx = 0.17
+            orgy = 0.08
+            xsize = 0.75
+            ysize = 0.83 / 2.0
+            plt.axes([orgx, orgy, xsize, ysize])
+            plt.plot(eng, xas, linewidth=2, label="XAS")
+            plt.xlabel("Energy above Fermi [eV]")
+            plt.ylabel("Absorption [arb. unit]")
+            if specified:
+                plt.ticklabel_format(axis="x", useOffset=False)
+                leg = plt.legend(fontsize=12, loc="lower right")
+            else:
+                plt.axvline(x=0, color="black", linewidth=1)
+                leg = plt.legend(loc="lower right")
+            leg.get_frame().set_alpha(0.5)
+            return self._save_figure(figure, output, show=True)
 
     def plot(
         self,
@@ -59,7 +101,7 @@ class PlotFdmXas:
             axis.legend()
 
         figure.tight_layout()
-        return save_figure(figure, output)
+        return self._save_figure(figure, output)
 
     def plot_sites(
         self,
@@ -72,6 +114,7 @@ class PlotFdmXas:
         ymax=None,
         fermi=False,
         fermi_position=None,
+        extra_formats=False,
     ):
         """Draw computed and optionally observed XAS in separate panels.
 
@@ -84,6 +127,7 @@ class PlotFdmXas:
             ymax: Optional upper limit of the absorption axis.
             fermi: Whether the energy axis is Fermi-relative.
             fermi_position: Energy of the vertical Fermi marker.
+            extra_formats: Save the figure in EPS, PDF, and PNG.
 
         Returns:
             pathlib.Path: Destination of the saved figure.
@@ -91,57 +135,48 @@ class PlotFdmXas:
         Raises:
             ValueError: If no calculated spectrum is supplied.
         """
-        import matplotlib
-
-        matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
-        figure, axes = plt.subplots(
-            2,
-            1,
-            figsize=(8.1, 9.89),
-            sharex=True,
-        )
-        top, bottom = axes
-
-        plotted = False
-        for energy, intensity, label in spectra:
-            bottom.plot(energy, intensity, linewidth=1, label=label)
-            plotted = True
-
-        if not plotted:
-            plt.close(figure)
+        spectra = list(spectra)
+        if not spectra:
             raise ValueError("No XAS spectra to plot")
 
-        bottom.set_ylabel("Absorption [arb. unit]")
-        if fermi:
-            bottom.set_xlabel("Energy above Fermi [eV]")
-        else:
-            bottom.set_xlabel("Photon Energy [eV]")
-
-        if fermi_position is not None:
-            bottom.axvline(
-                fermi_position,
-                color="black",
-                linewidth=1,
-            )
-
-        bottom.legend(loc="lower right")
-        if xmin is not None or xmax is not None:
-            bottom.set_xlim(left=xmin, right=xmax)
-        if ymax is not None:
-            bottom.set_ylim(top=ymax)
-
-        if observed:
-            for energy, intensity, label in observed:
-                top.plot(energy, intensity, label=label)
-            top.legend(loc="lower right")
-            top.set_ylabel("Observed [arb. unit]")
-        else:
-            top.set_visible(False)
-
-        figure.tight_layout()
-        return save_figure(figure, output)
+        with plt.rc_context():
+            plt.rcParams["font.family"] = "Times New Roman"
+            # ラベル等のフォントサイズ
+            plt.rcParams["font.size"] = 16
+            # レジェンドのフォントサイズ
+            plt.rcParams["legend.fontsize"] = 14
+            # 軸の太さを設定。目盛りは変わらない
+            plt.rcParams["axes.linewidth"] = 1.5
+            # for portrait
+            figure = plt.figure(figsize=(8.1, 9.89))
+            plt.subplot(2, 1, 2)
+            for energy, intensity, label in spectra:
+                plt.plot(energy, intensity, linewidth=1, label=label)
+            plt.ticklabel_format(axis="x", useOffset=False)
+            plt.ylabel("Absorption [arb. unit]")
+            if fermi_position is not None:
+                plt.axvline(x=fermi_position, color="black", linewidth=1)
+            leg = plt.legend(loc="lower right")
+            leg.get_frame().set_alpha(0.5)
+            plt.xlim(xmax=xmax, xmin=xmin)
+            plt.ylim(ymax=ymax)
+            xas_xmin, xas_xmax = plt.xlim()
+            if fermi:
+                plt.xlabel("Energy above Fermi [eV]")
+            else:
+                plt.xlabel("Photon Energy [eV]")
+            # Athena data plot
+            if observed:
+                plt.subplot(2, 1, 1)
+                for energy, intensity, label in observed:
+                    plt.plot(energy, intensity, label=label)
+                plt.xlim([xas_xmin, xas_xmax])
+                plt.ticklabel_format(axis="x", useOffset=False)
+                leg = plt.legend(loc="lower right")
+                leg.get_frame().set_alpha(0.5)
+            return self._save_figure(figure, output, extra_formats=extra_formats, show=True)
 
     def plot_experiment_comparison(
         self,
@@ -175,33 +210,44 @@ class PlotFdmXas:
         Returns:
             pathlib.Path: Saved figure filename.
         """
-        import matplotlib
-
-        matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
-        figure, axis = plt.subplots(figsize=(7.0, 9.89))
-        axis.plot(
-            calculated_energy,
-            calculated_absorption,
-            color="red",
-            linewidth=1,
-            label="FDMNES",
-        )
-        axis.plot(
-            observed_energy,
-            observed_absorption,
-            color="blue",
-            linewidth=1,
-            label="Experiment",
-        )
-        axis.set_xlabel("Photon Energy [eV]")
-        axis.set_ylabel("Absorption [arb. unit]")
-        axis.set_xlim(left=xmin, right=xmax)
-        axis.set_ylim(bottom=ymin, top=ymax)
-        axis.legend(loc="lower right")
-        figure.tight_layout()
-        return save_figure(figure, output)
+        with plt.rc_context():
+            plt.rcParams["font.family"] = "Times New Roman"
+            # ラベル等のフォントサイズ
+            plt.rcParams["font.size"] = 16
+            # レジェンドのフォントサイズ
+            plt.rcParams["legend.fontsize"] = 14
+            # 軸の太さを設定。目盛りは変わらない
+            plt.rcParams["axes.linewidth"] = 1.5
+            # for portrait
+            figure = plt.figure(figsize=(7.0, 9.89))
+            orgx = 0.17
+            orgy = 0.08
+            xsize = 0.75
+            ysize = 0.83 / 2.0
+            plt.axes([orgx, orgy, xsize, ysize])
+            plt.plot(
+                calculated_energy,
+                calculated_absorption,
+                color="red",
+                linewidth=1,
+                label="FDM Green R3",
+            )
+            plt.plot(
+                observed_energy,
+                observed_absorption,
+                color="blue",
+                linewidth=1,
+                label="exp.",
+            )
+            plt.xlabel("Photon Energy [eV]")
+            plt.ylabel("Absorption [arb. unit]")
+            leg = plt.legend(fontsize=12, loc="lower right")
+            leg.get_frame().set_alpha(0.5)
+            plt.xlim(xmax=xmax, xmin=xmin)
+            plt.ylim(ymin=ymin, ymax=ymax)
+            return self._save_figure(figure, output, show=True)
 
     def plot_composite(
         self,
@@ -242,9 +288,15 @@ class PlotFdmXas:
         """
         import matplotlib.pyplot as plt
 
-        with plt.rc_context(
-            {"font.size": 16, "legend.fontsize": 14, "axes.linewidth": 1.5}
-        ):
+        with plt.rc_context():
+            plt.rcParams["font.family"] = "Times New Roman"
+            # ラベル等のフォントサイズ
+            plt.rcParams["font.size"] = 16
+            # レジェンドのフォントサイズ
+            plt.rcParams["legend.fontsize"] = 14
+            # 軸の太さを設定。目盛りは変わらない
+            plt.rcParams["axes.linewidth"] = 1.5
+            # for portrait
             figure = plt.figure(figsize=(8.1, 9.89))
             rows = 2 + bool(dos)
             calculated = figure.add_subplot(rows, 1, 2)
@@ -257,7 +309,8 @@ class PlotFdmXas:
             calculated.set_ylabel(ylabel)
             calculated.set_ylim(bottom=0, top=ymax)
             calculated.set_xlim(left=xmin, right=xmax)
-            calculated.legend(loc="lower right", framealpha=1)
+            leg = calculated.legend(loc="lower right")
+            leg.get_frame().set_alpha(0.5)
 
             axes = [calculated]
             bottom = calculated
@@ -266,7 +319,8 @@ class PlotFdmXas:
                 energy, intensity, label = observed
                 observed_axis.plot(energy, intensity, label=label)
                 observed_axis.set_ylim(bottom=0)
-                observed_axis.legend(loc="lower right", framealpha=1)
+                leg = observed_axis.legend(loc="lower right")
+                leg.get_frame().set_alpha(0.5)
                 axes.append(observed_axis)
             if dos:
                 bottom = figure.add_subplot(rows, 1, 3, sharex=calculated)
@@ -274,7 +328,8 @@ class PlotFdmXas:
                     bottom.plot(energy, density, linewidth=1, label=label)
                 bottom.set_ylabel("DOS [stat/eV]")
                 bottom.set_ylim(bottom=0, top=dmax)
-                bottom.legend(loc="upper right", framealpha=1)
+                leg = bottom.legend(loc="upper right")
+                leg.get_frame().set_alpha(0.5)
                 axes.append(bottom)
             if fermi_position is not None:
                 calculated.axvline(fermi_position, color="black", linewidth=1)
@@ -283,4 +338,4 @@ class PlotFdmXas:
             for axis in axes:
                 axis.ticklabel_format(axis="x", useOffset=False)
             bottom.set_xlabel(xlabel)
-            return save_figure(figure, output, extra_formats=extra_formats, show=show)
+            return self._save_figure(figure, output, extra_formats=extra_formats, show=show)

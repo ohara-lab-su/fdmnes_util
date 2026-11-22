@@ -118,8 +118,9 @@
 # ---- End of SAE original header ----
 """Read and generate FDMNES calculation input files."""
 
-from math import cos, isfinite, radians, sin
 from pathlib import Path
+
+from .fdm_structure import FdmStructure
 
 
 class FdmInp:
@@ -278,25 +279,25 @@ class FdmInp:
         return "convolution" in self.tags
 
     def get_conv_out(self):
-        """Return the value associated with ``Conv_out``.
+        """Return the output filename specified by ``Conv_out``.
 
         Returns:
             str: Convolution-output value, or an empty string.
         """
         values = self._last_record("conv_out")
         if values:
-            return values[0]
+            return values[0].split()[0]
         return ""
 
     def get_calculation(self):
-        """Return the value associated with ``Calculation``.
+        """Return the first filename in the last ``Calculation`` block.
 
         Returns:
             str: Calculation value, or an empty string.
         """
         values = self._last_record("calculation")
         if values:
-            return values[0]
+            return values[0].split()[0]
         return ""
 
     def get_cellparam(self):
@@ -334,9 +335,6 @@ class FdmInp:
             ValueError: If the Crystal section is absent or malformed.
             ImportError: If ASE is not installed.
         """
-        from ase import Atoms
-        from ase.cell import Cell
-
         crystal_lines = self._get_structure_lines("crystal")
         if not crystal_lines:
             raise ValueError("No Crystal section was found")
@@ -345,35 +343,7 @@ class FdmInp:
         if cell_values is None:
             raise ValueError("Crystal cell parameters are missing")
 
-        atomic_numbers = []
-        scaled_positions = []
-        for line in crystal_lines[1:]:
-            fields = line.split()
-            if len(fields) < 4:
-                continue
-
-            try:
-                atomic_number = int(fields[0])
-                coordinates = [float(value) for value in fields[1:4]]
-            except ValueError:
-                continue
-
-            if atomic_number < 1 or atomic_number > 118:
-                raise ValueError("Invalid atomic number in Crystal section")
-
-            atomic_numbers.append(atomic_number)
-            scaled_positions.append(coordinates)
-
-        if not atomic_numbers:
-            raise ValueError("No atoms were found in the Crystal section")
-
-        cell = Cell.fromcellpar(cell_values)
-        return Atoms(
-            numbers=atomic_numbers,
-            scaled_positions=scaled_positions,
-            cell=cell,
-            pbc=True,
-        )
+        return FdmStructure.crystal_atoms(cell_values, crystal_lines[1:])
 
     def get_molecule_atoms(self):
         """Build an isolated ASE structure from an FDMNES Molecule block.
@@ -388,58 +358,7 @@ class FdmInp:
             ValueError: If the scale or atomic-coordinate records are invalid.
             ImportError: If ASE is not installed.
         """
-        from ase import Atoms
-        from ase.cell import Cell
-
-        lines = self._get_structure_lines("molecule")
-        if len(lines) < 2:
-            raise ValueError("Molecule requires scale parameters and atom rows")
-        scale = [float(value.replace("D", "E")) for value in lines[0].split()]
-        if len(scale) not in (1, 2, 6) or any(
-            not isfinite(value) or value <= 0 for value in scale
-        ):
-            raise ValueError("Molecule requires one, two, or six positive parameters")
-
-        numbers = []
-        positions = []
-        for line in lines[1:]:
-            fields = line.split()
-            if len(fields) < 4:
-                raise ValueError(
-                    "Molecule atom rows require a number and three coordinates"
-                )
-            number = int(fields[0])
-            if not 1 <= number <= 118:
-                raise ValueError("Invalid atomic number in Molecule section")
-            numbers.append(number)
-            coordinates = [float(value.replace("D", "E")) for value in fields[1:4]]
-            if not all(isfinite(value) for value in coordinates):
-                raise ValueError("Molecule coordinates must be finite")
-            positions.append(coordinates)
-
-        if len(scale) == 6:
-            # The three angles define the basis for the fractional positions.
-            cell = Cell.fromcellpar(scale)
-            positions = cell.cartesian_positions(positions)
-        else:
-            for index, (radius, second, third) in enumerate(positions):
-                radius *= scale[0]
-                angle = radians(second)
-                if len(scale) == 2:
-                    positions[index] = [
-                        radius * cos(angle),
-                        radius * sin(angle),
-                        third * scale[1],
-                    ]
-                else:
-                    azimuth = radians(third)
-                    planar_radius = radius * sin(angle)
-                    positions[index] = [
-                        planar_radius * cos(azimuth),
-                        planar_radius * sin(azimuth),
-                        radius * cos(angle),
-                    ]
-        return Atoms(numbers=numbers, positions=positions)
+        return FdmStructure.molecule_atoms(self._get_structure_lines("molecule"))
 
     def _get_structure_lines(self, section: str) -> list[str]:
         """Collect the scale and atom rows following a structure keyword.

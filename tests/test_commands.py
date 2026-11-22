@@ -171,10 +171,37 @@ def test_plotting_cli(tmp_path, monkeypatch):
 
     """
     pytest.importorskip("matplotlib")
+    import matplotlib.pyplot as plt
+    from matplotlib.figure import Figure
+
     prepare(tmp_path)
     monkeypatch.chdir(tmp_path)
-    fd_xas.main(["-i", "Fe", "-o", "xas.pdf"])
-    fd_ldos.main(["-i", "Fe", "--year", "2020", "-o", "ldos.pdf"])
+    savefig = Figure.savefig
+    shown = []
+
+    def check_sae_figure(figure, filename, **kwargs):
+        (axis,) = figure.axes
+        np.testing.assert_allclose(
+            axis.get_position().bounds,
+            [0.17, 0.08, 0.75, 0.415],
+        )
+        assert len(axis.lines) == 2
+        np.testing.assert_array_equal(axis.lines[1].get_xdata(), [0, 0])
+        if Path(filename).name == "xas.pdf":
+            assert axis.get_xlabel() == "Energy above Fermi [eV]"
+            assert axis.get_ylabel() == "Absorption [arb. unit]"
+        else:
+            sd = np.loadtxt(F / "Fe_sd0.txt", skiprows=1)
+            np.testing.assert_array_equal(axis.lines[0].get_ydata(), sd[:, 6])
+        return savefig(figure, filename, **kwargs)
+
+    monkeypatch.setattr(Figure, "savefig", check_sae_figure)
+    monkeypatch.setattr(plt, "show", lambda: shown.append(plt.gcf()))
+    fd_xas.main(["-o", "xas.pdf"])
+    assert len(shown) == 1
+    shutil.copyfile(F / "Fe_sd0.txt", tmp_path / "Fe_sd1.txt")
+    fd_ldos.main(["-o", "ldos.pdf"])
+    assert len(shown) == 2
     assert (tmp_path / "xas.pdf").stat().st_size > 100
     assert (tmp_path / "ldos.pdf").stat().st_size > 100
 

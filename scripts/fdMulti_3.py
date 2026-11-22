@@ -20,6 +20,13 @@ from fdmnes_util.fdm_sd import FdmSd
 from fdmnes_util.fdm_txt import FdmTxt
 from fdmnes_util.plot.plot_fdm_dos import PlotFdmDos
 
+__author__ = "Kengo NAKADA"
+__maintainer__ = "Kengo NAKADA"
+__credits__ = ["Kengo NAKADA"]
+__email__ = "kengo.nakada@gmail.com"
+__copyright__ = "Copyright 2015, Kengo NAKADA"
+__license__ = "MIT"
+
 
 def main(argv=None):
     """Read three calculations and save their Fermi-aligned LDOS panels.
@@ -31,7 +38,7 @@ def main(argv=None):
         list[pathlib.Path]: Paths to the EPS, PDF and PNG figures.
     """
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("prefixes", nargs=3, help="Three calculation prefixes")
+    parser.add_argument("prefixes", nargs="*", help="Three calculation prefixes")
     parser.add_argument("--year", type=int, choices=(2016, 2020))
     parser.add_argument("--site", type=int, default=0)
     parser.add_argument("--orbital", default="p")
@@ -40,6 +47,11 @@ def main(argv=None):
     parser.add_argument("--dmax", type=float, default=5.0)
     parser.add_argument("--output", default="LDOSmulti")
     options = parser.parse_args(argv)
+
+    if not options.prefixes:
+        options.prefixes = ("Pd55_1", "Pd55_5", "FCC/Pd")
+    if len(options.prefixes) != 3:
+        parser.error("Specify three calculation prefixes")
 
     readers = []
     fermi_energies = []
@@ -55,20 +67,18 @@ def main(argv=None):
         labels.append(f"{Path(prefix).name}: {options.orbital}")
 
     plotter = PlotFdmDos()
-    paths = []
-    for extension in (".eps", ".pdf", ".png"):
-        destination = Path(options.output).with_suffix(extension)
-        saved_path = plotter.plot_three_calculations(
-            readers,
-            fermi_energies,
-            labels,
-            destination,
-            orbital=options.orbital,
-            emin=options.emin,
-            emax=options.emax,
-            density_max=options.dmax,
-        )
-        paths.append(saved_path)
+    paths = [Path(options.output).with_suffix(ext) for ext in (".eps", ".pdf", ".png")]
+    plotter.plot_three_calculations(
+        readers,
+        fermi_energies,
+        labels,
+        paths[0],
+        orbital=options.orbital,
+        emin=options.emin,
+        emax=options.emax,
+        density_max=options.dmax,
+        extra_outputs=paths[1:],
+    )
     return paths
 
 

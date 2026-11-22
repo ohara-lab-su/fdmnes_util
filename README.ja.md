@@ -37,7 +37,7 @@ FDMNESでは、計算条件を記述する入力ファイルのほか、計算�
 
 クラス名は `FdmSd2016`、ファイル名は `fdm_sd_2016.py` のように、Pythonの命名規則に従って対応させています。2016年形式と2020年形式は別クラスにしています。2022年版については、実際の出力を照合するまでは2020年形式と同じものとして扱いません。
 
-ファイルから読み出した値を使う処理は `AnalyzeFdmXas`、`AnalyzeFdmLog` などの解析クラスが担当します。グラフ作成は `PlotFdmXas`、`PlotFdmDos` が担当します。**スクリプトには解析式や描画処理を重複して書かず、これらのクラスを呼び出す形**にしています。
+BAV の計算クラスタは年別の BAV リーダーで読み取ります。数値解析は `AnalyzeFdmXas` や `AnalyzeFdmAverage` が担当します。グラフ作成は `PlotFdmXas`、`PlotFdmDos` が担当します。**スクリプトには解析式や描画処理を重複して書かず、これらのクラスを呼び出す形**にしています。
 
 ## クラスライブラリ API
 
@@ -116,7 +116,7 @@ EPS、PDF、PNGを出力します。元のスクリプトが持っていた対�
 
 ## VASPとの連携
 
-POSCARの読み込みは、別パッケージの `vasp_util` に任せています。`fdmnes_util` にVASP用のパーサーは実装しない方針です。`FDvasp2fdm.py` は `VaspPoscarFile` を通してPOSCARを読み込み、`FdmStructure` でFDMNESの構造部分を書き出すサンプルです。
+`FDvasp2fdm.py` は別パッケージの `vasp_util.vasp_poscar.VaspPoscar` で POSCAR を読み、`FdmStructure` で FDMNES の構造節を書き出します。FDMNES 入力から POSCAR へ変換する場合も、結晶・分子の構造の組み立ては `FdmStructure` が担当します。
 
 ```console
 fdmnes_util install script

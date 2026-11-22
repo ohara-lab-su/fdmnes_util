@@ -23,7 +23,7 @@
 | `get_nonexc()` | — | bool。`Nonexc` の有無。 |
 | `get_convolution()` | — | bool。`Convolution` の有無。 |
 | `get_conv_out()` | — | str。`Conv_out` の値。未指定なら空文字列。 |
-| `get_calculation()` | — | str。最後の `Calculation` の値。未指定なら空文字列。 |
+| `get_calculation()` | — | str。最後の `Calculation` ブロックの先頭ファイル名。未指定なら空文字列。 |
 | `get_cellparam()` | — | list[float] または None。結晶の格子長 3 個と角度 3 個。 |
 | `get_crystal_atoms()` | — | ase.Atoms。周期構造。 |
 | `get_molecule_atoms()` | — | ase.Atoms。非周期構造。分率・円筒・球座標の入力に対応。 |
@@ -204,7 +204,7 @@ energy, s_ldos = sd.get_eng(), sd.get_ldos("s")
 
 2020 年形式の SD から、軌道ごとの状態密度を読みます。
 
-検証済み形式は 1 スピンです。`spin` には 0・`up`・`non`・`nonmag` を指定できます。ファイルにある s・p・d 軌道群を使えます。
+非磁性の列形式と、2021年・2026年の Ni 実出力で確認した磁性の31列形式に対応します。`spin` は 0（`up`・`non`・`nonmag`）、磁性では 1（`dn`・`down`）も指定できます。`total` と `Int(total)` は全スピン共通です。
 
 | メソッドと引数の既定値 | 引数の意味 | 戻り値 |
 | --- | --- | --- |
@@ -216,8 +216,8 @@ energy, s_ldos = sd.get_eng(), sd.get_ldos("s")
 | `get_ldos(l=0, spin=0)` | l は軌道群名または角運動量番号、spin はスピン指定。 | ndarray。軌道群の密度。 |
 | `get_intldos(l=0, spin=0)` | l は軌道群名または角運動量番号、spin はスピン指定。 | ndarray。軌道群の積分値。 |
 | `get_pdos(l=0, m=0, lm=None, spin=0)` | l、m は軌道の量子数。lm に軌道名（例 p_z）を渡すと l、m を上書き。spin はスピン指定。 | ndarray。個別軌道への射影密度。 |
-| `get_tdos(spin=0)` | spin は唯一のスピンチャネルの指定。 | ndarray。ファイルに格納された全 DOS。 |
-| `get_inttdos(spin=0)` | spin は唯一のスピンチャネルの指定。 | ndarray。ファイルに格納された全 DOS の積分値。 |
+| `get_tdos(spin=0)` | spin は指定の有効性の検査に使います。全スピン共通の列を返します。 | ndarray。ファイルに格納された全 DOS。 |
+| `get_inttdos(spin=0)` | spin は指定の有効性の検査に使います。全スピン共通の列を返します。 | ndarray。ファイルに格納された全 DOS の積分値。 |
 
 **使用例**
 
@@ -308,26 +308,6 @@ log = FdmBav2020("Fe_bav.txt")
 symbols, positions = log.get_atoms_index_j(), log.get_position()
 ```
 
-### `FdmBav2026`
-
-`from fdmnes_util.fdm_bav_2026 import FdmBav2026`
-
-`FdmBav2020` を継承し、2026.11.05版のBAVにある `Cycle n, Fermi energy = ...` と `Total energy = ... eV, Delta energy = ...` からSCF履歴を取得します。ファイルを直接指定して使います。座標や吸収端などの共通メソッドと既定値は同ページの `FdmBav2020` と同じです。
-
-| メソッドと引数の既定値 | 引数の意味 | 戻り値 |
-| --- | --- | --- |
-| `__init__(filename)`（継承） | BAVファイルのパス。 | `None`。 |
-| `get_n_scf_loop()` | 引数なし。 | `int`。最後に記録されたSCFサイクル。記録がなければ `0`。 |
-| `get_scf_toten()` | 引数なし。 | `list[float]`。記録順のSCF全エネルギー（eV）。記録がなければ空リスト。 |
-
-```python
-from fdmnes_util.fdm_bav_2026 import FdmBav2026
-
-log = FdmBav2026("Fe_SCF_bav.txt")
-print(log.get_n_scf_loop())
-print(log.get_scf_toten())
-```
-
 ## 構造の入出力
 
 ### `Cif`
@@ -376,37 +356,18 @@ pdb = Pdb("Fe.pdb")
 symbols, coordinates = pdb.get_symbols(), pdb.get_cartesian_positions()
 ```
 
-### `VaspPoscarFile`
-
-`from fdmnes_util.vasp_poscar import VaspPoscarFile`
-
-外部ライブラリ `vasp_util` を通して POSCAR を読みます。
-
-| メソッドと引数の既定値 | 引数の意味 | 戻り値 |
-| --- | --- | --- |
-| `__init__(filename: str \| Path='POSCAR')` | filename は POSCAR のパス。外部の vasp_util が必要。 | None |
-| `get_lattice_vectors()` | — | ndarray。格子ベクトルを行に並べた 3×3 配列（Å）。 |
-| `get_direct_positions()` | — | ndarray。POSCAR の原子順の分率座標。 |
-| `get_symbols()` | — | list[str]。POSCAR の原子順の元素記号。 |
-
-**使用例**
-
-```python
-from fdmnes_util.vasp_poscar import VaspPoscarFile
-poscar = VaspPoscarFile("POSCAR")
-lattice, fractional = poscar.get_lattice_vectors(), poscar.get_direct_positions()
-```
-
 ### `Xyz`
 
 `from fdmnes_util.xyz import Xyz`
 
-標準 XYZ の元素記号と直交座標を読みます。
+標準 XYZ の元素記号と直交座標を読み書きします。
 
 | メソッドと引数の既定値 | 引数の意味 | 戻り値 |
 | --- | --- | --- |
 | `__init__(filename: str \| Path)` | filename は標準 XYZ。symbols と positions に元素記号と直交座標を格納。 | None |
 | `read()` | インスタンスに設定した filename を再読み込みし、symbols と positions を更新。 | None |
+| `render(symbols, positions)` (静的) | symbols は元素記号の並び、positions は対応する直交座標（Å）。 | str。末尾改行を含む XYZ。 |
+| `write(symbols, positions, filename)` (クラスメソッド) | symbols と positions は render() と共通。filename は保存先。 | Path。XYZ の保存先。 |
 
 **使用例**
 
@@ -416,24 +377,16 @@ cluster = Xyz("cluster.xyz")
 symbols, positions = cluster.symbols, cluster.positions
 ```
 
-### `StructureConversion`
+### `ElementTable`
 
-`from fdmnes_util.structure_conversion import StructureConversion`
+`from fdmnes_util.fdm_structure import ElementTable`
 
-構造ファイルから ASE の `Atoms` を作ります。
+構造データに含まれる原子番号と元素記号を相互に引きます。
 
-| メソッドと引数の既定値 | 引数の意味 | 戻り値 |
+| メソッド | 引数 | 戻り値 |
 | --- | --- | --- |
-| `poscar_to_atoms(filename)` (静的) | filename は vasp_util で読む POSCAR のパス。 | ase.Atoms。POSCAR と同じ原子順の周期構造。 |
-| `other_to_atoms(filename, format)` (静的) | filename は構造ファイル、format は ASE の形式識別子（例 cif）。 | ase.Atoms。ASE が読み込んだ構造。 |
-
-**使用例**
-
-```python
-from fdmnes_util.structure_conversion import StructureConversion
-atoms = StructureConversion.poscar_to_atoms("POSCAR")
-print(atoms.get_chemical_formula())
-```
+| `get_atomic_symbol0(num)` | 原子番号。 | str。元素記号。 |
+| `get_atomic_number1(atom)` | 元素記号。 | int。原子番号。 |
 
 ### `FdmStructure`
 
@@ -443,7 +396,11 @@ print(atoms.get_chemical_formula())
 
 | メソッドと引数の既定値 | 引数の意味 | 戻り値 |
 | --- | --- | --- |
-| `__init__(structure: VaspPoscarFile)` | structure は元素記号・格子ベクトル・分率座標を取得できる構造リーダー。 | None |
+| `__init__(structure)` | structure は `vasp_util.vasp_poscar.VaspPoscar`、または元素記号・格子ベクトル・分率座標を取得できる `Cif`・`Pdb` などのリーダー。 | None |
+| `fdm_to_atoms(filename, *, vacuum=10.0)` (静的) | FDMNES 入力パス。vacuum は分子の各側に設ける真空層の厚さ（Å）。 | ase.Atoms。POSCAR 書き出し用の構造。 |
+| `poscar_to_atoms(filename)` (静的) | vasp_util で読む POSCAR のパス。 | ase.Atoms。元の格子と原子順を持つ周期構造。 |
+| `crystal_atoms(cell_values, atom_lines)` (静的) | 格子の長さ・角度6要素と、原子番号・分率座標の各行。 | ase.Atoms。周期境界を持つ結晶構造。 |
+| `molecule_atoms(lines)` (静的) | 分子のスケールと原子座標の行。 | ase.Atoms。直交座標を Å で持つ孤立分子。 |
 | `render(molecule: bool=False)` | molecule が True のとき Molecule、False のとき Crystal を選択。 | str。FDMNES 構造節。 |
 | `render_xyz_molecule(symbols: list[str], positions: list[tuple[float, float, float]])` (静的) | symbols は元素記号の並び、positions は対応する直交座標（Å）。 | str。XYZ 座標から生成した Molecule 節。 |
 | `write(filename: str \| Path, molecule: bool=False)` | filename は保存先、molecule は Molecule の選択。 | Path。構造節の保存先。 |
@@ -452,53 +409,13 @@ print(atoms.get_chemical_formula())
 
 ```python
 from fdmnes_util.fdm_structure import FdmStructure
-from fdmnes_util.vasp_poscar import VaspPoscarFile
+from vasp_util.vasp_poscar import VaspPoscar
 
-structure = FdmStructure(VaspPoscarFile("POSCAR"))
+structure = FdmStructure(VaspPoscar("POSCAR"))
 output = structure.write("Fe.fdmnes")
 ```
 
-### `FdmXyz`
-
-`from fdmnes_util.fdm_xyz import FdmXyz`
-
-元素記号と直交座標を XYZ 形式で保存します。
-
-| メソッドと引数の既定値 | 引数の意味 | 戻り値 |
-| --- | --- | --- |
-| `render(symbols, positions)` | symbols は元素記号の並び、positions は対応する直交座標（Å）。 | str。末尾改行を含む XYZ。 |
-| `write(symbols, positions, filename)` | symbols と positions は render() と共通。filename は保存先。 | Path。XYZ の保存先。 |
-
-**使用例**
-
-```python
-from fdmnes_util.fdm_xyz import FdmXyz
-writer = FdmXyz()
-output = writer.write(["Fe", "Fe"], [(0.0, 0.0, 0.0), (1.5, 1.5, 1.5)], "Fe_pair.xyz")
-```
-
 ## 数値解析
-
-### `AnalyzeFdmLog`
-
-`from fdmnes_util.analyze_fdm_log import AnalyzeFdmLog`
-
-年別の BAV リーダーから計算クラスタの情報を取り出します。
-
-| メソッドと引数の既定値 | 引数の意味 | 戻り値 |
-| --- | --- | --- |
-| `__init__(reader)` | reader は年別の BAV リーダー。 | None |
-| `positions()` | — | tuple[list[str], ndarray]。元素記号と直交座標（Å）。 |
-
-**使用例**
-
-```python
-from fdmnes_util.analyze_fdm_log import AnalyzeFdmLog
-from fdmnes_util.fdm_bav import FdmBav
-
-log = FdmBav("Fe_bav.txt").select_reader()
-symbols, positions = AnalyzeFdmLog(log).positions()
-```
 
 ### `AnalyzeFdmAverage`
 
@@ -558,10 +475,11 @@ energy, intensity = AnalyzeFdmXas.photon_energy(conv, raw)
 
 | メソッドと引数の既定値 | 引数の意味 | 戻り値 |
 | --- | --- | --- |
+| `plot_convolved(eng, xas, output, *, specified=False)` | eng はフェルミ準位基準のエネルギー、xas は畳み込み強度、output は保存先。specified は SAE の `fdXAS_specified.py` の目盛りと凡例の指定。 | Path。図の保存先。 |
 | `plot(spectra, output, *, title=None, xlabel='Energy (eV)', ylabel='XAS', xmin=None, xmax=None, ymax=None, fermi_position=None)` | spectra は (energy, intensity, label) の並び、output は保存先。title は見出し、xlabel と ylabel は軸ラベル、xmin・xmax・ymax は軸の範囲、fermi_position は縦線の位置（eV）。 | Path。図の保存先。 |
-| `plot_sites(spectra, output, *, observed=None, xmin=None, xmax=None, ymax=None, fermi=False, fermi_position=None)` | spectra と observed は計算・実験それぞれの (energy, intensity, label) の並び。output は保存先、xmin・xmax・ymax は軸の範囲、fermi は軸がフェルミ基準か、fermi_position は縦線の位置。 | Path。サイト比較図の保存先。 |
+| `plot_sites(spectra, output, *, observed=None, xmin=None, xmax=None, ymax=None, fermi=False, fermi_position=None, extra_formats=False)` | spectra と observed は計算・実験それぞれの (energy, intensity, label) の並び。output は保存先、xmin・xmax・ymax は軸の範囲、fermi は軸がフェルミ基準か、fermi_position は縦線の位置、extra_formats は EPS・PDF・PNG の追加保存。 | Path。サイト比較図の保存先。 |
 | `plot_experiment_comparison(calculated_energy, calculated_absorption, observed_energy, observed_absorption, output, *, xmin=None, xmax=None, ymin=0.0, ymax=None)` | calculated_energy と calculated_absorption は計算の軸と強度、observed_energy と observed_absorption は実験の軸と強度。output は保存先、xmin・xmax・ymin・ymax は表示範囲。 | Path。計算と実験を重ねた図の保存先。 |
-| `plot_composite(spectra, output, *, observed=None, dos=(), xlabel='Photon Energy [eV]', ylabel='Absorption [arb. unit]', xmin=None, xmax=None, ymax=None, dmax=None, fermi_position=None, extra_formats=False, show=False)` | spectra は計算曲線の並び、observed は実験曲線 1 本、dos は LDOS 曲線の並び。各曲線は (energy, value, label)。output は保存先、xlabel・ylabel はラベル、xmin・xmax・ymax・dmax は軸の範囲、fermi_position は縦線。extra_formats は PDF・EPS・PNG の追加保存、show は画面表示。 | Path。主図の保存先。 |
+| `plot_composite(spectra, output, *, observed=None, dos=(), xlabel='Photon Energy [eV]', ylabel='Absorption [arb. unit]', xmin=None, xmax=None, ymax=None, dmax=None, fermi_position=None, extra_formats=False, show=False)` | spectra は計算曲線の並び、observed は実験曲線 1 本、dos は LDOS 曲線の並び。各曲線は (energy, value, label)。output は保存先、xlabel・ylabel はラベル、xmin・xmax・ymax・dmax は軸の範囲、fermi_position は縦線。extra_formats は PDF・EPS・PNG の追加保存、show は画面表示、shade_occupied はフェルミ準位より下の LDOS を塗り分けます。 | Path。主図の保存先。 |
 
 **使用例**
 
@@ -581,13 +499,14 @@ output = PlotFdmXas().plot([(conv.get_eng(), conv.get_xas(), "Fe")], "Fe_XAS.pdf
 
 | メソッドと引数の既定値 | 引数の意味 | 戻り値 |
 | --- | --- | --- |
-| `plot_single_orbital(reader, output, *, orbital='p', emin=None, emax=None, dmax=None, edge_offset=0.0, fermi_position=0.0)` | reader は SD リーダー、output は保存先、orbital は軌道群、emin・emax・dmax は軸の範囲、edge_offset は軸に加える値、fermi_position は縦線の位置。 | Path。図の保存先。 |
+| `plot_local(reader, output, *, orbit=1, integrated=False)` | reader は SD リーダー、output は保存先、orbit は軌道角運動量の番号、integrated は積分 LDOS を選択。SAE の `fdLDOS.py` と同じ配置で描きます。 | Path。図の保存先。 |
+| `plot_single_orbital(reader, output, *, orbital='p', emin=None, emax=None, dmax=None, edge_offset=0.0, fermi_position=0.0, divisor=None, extra_outputs=())` | reader は SD リーダーまたは複数サイトのリーダーの並び、output は保存先、orbital は軌道群、emin・emax・dmax は軸の範囲、edge_offset は軸に加える値、fermi_position は縦線の位置、divisor は複数サイトの和の除数、extra_outputs は追加の保存先。 | Path。図の保存先。 |
 | `plot_occupied_ldos(reader, output, *, orbital='p', edge_offset=0.0, fermi_position=0.0, emin=None, emax=None, dmax=None)` | reader は SD リーダー、output は保存先、orbital は軌道群、edge_offset は軸に加える値、fermi_position は塗り分けの境界、emin・emax・dmax は軸の範囲。 | Path。占有側を塗った図の保存先。 |
 | `plot(reader, output, orbitals=('s', 'p', 'd'), *, integrated=False)` | reader は SD リーダー、output は保存先、orbitals は軌道群の並び、integrated は積分列を選択。 | Path。図の保存先。 |
 | `save_multiple_formats(readers, labels, output_prefix, *, formats=('eps', 'pdf', 'png'), edge_energy, fermi_energy, orbital='p', emin=None, emax=None)` | readers と labels は 3 サイト分の SD リーダーとラベル、output_prefix は保存名、formats は拡張子の並び。edge_energy と fermi_energy は吸収端とフェルミ値（eV）、orbital は軌道群、emin・emax は軸の範囲。 | list[Path]。指定形式の保存先。 |
 | `plot_multiple_sites(readers, labels, output, *, edge_energy, fermi_energy, orbital='p', emin=None, emax=None)` | readers と labels は 3 サイト分の SD リーダーとラベル、output は保存先。edge_energy と fermi_energy は吸収端とフェルミ値（eV）、orbital は軌道群、emin・emax は軸の範囲。 | Path。3 サイトの図の保存先。 |
-| `plot_three_calculations(readers, fermi_energies, labels, output, *, orbital='p', emin=None, emax=None, density_max=5.0)` | readers・fermi_energies・labels は 3 計算分のリーダー・フェルミ値・ラベル。output は保存先、orbital は軌道群、emin・emax・density_max は軸の範囲。 | Path。フェルミ基準で比較する図の保存先。 |
-| `plot_composite(reader, output, *, groups, spins=(0,), spin_labels=('', ''), projected=False, integrated=False, xas=(), shift=0.0, fermi_position=0.0, xlabel='Photon Energy [eV]', limits=(None, None), density_max=None, orbital_max=None, xas_max=None, label='0', extra_formats=False, show=False)` | reader は SD リーダー、output は保存先。groups は下から並べる軌道名のグループ、spins は各群のスピン順、spin_labels はスピン別の接尾辞。projected は PDOS の選択、integrated は LDOS の積分軸、xas は (energy, intensity, label) の並び。shift は SD 軸だけの移動量、fermi_position は縦線、xlabel は軸ラベル。limits はエネルギー範囲、density_max は DOS 上限、orbital_max は軌道群別上限の辞書、xas_max は XAS 上限、label は曲線ラベル。extra_formats は PDF・EPS・PNG の追加保存、show は画面表示。 | Path。主図の保存先。 |
+| `plot_three_calculations(readers, fermi_energies, labels, output, *, orbital='p', emin=None, emax=None, density_max=5.0, extra_outputs=())` | readers・fermi_energies・labels は 3 計算分のリーダー・フェルミ値・ラベル。output は保存先、orbital は軌道群、emin・emax・density_max は軸の範囲、extra_outputs は追加の保存先。 | Path。フェルミ基準で比較する図の保存先。 |
+| `plot_composite(reader, output, *, groups, spins=(0,), spin_labels=('', ''), projected=False, integrated=False, xas=(), shift=0.0, fermi_position=0.0, xlabel='Photon Energy [eV]', limits=(None, None), density_max=None, orbital_max=None, xas_max=None, label='0', extra_formats=False, show=False, shade_occupied=False)` | reader は SD リーダー、output は保存先。groups は下から並べる軌道名のグループ、spins は各群のスピン順、spin_labels はスピン別の接尾辞。projected は PDOS の選択、integrated は LDOS の積分軸、xas は (energy, intensity, label) の並び。shift は SD 軸だけの移動量、fermi_position は縦線、xlabel は軸ラベル。limits はエネルギー範囲、density_max は DOS 上限、orbital_max は軌道群別上限の辞書、xas_max は XAS 上限、label は曲線ラベル。extra_formats は PDF・EPS・PNG の追加保存、show は画面表示、shade_occupied はフェルミ準位より下の LDOS を塗り分けます。 | Path。主図の保存先。 |
 
 **使用例**
 
@@ -631,7 +550,7 @@ output = PlotFdmXasLdos().plot(xas, ldos, "Fe_XAS_LDOS.pdf")
 
 | メソッドと引数の既定値 | 引数の意味 | 戻り値 |
 | --- | --- | --- |
-| `plot(orbital_data, output, *, xas_data=None, raw_xas_data=None, emin=None, emax=None, dmax=None, ymax=None, energy_offset=0.0, orbital_groups=None, fermi_position=None)` | orbital_data は (label, energy, DOS) の並び、output は保存先。xas_data・raw_xas_data は畳み込み・生 XAS の (energy, intensity) で、生 XAS には畳み込み XAS も必要。emin・emax・dmax・ymax は各軸の範囲。energy_offset は全系列への軸の移動量（eV）、orbital_groups は同じ段に描く軌道名のグループ。fermi_position は表示軸上のフェルミ準位（eV）。指定すると全パネルに縦線を描く。 | Path。平均 PDOS と任意の XAS を含む図の保存先。 |
+| `plot(orbital_data, output, *, xas_data=None, raw_xas_data=None, emin=None, emax=None, dmax=None, ymax=None, energy_offset=0.0, orbital_groups=None, fermi_position=None, xlabel='Photon Energy [eV]', extra_formats=False, show=False)` | orbital_data は (label, energy, DOS) の並び、output は保存先。xas_data・raw_xas_data は畳み込み・生 XAS の (energy, intensity) で、生 XAS には畳み込み XAS も必要。emin・emax・dmax・ymax は各軸の範囲。energy_offset は全系列への軸の移動量（eV）、orbital_groups は同じ段に描く軌道名のグループ。fermi_position は表示軸上のフェルミ準位（eV）。指定すると全パネルに縦線を描きます。xlabel は軸ラベル、extra_formats は EPS・PDF・PNG の追加保存、show は画面表示。 | Path。平均 PDOS と任意の XAS を含む図の保存先。 |
 
 **使用例**
 
@@ -706,13 +625,13 @@ pz_pdos = sd.get_pdos(lm="p_z")
 ### BAV から計算クラスタを XYZ に書き出す
 
 ```python
-from fdmnes_util.analyze_fdm_log import AnalyzeFdmLog
 from fdmnes_util.fdm_bav import FdmBav
-from fdmnes_util.fdm_xyz import FdmXyz
+from fdmnes_util.xyz import Xyz
 
 bav = FdmBav("Fe_bav.txt").select_reader()
-symbols, positions = AnalyzeFdmLog(bav).positions()
-FdmXyz().write(symbols, positions, "Fe_cluster.xyz")
+symbols = bav.get_atoms_index_j()
+positions = bav.get_position()
+Xyz.write(symbols, positions, "Fe_cluster.xyz")
 ```
 
 ### サイト平均 XAS を描画する

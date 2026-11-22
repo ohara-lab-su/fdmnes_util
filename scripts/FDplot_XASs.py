@@ -35,6 +35,13 @@ from fdmnes_util.fdm_inp import FdmInp
 from fdmnes_util.fdm_txt import FdmTxt
 from fdmnes_util.fdmfile import Fdmfile
 
+__author__ = "Kengo NAKADA"
+__maintainer__ = "Kengo NAKADA"
+__credits__ = ["Kengo NAKADA"]
+__email__ = "kengo.nakada@gmail.com"
+__copyright__ = "Copyright 2015, Kengo NAKADA"
+__license__ = "MIT"
+
 
 def main(argv=None):
     """Execute the multiple-site XAS plotting command.
@@ -64,7 +71,7 @@ def main(argv=None):
     # In the original FDplot_XASs.py, -o means 'observed'. It is a switch,
     # not the output filename. Keep that meaning.
     parser.add_argument("-o", "--obs", action="store_true")
-    parser.add_argument("--output", default="XAS.pdf")
+    parser.add_argument("--output")
     options = parser.parse_args(argv)
 
     input_path = Fdmfile.select_input(options.input)
@@ -101,13 +108,14 @@ def main(argv=None):
     plotter = PlotFdmXas()
     return plotter.plot_sites(
         spectra,
-        options.output,
+        options.output or "XAS.pdf",
         observed=observed,
         xmin=options.emin,
         xmax=options.emax,
         ymax=options.ymax,
         fermi=options.fermi,
         fermi_position=fermi_position,
+        extra_formats=options.output is None,
     )
 
 

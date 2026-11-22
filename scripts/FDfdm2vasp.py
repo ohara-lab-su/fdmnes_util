@@ -28,10 +28,9 @@ padding around the positions obtained from the FDMNES coordinate scale.
 """
 
 import argparse
-from math import isfinite
 from pathlib import Path
 
-from fdmnes_util.fdm_inp import FdmInp
+from fdmnes_util.fdm_structure import FdmStructure
 
 
 def main() -> None:
@@ -56,16 +55,10 @@ def main() -> None:
     if output_path is None:
         output_path = Path(str(input_path) + ".vasp")
 
-    # The FDMNES-specific interpretation remains in its file class.
-    input_file = FdmInp(input_path)
-    if "molecule" in input_file.tags:
-        if not isfinite(args.vacuum) or args.vacuum <= 0:
-            parser.error("--vacuum must be a positive finite distance")
-        atoms = input_file.get_molecule_atoms()
-        # POSCAR needs a periodic cell even though Molecule has no translation.
-        atoms.center(vacuum=args.vacuum)
-    else:
-        atoms = input_file.get_crystal_atoms()
+    try:
+        atoms = FdmStructure.fdm_to_atoms(input_path, vacuum=args.vacuum)
+    except ValueError as error:
+        parser.error(str(error))
 
     # ASE provides the POSCAR writer; this project does not implement one.
     from ase.io import write

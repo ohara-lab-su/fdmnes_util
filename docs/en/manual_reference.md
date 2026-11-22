@@ -23,7 +23,7 @@ Read, inspect, and generate FDMNES calculation inputs.
 | `get_nonexc()` | — | bool: True when the keyword is present. |
 | `get_convolution()` | — | bool: True when `Convolution` is present. |
 | `get_conv_out()` | — | str: Convolution-output value, or an empty string. |
-| `get_calculation()` | — | str: Last `Calculation` value, or an empty string. |
+| `get_calculation()` | — | str: First filename in the last `Calculation` block, or an empty string. |
 | `get_cellparam()` | — | list[float] \| None: The six cell parameters, or None when absent. |
 | `get_crystal_atoms()` | — | ase.Atoms: Periodic atomic structure with fractional positions. |
 | `get_molecule_atoms()` | — | ase.Atoms: Atom positions in angstroms, with periodicity disabled. |
@@ -204,7 +204,7 @@ energy, s_ldos = sd.get_eng(), sd.get_ldos("s")
 
 Read orbital-resolved density of states from a 2020-format SD file.
 
-The verified layout has one spin. Pass 0, `up`, `non`, or `nonmag` as `spin`. Use the s, p, and d groups present in the file.
+This reader supports nonmagnetic columns and the 31-column magnetic layout verified on 2021 and 2026 Ni output. Pass 0 (`up`, `non`, or `nonmag`) or, for magnetic output, 1 (`dn` or `down`). The `total` and `Int(total)` columns describe both spins together.
 
 | Method and parameter defaults | Parameter meanings | Return value |
 | --- | --- | --- |
@@ -213,11 +213,11 @@ The verified layout has one spin. Pass 0, `up`, `non`, or `nonmag` as `spin`. Us
 | `get_eng()` | — | ndarray. Energy axis in eV. |
 | `get_lmax()` | — | int. Maximum orbital angular momentum index. |
 | `get_ispin()` | — | int. Number of spin channels. |
-| `get_ldos(l=0, spin=0)` | `l` Orbital angular momentum index or the name s, p, or d. `spin` Spin channel. This reader supports nonmagnetic output. | numpy.ndarray: Density values for the requested orbital. |
-| `get_intldos(l=0, spin=0)` | `l` Angular momentum index or group name s, p, or d. `spin` Zero or the name of the sole available spin channel. | numpy.ndarray: Integrated densities on the file's energy grid. |
-| `get_pdos(l=0, m=0, lm=None, spin=0)` | `l` Orbital angular momentum index. `m` Magnetic quantum number. `lm` Optional orbital name, such as `dxy` or `p_x`. `spin` Zero or the name of the sole available spin channel. | numpy.ndarray: Partial density values. |
-| `get_tdos(spin=0)` | `spin` Zero or the name of the sole available spin channel. | ndarray. Stored total DOS column. |
-| `get_inttdos(spin=0)` | `spin` Zero or the name of the sole available spin channel. | ndarray. Stored integrated total DOS column. |
+| `get_ldos(l=0, spin=0)` | `l` Orbital angular momentum index or the name s, p, or d. `spin` Spin channel number or name. | numpy.ndarray: Density values for the requested orbital. |
+| `get_intldos(l=0, spin=0)` | `l` Angular momentum index or group name s, p, or d. `spin` Spin channel number or name. | numpy.ndarray: Integrated densities on the file's energy grid. |
+| `get_pdos(l=0, m=0, lm=None, spin=0)` | `l` Orbital angular momentum index. `m` Magnetic quantum number. `lm` Optional orbital name, such as `dxy` or `p_x`. `spin` Spin channel number or name. | numpy.ndarray: Partial density values. |
+| `get_tdos(spin=0)` | `spin` Spin channel number or name. | ndarray. Stored total DOS across all spins. |
+| `get_inttdos(spin=0)` | `spin` Spin channel number or name. | ndarray. Stored integrated total DOS across all spins. |
 
 **Example**
 
@@ -308,26 +308,6 @@ log = FdmBav2020("Fe_bav.txt")
 symbols, positions = log.get_atoms_index_j(), log.get_position()
 ```
 
-### `FdmBav2026`
-
-`from fdmnes_util.fdm_bav_2026 import FdmBav2026`
-
-This subclass reads SCF records of the form `Cycle n, Fermi energy = ...` and `Total energy = ... eV, Delta energy = ...` verified in FDMNES 2026.11.05 BAV output. Instantiate it with a log path. Common methods such as cluster coordinates and edge information retain the behavior documented under `FdmBav2020`.
-
-| Method and parameter defaults | Parameter meanings | Return value |
-| --- | --- | --- |
-| `__init__(filename)` (inherited) | BAV file path. | `None`. |
-| `get_n_scf_loop()` | No parameters. | `int`. Last reported SCF cycle, or `0` if absent. |
-| `get_scf_toten()` | No parameters. | `list[float]`. SCF total energies in eV and in log order, or an empty list if absent. |
-
-```python
-from fdmnes_util.fdm_bav_2026 import FdmBav2026
-
-log = FdmBav2026("Fe_SCF_bav.txt")
-print(log.get_n_scf_loop())
-print(log.get_scf_toten())
-```
-
 ## Structure I/O
 
 ### `Cif`
@@ -376,37 +356,18 @@ pdb = Pdb("Fe.pdb")
 symbols, coordinates = pdb.get_symbols(), pdb.get_cartesian_positions()
 ```
 
-### `VaspPoscarFile`
-
-`from fdmnes_util.vasp_poscar import VaspPoscarFile`
-
-Provide FDMNES conversion data using vasp_util's POSCAR reader.
-
-| Method and parameter defaults | Parameter meanings | Return value |
-| --- | --- | --- |
-| `__init__(filename: str \| Path='POSCAR')` | `filename` POSCAR filename. | None. |
-| `get_lattice_vectors()` | — | numpy.ndarray: Lattice vectors stored by rows. |
-| `get_direct_positions()` | — | numpy.ndarray: Array of fractional atomic positions. |
-| `get_symbols()` | — | list[str]: Chemical symbols in POSCAR atom order. |
-
-**Example**
-
-```python
-from fdmnes_util.vasp_poscar import VaspPoscarFile
-poscar = VaspPoscarFile("POSCAR")
-lattice, fractional = poscar.get_lattice_vectors(), poscar.get_direct_positions()
-```
-
 ### `Xyz`
 
 `from fdmnes_util.xyz import Xyz`
 
-Represent atomic symbols and Cartesian coordinates in an XYZ file.
+Read and write atomic symbols and Cartesian coordinates in standard XYZ format.
 
 | Method and parameter defaults | Parameter meanings | Return value |
 | --- | --- | --- |
 | `__init__(filename: str \| Path)` | `filename` Path to a standard XYZ coordinate file. | None. |
 | `read()` | — | None. Refreshes symbols and positions in place. |
+| `render(symbols, positions)` (static) | `symbols` Chemical symbols in the desired output order. `positions` Cartesian positions in angstroms, each with three values. | str. Complete XYZ text, including a trailing newline. |
+| `write(symbols, positions, filename)` (class method) | `symbols` Chemical symbols in the desired output order. `positions` Cartesian positions in angstroms, each with three values. `filename` Destination filename or path. | Path. Saved XYZ path. |
 
 **Example**
 
@@ -416,24 +377,16 @@ cluster = Xyz("cluster.xyz")
 symbols, positions = cluster.symbols, cluster.positions
 ```
 
-### `StructureConversion`
+### `ElementTable`
 
-`from fdmnes_util.structure_conversion import StructureConversion`
+`from fdmnes_util.fdm_structure import ElementTable`
 
-Adapt structure readers to ASE without duplicating POSCAR parsing.
+Look up atomic numbers and element symbols used in structure records.
 
-| Method and parameter defaults | Parameter meanings | Return value |
+| Method | Argument | Return value |
 | --- | --- | --- |
-| `poscar_to_atoms(filename)` (static) | `filename` Path to the POSCAR file. | ase.Atoms: Periodic structure in the POSCAR atom order. |
-| `other_to_atoms(filename, format)` (static) | `filename` Path to the structure file. `format` ASE file-format identifier. | ase.Atoms: Structure returned by ASE. |
-
-**Example**
-
-```python
-from fdmnes_util.structure_conversion import StructureConversion
-atoms = StructureConversion.poscar_to_atoms("POSCAR")
-print(atoms.get_chemical_formula())
-```
+| `get_atomic_symbol0(num)` | Atomic number. | Element symbol as str. |
+| `get_atomic_number1(atom)` | Element symbol. | Atomic number as int. |
 
 ### `FdmStructure`
 
@@ -443,7 +396,11 @@ Convert structure information into a FDMNES structural section.
 
 | Method and parameter defaults | Parameter meanings | Return value |
 | --- | --- | --- |
-| `__init__(structure: VaspPoscarFile)` | `structure` Structure read using the external VASP module. | None. |
+| `__init__(structure)` | `structure` A `vasp_util.vasp_poscar.VaspPoscar` instance or a reader such as `Cif` or `Pdb` exposing element symbols, lattice vectors, and fractional coordinates. | None. |
+| `fdm_to_atoms(filename, *, vacuum=10.0)` (static) | FDMNES input path. `vacuum` is the padding in Å on each side of the molecule. | ase.Atoms for POSCAR writing. |
+| `poscar_to_atoms(filename)` (static) | POSCAR path passed to vasp_util. | Periodic ase.Atoms with the original lattice and atom order. |
+| `crystal_atoms(cell_values, atom_lines)` (static) | Six cell lengths and angles, followed by atom records containing atomic numbers and fractional coordinates. | ase.Atoms with periodic boundaries. |
+| `molecule_atoms(lines)` (static) | Molecular scale and atomic-coordinate records. | ase.Atoms for an isolated molecule with Cartesian coordinates in Å. |
 | `render(molecule: bool=False)` | `molecule` Write the `Molecule` keyword instead of `Crystal`. | str: Formatted FDMNES structure section. |
 | `render_xyz_molecule(symbols: list[str], positions: list[tuple[float, float, float]])` (static) | `symbols` Chemical symbols in atom order. `positions` Cartesian positions in angstroms. | str. FDMNES Molecule section from XYZ coordinates. |
 | `write(filename: str \| Path, molecule: bool=False)` | `filename` Destination filename. `molecule` Whether to use the Molecule keyword. | Path: Written file path. |
@@ -452,53 +409,13 @@ Convert structure information into a FDMNES structural section.
 
 ```python
 from fdmnes_util.fdm_structure import FdmStructure
-from fdmnes_util.vasp_poscar import VaspPoscarFile
+from vasp_util.vasp_poscar import VaspPoscar
 
-structure = FdmStructure(VaspPoscarFile("POSCAR"))
+structure = FdmStructure(VaspPoscar("POSCAR"))
 output = structure.write("Fe.fdmnes")
 ```
 
-### `FdmXyz`
-
-`from fdmnes_util.fdm_xyz import FdmXyz`
-
-Serialize FDMNES atomic positions using the standard XYZ format.
-
-| Method and parameter defaults | Parameter meanings | Return value |
-| --- | --- | --- |
-| `render(symbols, positions)` | `symbols` Chemical symbols in the desired output order. `positions` Cartesian positions in angstroms, each with three values. | str. Complete XYZ text, including a trailing newline. |
-| `write(symbols, positions, filename)` | `symbols` Chemical symbols in the desired output order. `positions` Cartesian positions in angstroms, each with three values. `filename` Destination filename or path. | Path. Saved XYZ path. |
-
-**Example**
-
-```python
-from fdmnes_util.fdm_xyz import FdmXyz
-writer = FdmXyz()
-output = writer.write(["Fe", "Fe"], [(0.0, 0.0, 0.0), (1.5, 1.5, 1.5)], "Fe_pair.xyz")
-```
-
 ## Analysis
-
-### `AnalyzeFdmLog`
-
-`from fdmnes_util.analyze_fdm_log import AnalyzeFdmLog`
-
-Analyze the cluster block of a year-specific FDMNES BAV reader.
-
-| Method and parameter defaults | Parameter meanings | Return value |
-| --- | --- | --- |
-| `__init__(reader)` | `reader` BAV reader exposing the source lines in file order. | None. |
-| `positions()` | — | tuple[list[str], ndarray]. Chemical symbols and Cartesian coordinates. |
-
-**Example**
-
-```python
-from fdmnes_util.analyze_fdm_log import AnalyzeFdmLog
-from fdmnes_util.fdm_bav import FdmBav
-
-log = FdmBav("Fe_bav.txt").select_reader()
-symbols, positions = AnalyzeFdmLog(log).positions()
-```
 
 ### `AnalyzeFdmAverage`
 
@@ -558,8 +475,9 @@ Matplotlib visualizations for FDMNES XAS.
 
 | Method and parameter defaults | Parameter meanings | Return value |
 | --- | --- | --- |
+| `plot_convolved(eng, xas, output, *, specified=False)` | `eng` Fermi-relative energies. `xas` Convolved absorption. `output` Figure path. `specified` Use the original `fdXAS_specified.py` ticks and legend. | Path to the saved figure. |
 | `plot(spectra, output, *, title=None, xlabel='Energy (eV)', ylabel='XAS', xmin=None, xmax=None, ymax=None, fermi_position=None)` | `spectra` Sequence of energy, intensity, and curve-label tuples. `output` Destination path. The extension determines the figure format. `title` Optional figure title. `xlabel` Energy-axis label. `ylabel` Absorption-axis label. `xmin` Optional minimum energy. `xmax` Optional maximum energy. `ymax` Optional maximum absorption. `fermi_position` Energy at which to draw the optional Fermi marker. | pathlib.Path: Path to the saved figure. |
-| `plot_sites(spectra, output, *, observed=None, xmin=None, xmax=None, ymax=None, fermi=False, fermi_position=None)` | `spectra` Computed spectra as energy, intensity, label tuples. `output` Destination path for the figure. `observed` Optional Athena spectra for the upper panel. `xmin` Optional lower limit of the energy axis. `xmax` Optional upper limit of the energy axis. `ymax` Optional upper limit of the absorption axis. `fermi` Whether the energy axis is Fermi-relative. `fermi_position` Energy of the vertical Fermi marker. | pathlib.Path: Destination of the saved figure. |
+| `plot_sites(spectra, output, *, observed=None, xmin=None, xmax=None, ymax=None, fermi=False, fermi_position=None, extra_formats=False)` | `spectra` Computed spectra as energy, intensity, label tuples. `output` Destination path for the figure. `observed` Optional Athena spectra for the upper panel. `xmin` Optional lower limit of the energy axis. `xmax` Optional upper limit of the energy axis. `ymax` Optional upper limit of the absorption axis. `fermi` Whether the energy axis is Fermi-relative. `fermi_position` Energy of the vertical Fermi marker. `extra_formats` Also save EPS, PDF, and PNG. | pathlib.Path: Destination of the saved figure. |
 | `plot_experiment_comparison(calculated_energy, calculated_absorption, observed_energy, observed_absorption, output, *, xmin=None, xmax=None, ymin=0.0, ymax=None)` | `calculated_energy` Calculated photon energies in eV. `calculated_absorption` Calculated absorption intensity. `observed_energy` Experimental photon energies in eV. `observed_absorption` Normalized experimental absorption. `output` Destination PDF or image filename. `xmin` Optional minimum photon energy in eV. `xmax` Optional maximum photon energy in eV. `ymin` Optional minimum absorption value. `ymax` Optional maximum absorption value. | pathlib.Path: Saved figure filename. |
 | `plot_composite(spectra, output, *, observed=None, dos=(), xlabel='Photon Energy [eV]', ylabel='Absorption [arb. unit]', xmin=None, xmax=None, ymax=None, dmax=None, fermi_position=None, extra_formats=False, show=False)` | `spectra` Calculated spectrum tuples of energy, intensity, and label. `output` Main output filename. `observed` Optional measured energy, absorption, and label tuple. `dos` Optional LDOS tuples of energy, density, and label. `xlabel` Label of the bottom energy axis. `ylabel` Label of the calculated absorption axis. `xmin` Lower common energy limit. `xmax` Upper common energy limit. `ymax` Upper calculated absorption limit. `dmax` Upper LDOS limit. `fermi_position` Optional Fermi marker on calculated panels, in eV. `extra_formats` Also save EPS, PNG and PDF. `show` Display the figure using the active Matplotlib backend. | pathlib.Path: Main figure path. |
 
@@ -581,13 +499,14 @@ Create density-of-states figures without parsing an SD file.
 
 | Method and parameter defaults | Parameter meanings | Return value |
 | --- | --- | --- |
-| `plot_single_orbital(reader, output, *, orbital='p', emin=None, emax=None, dmax=None, edge_offset=0.0, fermi_position=0.0)` | `reader` Year-specific FDMNES SD reader. `output` Destination image path. Matplotlib infers its format. `orbital` Orbital channel to plot, such as `p`. `emin` Optional minimum energy for the horizontal axis. `emax` Optional maximum energy for the horizontal axis. `dmax` Optional maximum density for the vertical axis. `edge_offset` Offset added to the computed energy axis (eV). `fermi_position` Position of the vertical Fermi marker (eV). | pathlib.Path: The generated image file. |
+| `plot_local(reader, output, *, orbit=1, integrated=False)` | `reader` SD reader. `output` Figure path. `orbit` Orbital angular momentum index. `integrated` Plot integrated LDOS. Uses the SAE `fdLDOS.py` layout. | Path to the saved figure. |
+| `plot_single_orbital(reader, output, *, orbital='p', emin=None, emax=None, dmax=None, edge_offset=0.0, fermi_position=0.0, divisor=None, extra_outputs=())` | `reader` SD reader or sequence of site readers. `output` Destination image path. Matplotlib infers its format. `orbital` Orbital channel to plot, such as `p`. `emin` Optional minimum energy for the horizontal axis. `emax` Optional maximum energy for the horizontal axis. `dmax` Optional maximum density for the vertical axis. `edge_offset` Offset added to the computed energy axis (eV). `fermi_position` Position of the vertical Fermi marker (eV). `divisor` Optional divisor of the site sum. `extra_outputs` Additional save paths. | pathlib.Path: The generated image file. |
 | `plot_occupied_ldos(reader, output, *, orbital='p', edge_offset=0.0, fermi_position=0.0, emin=None, emax=None, dmax=None)` | `reader` FDMNES SD object for the selected format year. `output` Destination figure path. `orbital` Orbital channel whose LDOS is plotted. `edge_offset` Energy offset added to SD energies, in eV. `fermi_position` Fermi level in the shifted energy axis, in eV. `emin` Optional lower energy limit, in eV. `emax` Optional upper energy limit, in eV. `dmax` Optional upper density limit. | pathlib.Path: Destination of the saved figure. |
 | `plot(reader, output, orbitals=('s', 'p', 'd'), *, integrated=False)` | `reader` A version-specific SD reader exposing the `get_*dos` API. `output` Path of the output image or PDF. `orbitals` Orbital channels to draw in the requested order. `integrated` Plot integrated LDOS instead of LDOS when True. | pathlib.Path: Path to the figure written to disk. |
 | `save_multiple_formats(readers, labels, output_prefix, *, formats=('eps', 'pdf', 'png'), edge_energy, fermi_energy, orbital='p', emin=None, emax=None)` | `readers` Exactly three year-specific SD reader objects. `labels` Three site labels in the same order as the readers. `output_prefix` Output path without a filename extension. `formats` Sequence of image extensions supported by Matplotlib. `edge_energy` Absorption-edge energy in eV. `fermi_energy` Fermi energy relative to the edge in eV. `orbital` Orbital channel to plot. `emin` Optional minimum photon energy in eV. `emax` Optional maximum photon energy in eV. | list[pathlib.Path]: Paths to the generated image files. |
 | `plot_multiple_sites(readers, labels, output, *, edge_energy, fermi_energy, orbital='p', emin=None, emax=None)` | `readers` Three version-specific SD reader instances. `labels` Three labels corresponding to the SD files. `output` Path of the image to save. `edge_energy` Absorption-edge energy in eV. `fermi_energy` Fermi energy relative to the absorption edge in eV. `orbital` Orbital channel to display, defaulting to p. `emin` Optional lower photon-energy limit in eV. `emax` Optional upper photon-energy limit in eV. | pathlib.Path: Path of the saved figure. |
-| `plot_three_calculations(readers, fermi_energies, labels, output, *, orbital='p', emin=None, emax=None, density_max=5.0)` | `readers` Three SD readers, one per calculation. `fermi_energies` Three Fermi energies from the corresponding `FdmTxt` objects, expressed in the SD energy reference. `labels` Labels for the three independent calculations. `output` Destination image path. `orbital` LDOS channel to plot. `emin` Optional minimum Fermi-relative energy in eV. `emax` Optional maximum Fermi-relative energy in eV. `density_max` Upper bound of the LDOS axis. | pathlib.Path: Path to the saved figure. |
-| `plot_composite(reader, output, *, groups, spins=(0,), spin_labels=('', ''), projected=False, integrated=False, xas=(), shift=0.0, fermi_position=0.0, xlabel='Photon Energy [eV]', limits=(None, None), density_max=None, orbital_max=None, xas_max=None, label='0', extra_formats=False, show=False)` | `reader` SD reader supplying densities on its own energy grid. `output` Main figure filename. `groups` Bottom-to-top groups of orbital names. Use ("total",) for a total DOS panel. `spins` Spin channel order within each group, from bottom to top. `spin_labels` Label suffixes indexed by spin channel. `projected` Use individual orbital projections (PDOS). `integrated` Add stored integral curves on right-hand axes. `xas` Energy, intensity and label tuples for the absorption panel. `shift` Reference-frame shift applied only to the SD grid, in eV. `fermi_position` Position of the vertical energy marker, in eV. `xlabel` Energy reference label shown on the bottom axis. `limits` Lower and upper energy limits, with None for SD bounds. `density_max` Default upper limit on DOS magnitudes. `orbital_max` Optional mapping of group names to DOS limits. `xas_max` Maximum intensity on the absorption panel. `label` Site or material label used on the DOS curves. `extra_formats` Also save PDF, EPS, and PNG. `show` Display the figure after saving. | pathlib.Path: Main saved figure. |
+| `plot_three_calculations(readers, fermi_energies, labels, output, *, orbital='p', emin=None, emax=None, density_max=5.0, extra_outputs=())` | `readers` Three SD readers, one per calculation. `fermi_energies` Three Fermi energies from the corresponding `FdmTxt` objects, expressed in the SD energy reference. `labels` Labels for the three independent calculations. `output` Destination image path. `orbital` LDOS channel to plot. `emin` Optional minimum Fermi-relative energy in eV. `emax` Optional maximum Fermi-relative energy in eV. `density_max` Upper bound of the LDOS axis. `extra_outputs` Additional save paths. | pathlib.Path: Path to the saved figure. |
+| `plot_composite(reader, output, *, groups, spins=(0,), spin_labels=('', ''), projected=False, integrated=False, xas=(), shift=0.0, fermi_position=0.0, xlabel='Photon Energy [eV]', limits=(None, None), density_max=None, orbital_max=None, xas_max=None, label='0', extra_formats=False, show=False, shade_occupied=False)` | `reader` SD reader supplying densities on its own energy grid. `output` Main figure filename. `groups` Bottom-to-top groups of orbital names. Use ("total",) for a total DOS panel. `spins` Spin channel order within each group, from bottom to top. `spin_labels` Label suffixes indexed by spin channel. `projected` Use individual orbital projections (PDOS). `integrated` Add stored integral curves on right-hand axes. `xas` Energy, intensity and label tuples for the absorption panel. `shift` Reference-frame shift applied only to the SD grid, in eV. `fermi_position` Position of the vertical energy marker, in eV. `xlabel` Energy reference label shown on the bottom axis. `limits` Lower and upper energy limits, with None for SD bounds. `density_max` Default upper limit on DOS magnitudes. `orbital_max` Optional mapping of group names to DOS limits. `xas_max` Maximum intensity on the absorption panel. `label` Site or material label used on the DOS curves. `extra_formats` Also save PDF, EPS, and PNG. `show` Display the figure after saving. `shade_occupied` Shade LDOS below the Fermi level. | pathlib.Path: Main saved figure. |
 
 **Example**
 
@@ -631,7 +550,7 @@ Draw averaged FDMNES orbital projections and absorption spectra.
 
 | Method and parameter defaults | Parameter meanings | Return value |
 | --- | --- | --- |
-| `plot(orbital_data, output, *, xas_data=None, raw_xas_data=None, emin=None, emax=None, dmax=None, ymax=None, energy_offset=0.0, orbital_groups=None, fermi_position=None)` | `orbital_data` Sequence of (label, energy, DOS) records. `output` Destination image filename. `xas_data` Optional (energy, absorption) pair after broadening. `raw_xas_data` Optional (energy, absorption) pair before broadening. `emin` Optional minimum energy. `emax` Optional maximum energy. `dmax` Optional upper bound for each PDOS panel. `ymax` Optional upper bound for the XAS panel. `energy_offset` Energy shift in eV applied to every plotted curve. `orbital_groups` Optional orbital-name groups. Each group is plotted in one panel, following the SAE orbital block layout. `fermi_position` Fermi level in the displayed energy reference (eV), drawn on every panel when supplied. | pathlib.Path: Path to the generated figure. |
+| `plot(orbital_data, output, *, xas_data=None, raw_xas_data=None, emin=None, emax=None, dmax=None, ymax=None, energy_offset=0.0, orbital_groups=None, fermi_position=None, xlabel='Photon Energy [eV]', extra_formats=False, show=False)` | `orbital_data` Sequence of (label, energy, DOS) records. `output` Destination image filename. `xas_data` Optional (energy, absorption) pair after broadening. `raw_xas_data` Optional (energy, absorption) pair before broadening. `emin` Optional minimum energy. `emax` Optional maximum energy. `dmax` Optional upper bound for each PDOS panel. `ymax` Optional upper bound for the XAS panel. `energy_offset` Energy shift in eV applied to every plotted curve. `orbital_groups` Optional orbital-name groups. Each group is plotted in one panel, following the SAE orbital block layout. `fermi_position` Fermi level in the displayed energy reference (eV), drawn on every panel when supplied. `xlabel` Energy-axis label. `extra_formats` Also save EPS, PDF, and PNG. `show` Display the figure. | pathlib.Path: Path to the generated figure. |
 
 **Example**
 
@@ -706,13 +625,13 @@ pz_pdos = sd.get_pdos(lm="p_z")
 ### Export a calculation cluster from BAV to XYZ
 
 ```python
-from fdmnes_util.analyze_fdm_log import AnalyzeFdmLog
 from fdmnes_util.fdm_bav import FdmBav
-from fdmnes_util.fdm_xyz import FdmXyz
+from fdmnes_util.xyz import Xyz
 
 bav = FdmBav("Fe_bav.txt").select_reader()
-symbols, positions = AnalyzeFdmLog(bav).positions()
-FdmXyz().write(symbols, positions, "Fe_cluster.xyz")
+symbols = bav.get_atoms_index_j()
+positions = bav.get_position()
+Xyz.write(symbols, positions, "Fe_cluster.xyz")
 ```
 
 ### Plot the mean XAS across sites

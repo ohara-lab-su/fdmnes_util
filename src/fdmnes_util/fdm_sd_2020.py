@@ -129,15 +129,26 @@ class FdmSd2020:
         ispin: Number of spin channels in this format.
     """
 
+    # total と Int(total) は磁性出力でも全スピン共通の一列。
+    total_ispin = 1
+
     ORBITALS = {
         "s": (0, 0),
+        # py (l=1, m=-1, spin=0)
         "py": (1, -1),
+        # pz (l=1, m=0, spin=0)
         "pz": (1, 0),
+        # px (l=1, m=1, spin=0)
         "px": (1, 1),
+        # dxy (l=2, m=-2, spin=0)
         "dxy": (2, -2),
+        # dyz (l=2, m=-1, spin=0)
         "dyz": (2, -1),
+        # dz2 (l=2, m=0, spin=0)
         "dz2": (2, 0),
+        # dxz (l=2, m=1, spin=0)
         "dxz": (2, 1),
+        # dx2-y2 (l=2, m=2, spin=0)
         "dx2-y2": (2, 2),
     }
     ALIASES = {
@@ -171,7 +182,19 @@ class FdmSd2020:
 
         self.columns = lines[0].split()
         column_count = len(self.columns)
-        if column_count not in (5, 10, 17):
+        if self._magnetic_header(self.columns):
+            self.ispin = 2
+            self.lmax = 2
+        elif column_count == 5:
+            self.ispin = 1
+            self.lmax = 0
+        elif column_count == 10:
+            self.ispin = 1
+            self.lmax = 1
+        elif column_count == 17:
+            self.ispin = 1
+            self.lmax = 2
+        else:
             raise ValueError(f"Not a 2020 SD header ({column_count} columns)")
 
         # 列名と同じ読込みから数値行を解析する。
@@ -179,33 +202,46 @@ class FdmSd2020:
         if self.values.shape[1] != column_count:
             raise ValueError("SD column count mismatch")
 
-        if weight is not None:
-            if weight == 0:
-                raise ValueError("weight must be nonzero")
-            # The energy axis is not a density and must not be normalized.
-            self.values[:, 1:] /= float(weight)
-
-        self.energy = self.values[:, 0].copy()
-        lmax_by_columns = {5: 0, 10: 1, 17: 2}
-        self.lmax = lmax_by_columns[column_count]
-        self.ispin = 1
         self._fields = dict(zip(self.columns, self.values.T))
 
-        required = {"Energy", "s", "Int(s)", "total", "Int(total)"}
+        required = {"Energy", "total", "Int(total)"}
+        orbitals = set()
         orbital_groups = ("s", "p", "d")
-        for level in range(1, self.lmax + 1):
+        for level in range(self.lmax + 1):
             group = orbital_groups[level]
-            required.update((group, f"Int({group})"))
+            orbitals.update((group, f"Int({group})"))
         for orbital, (level, _) in self.ORBITALS.items():
             if level <= self.lmax:
-                required.add(orbital)
+                orbitals.add(orbital)
+        if self.ispin == 2:
+            for suffix in ("_up", "_dn"):
+                required.update(f"{orbital}{suffix}" for orbital in orbitals)
+        else:
+            required.update(orbitals)
         missing = required.difference(self._fields)
         if missing or len(self._fields) != column_count:
             raise ValueError(f"Invalid 2020 SD columns; missing: {sorted(missing)}")
 
+        if weight is not None:
+            divisor = float(weight)
+            if divisor == 0:
+                raise ValueError("weight must be nonzero")
+            # Energy は除く
+            for name, column in self._fields.items():
+                if name != "Energy":
+                    column /= divisor
+
+        self.energy = self._fields["Energy"].copy()
+
+    @staticmethod
+    def _magnetic_header(columns):
+        return len(columns) == 31 and {"s_up", "s_dn"}.issubset(columns)
+
     def get_densities(self):
         """Return all density and integral columns in file order."""
-        return self.values[:, 1:]
+        if self.columns[0] == "Energy":
+            return self.values[:, 1:]
+        return np.delete(self.values, self.columns.index("Energy"), axis=1)
 
     def get_eng(self):
         """Return the energy axis (eV)."""
@@ -219,25 +255,24 @@ class FdmSd2020:
         """Return the number of spin channels."""
         return self.ispin
 
-    @staticmethod
-    def _check_spin(spin):
-        """Require the sole spin channel in the verified 2020 layout.
-
-        Args:
-            spin: Zero or one of the accepted names for the sole channel.
-
-        Raises:
-            ValueError: If the requested spin channel is unavailable.
-        """
-        if spin not in (0, "up", "non", "nonmag"):
+    def _spin_suffix(self, spin):
+        """実ファイルの軌道列に付くスピンの接尾辞を返す。"""
+        if spin in (0, "up", "non", "nonmag"):
+            if self.ispin == 1:
+                return ""
+            return "_up"
+        if self.ispin == 1:
             raise ValueError("The verified 2020 SD layout has one spin channel")
+        if spin in (1, "dn", "down"):
+            return "_dn"
+        raise ValueError(f"Unknown SD spin channel: {spin}")
 
     def get_ldos(self, l=0, spin=0):
         """Return the l-resolved DOS for the requested orbital.
 
         Args:
             l: Orbital angular momentum index or the name s, p, or d.
-            spin: Spin channel. This reader supports nonmagnetic output.
+            spin: スピン番号、または up・dn・down。
 
         Returns:
             numpy.ndarray: Density values for the requested orbital.
@@ -247,20 +282,19 @@ class FdmSd2020:
             IndexError: If a numerical angular momentum is out of range.
             KeyError: If the orbital column is absent.
         """
-        self._check_spin(spin)
-
+        suffix = self._spin_suffix(spin)
         if isinstance(l, int):
             key = ("s", "p", "d")[l]
         else:
             key = l
-        return self._fields[key]
+        return self._fields[f"{key}{suffix}"]
 
     def get_intldos(self, l=0, spin=0):
         """Return the stored integral of an angular-momentum DOS channel.
 
         Args:
             l: Angular momentum index or group name s, p, or d.
-            spin: Zero or the name of the sole available spin channel.
+            spin: スピン番号、または up・dn・down。
 
         Returns:
             numpy.ndarray: Integrated densities on the file's energy grid.
@@ -270,12 +304,12 @@ class FdmSd2020:
             IndexError: If a numerical angular momentum is out of range.
             KeyError: If the integrated orbital column is absent.
         """
-        self._check_spin(spin)
+        suffix = self._spin_suffix(spin)
         if isinstance(l, int):
             key = ("s", "p", "d")[l]
         else:
             key = l
-        return self._fields[f"Int({key})"]
+        return self._fields[f"Int({key}){suffix}"]
 
     def get_pdos(self, l=0, m=0, lm=None, spin=0):
         """Return an (l, m)-resolved orbital contribution.
@@ -284,7 +318,7 @@ class FdmSd2020:
             l: Orbital angular momentum index.
             m: Magnetic quantum number.
             lm: Optional orbital name, such as ``dxy`` or ``p_x``.
-            spin: Zero or the name of the sole available spin channel.
+            spin: スピン番号、または up・dn・down。
 
         Returns:
             numpy.ndarray: Partial density values.
@@ -293,7 +327,7 @@ class FdmSd2020:
             KeyError: If the orbital column does not exist.
             ValueError: If spin selects an unavailable channel.
         """
-        self._check_spin(spin)
+        suffix = self._spin_suffix(spin)
         if lm is not None:
             orbital_name = lm.lower()
             key = self.ALIASES.get(orbital_name, orbital_name)
@@ -304,15 +338,15 @@ class FdmSd2020:
                     key = orbital_name
                     break
 
-        if key not in self._fields:
+        if key not in self.ORBITALS:
             raise KeyError(f"Orbital absent: {key}")
-        return self._fields[key]
+        return self._fields[f"{key}{suffix}"]
 
     def get_tdos(self, spin=0):
         """Return the total DOS column written by FDMNES.
 
         Args:
-            spin: Zero or the name of the sole available spin channel.
+            spin: スピン指定の有効性を検査する。戻り値は全スピン共通。
 
         Returns:
             numpy.ndarray: One value per energy point.
@@ -320,14 +354,14 @@ class FdmSd2020:
         Raises:
             ValueError: If spin selects an unavailable channel.
         """
-        self._check_spin(spin)
+        self._spin_suffix(spin)
         return self._fields["total"]
 
     def get_inttdos(self, spin=0):
         """Return the integrated total DOS column written by FDMNES.
 
         Args:
-            spin: Zero or the name of the sole available spin channel.
+            spin: スピン指定の有効性を検査する。戻り値は全スピン共通。
 
         Returns:
             numpy.ndarray: One value per energy point.
@@ -335,5 +369,5 @@ class FdmSd2020:
         Raises:
             ValueError: If spin selects an unavailable channel.
         """
-        self._check_spin(spin)
+        self._spin_suffix(spin)
         return self._fields["Int(total)"]

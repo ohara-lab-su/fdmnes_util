@@ -10,7 +10,7 @@ SAE の命名では、大文字の `FD*.py` は汎用コマンド、小文字の
 
 ## POSCAR 読み込みと vasp_util 原本
 
-SAE の `FDvasp2fdm.py` は ASE で POSCAR を読み、`AseInputOperations` で FDMNES 用の構造を整えていました。現行の `FDvasp2fdm.py` では `VaspPoscarFile` が外部ライブラリの `vasp_util.vasp_poscar.VaspPoscar` を呼び、`get_lattice_vectors()`、`get_coords_direct()`、`get_atom_indices()` で格子・分率座標・原子順の元素記号を取得します。これらの読み取りメソッドは `vasp_util_original.zip` 内の `vasp_util/vasp_poscar.py` で確認できます。FDMNES の構造節と入力の生成は現行の `FdmStructure` と `FdmInp` が担当します。逆方向の `FDfdm2vasp.py` は FDMNES 入力の構造を ASE に渡し、ASE で POSCAR を書き出します。
+SAE の `FDvasp2fdm.py` は ASE で POSCAR を読み、`AseInputOperations` で FDMNES 用の構造を整えていました。現行の `FDvasp2fdm.py` では 外部ライブラリの `vasp_util.vasp_poscar.VaspPoscar` を直接使い、`get_lattice_vectors()`、`get_coords_direct()`、`get_atom_indices()` で格子・分率座標・原子順の元素記号を取得します。これらの読み取りメソッドは `vasp_util_original.zip` 内の `vasp_util/vasp_poscar.py` で確認できます。FDMNES の構造節と入力の生成は現行の `FdmStructure` と `FdmInp` が担当します。逆方向の `FDfdm2vasp.py` は FDMNES 入力の構造を ASE に渡し、ASE で POSCAR を書き出します。
 
 ## 複合描画の選び方
 
@@ -191,7 +191,7 @@ python FDplot_LDOS.py -i read_pdb.inp -a 0 --year 2020 --sp --total --intdos --x
 ```
 
 **原本からの変更点**
-現行版は BAV または `--year` で SD 形式を選びます。光子エネルギー軸をフェルミ基準に戻すときは吸収端とフェルミ値の両方を引きます。
+現行版は SD の列名で形式を選びます。`--year` で形式を明示できます。光子エネルギー軸をフェルミ基準に戻すときは吸収端とフェルミ値の両方を引きます。
 
 ### `FDplot_PDOS.py`
 
@@ -352,16 +352,16 @@ python fdExp_comp_XAS.py -i Fe_conv.txt --txt Fe.txt --experiment Fe_obs.txt.nor
 指定サイトの SD ファイルから LDOS を取り出して描くための最小限の例です。
 
 **現行版の入出力**
-SD ファイルを直接指定し、s・p・d 軌道群を `Fe_LDOS.pdf` に描きます。積分列を描く場合は `--intdos` を付けます。
+`read_pdb.inp` の `Filout` を使い、既定ではサイト 1 の p-LDOS を描きます。`-i` で計算入力、`-a` でサイト番号、`-l` で軌道角運動量の番号を指定できます。積分列を描く場合は `--intdos` を付けます。
 
 **実行例**
 
 ```bash
-python fdLDOS.py -i Fe_sd0.txt --year 2020 -o Fe_LDOS.pdf
+python fdLDOS.py -i read_pdb.inp -a 0 -l 1 --year 2020 -o Fe_LDOS.pdf
 ```
 
 **原本からの変更点**
-現行版は計算入力と原子番号からの探索を省き、SD のパスと形式年を直接受け取ります。
+SD ファイルも直接指定できます。`--year` で SD の形式を明示でき、`-o` で図の保存先を選べます。
 
 ### `fdLDOS0_specified.py`
 
@@ -378,7 +378,7 @@ python fdLDOS0_specified.py -i read_pdb.inp --year 2020 --emin -10 --emax 10 --d
 ```
 
 **原本からの変更点**
-Pd6 の固定パスやサイト集合、除数を使っていた原本から、指定計算の `_sd0.txt` にある p-LDOS を描く形に変更しました。
+入力を省略すると、原本と同じ Pd6 の5サイトの p-LDOS の和を6で割ります。計算入力を指定すると、その計算の `_sd0.txt` を描きます。
 
 ### `fdLDOS_color.py`
 
@@ -395,7 +395,7 @@ python fdLDOS_color.py Fe_sd0.txt --year 2020 --orbital p --fermi 0 --output Fe_
 ```
 
 **原本からの変更点**
-原本の多段 DOS と XAS を組み合わせるオプションから、現行版は単一軌道群の塗り分けを取り出しています。
+計算入力から描く場合は、原本と同じ多段 LDOS・TDOS・XAS を組み合わせられます。たとえば `-i read_pdb.inp --p --total --xas --nw` で p-LDOS、TDOS、XAS を描きます。
 
 ### `fdLDOSmulti.py`
 
@@ -403,7 +403,7 @@ python fdLDOS_color.py Fe_sd0.txt --year 2020 --orbital p --fermi 0 --output Fe_
 原本は `BaTiO3_R3m` の3サイトを並べ、Ba と Ti の p-LDOS を見比べるための例です。
 
 **現行版の入出力**
-`Fe.txt` と `Fe_sd0.txt` から `Fe_sd2.txt` までを読み、3サイトの図を作ります。既定は `LDOSmulti.pdf` で、例の `--all-formats` は EPS と PNG も保存します。
+`Fe.txt` と `Fe_sd0.txt` から `Fe_sd2.txt` までを読み、3サイトの図を作ります。出力先を省略すると、原本同様に `LDOSmulti` の EPS・PDF・PNG を保存します。
 
 **実行例**
 
@@ -412,7 +412,7 @@ python fdLDOSmulti.py --input Fe --year 2020 --orbital p --all-formats
 ```
 
 **原本からの変更点**
-計算名、軌道、表示範囲を引数で選べます。原本の試料固有ラベルはサイト番号と軌道名に置き換えました。
+計算名、軌道、表示範囲を引数で選べます。既定の `BaTiO3_R3m` には原本の Ba、Ba、Ti のサイトラベルを使います。
 
 ### `fdMulti_2_XAS+LDOS+EXP.py`
 
@@ -446,7 +446,7 @@ python fdMulti_3.py run1/Fe run2/Fe run3/Fe --year 2020 --site 0 --output Fe_thr
 ```
 
 **原本からの変更点**
-固定の Pd パスを三つの接頭辞に置き換えました。軌道、サイト、表示範囲を指定できます。
+三つの接頭辞を省略すると原本の Pd の計算を使います。計算、軌道、サイト、表示範囲を指定できます。
 
 ### `fdPDOS_XAS_av.py`
 
@@ -463,7 +463,7 @@ python fdPDOS_XAS_av.py Fe_1_sd0.txt Fe_2_sd0.txt --year 2020 --sp --xas-files F
 ```
 
 **原本からの変更点**
-固定パスを引数に置き換えました。生 XAS も描く場合は `--raw-xas-files` を追加します。フェルミ基準にする場合は生・畳み込み XAS と `--input` を併用して `--fermi` を指定します。
+SD ファイルを省略すると原本の三計算を使用し、`--xas` で畳み込み、`--broad` で生 XAS も重ねます。SD ファイルを明示する場合は対応する `--xas-files`・`--raw-xas-files` を指定できます。フェルミ基準は `--fermi` で選び、明示指定のときはエネルギー基準を判定するための `--input` も渡します。
 
 ### `fdXAS.py`
 
@@ -471,7 +471,7 @@ python fdPDOS_XAS_av.py Fe_1_sd0.txt Fe_2_sd0.txt --year 2020 --sp --xas-files F
 畳み込み XAS を単独で描く簡単な例です。図のスタイルや曲線を追加する際の出発点になります。
 
 **現行版の入出力**
-`Fe_conv.txt` 内のエネルギーと第1吸収列から `Fe_XAS.pdf` を作ります。`-o` を省くと `XAS.pdf` です。
+`Fe_conv.txt` 内のエネルギーと第1吸収列を SAE 原版の配置で描き、0 eV にフェルミ準位の縦線を表示します。入力は位置引数または `-i` で指定できます。省略時は `POSCAR_conv.txt`、または作業ディレクトリ内の唯一の `*_conv.txt` を読みます。`-o` を省くと `XAS.pdf` です。
 
 **実行例**
 

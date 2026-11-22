@@ -19,6 +19,6 @@ The table shows the rules used by `AnalyzeFdmXas.energy_reference()`. `E` is the
 | Without `Energpho` | `E + E_edge` | `E − E_Fermi` |
 | With `Energpho` | `E` | `E − E_edge − E_Fermi` |
 
-The 2016 SD layout is interpreted by column order and the configured spin count. The 2020 reader uses named columns and the verified layout has one spin channel. Many samples accept a `--year` argument. Automatic layout selection from a 2022 or later BAV log is unsupported.
+The 2016 SD reader uses column order and the configured spin count. The 2020 reader uses column names and handles nonmagnetic output and the 31-column magnetic layout verified on 2021 and 2026 Ni output. The magnetic layout stores one `total` and one `Int(total)` column for both spins. Many samples accept `--year` to select the layout explicitly.
 
 For the calculation keywords themselves, consult the FDMNES manual distributed with the application. This documentation covers the files and operations supported by the Python library.

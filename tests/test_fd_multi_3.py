@@ -21,8 +21,18 @@ class ExampleSd:
         return np.array([0.0, 1.0, 0.0])
 
 
-def test_three_calculations_saves_pdf(tmp_path):
+def test_three_calculations_saves_pdf(tmp_path, monkeypatch):
     """Generate a PDF from three independent Fermi references."""
+    from matplotlib.figure import Figure
+
+    grids = []
+    savefig = Figure.savefig
+
+    def record_grids(figure, *args, **kwargs):
+        grids.extend(axis.lines[0].get_xdata().copy() for axis in figure.axes)
+        return savefig(figure, *args, **kwargs)
+
+    monkeypatch.setattr(Figure, "savefig", record_grids)
     readers = [ExampleSd(), ExampleSd(), ExampleSd()]
     destination = tmp_path / "three.pdf"
     result = PlotFdmDos().plot_three_calculations(
@@ -33,6 +43,10 @@ def test_three_calculations_saves_pdf(tmp_path):
     )
     assert result == destination
     assert destination.stat().st_size > 0
+    np.testing.assert_array_equal(
+        grids,
+        [[0.0, 1.0, 2.0], [-0.5, 0.5, 1.5], [-1.0, 0.0, 1.0]],
+    )
 
 
 def test_three_calculations_rejects_bad_inputs(tmp_path):

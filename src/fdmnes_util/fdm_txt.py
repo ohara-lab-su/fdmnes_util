@@ -99,19 +99,21 @@ class FdmTxt:
         self.energy = self.values[:, 0]
         self.xas = self.values[:, 1:]
 
-        # The first line pairs values before "=" with names after it.
+        # 一行目のイコールで結ばれたところまでの変数の数のカウント
+        ###########################
+        # 一行目のイコールで結ばれた値=変数名を、動的に変数＝値としてセット
         self.parameters = {}
         tokens = lines[0].replace(",", " ").split()
         if "=" in tokens:
-            separator = tokens.index("=")
-            values = tokens[:separator]
-            names = tokens[separator + 1 :]
-
-            for key, value in zip(names, values):
+            count = tokens.index("=") + 1
+            # キーに対応する値がないときは、値が揃っている項目まで読む。
+            for i in range(count, min(len(tokens), 2 * count - 1)):
+                key = tokens[i]
                 try:
-                    self.parameters[key] = float(value)
+                    value = float(tokens[i - count])
                 except ValueError:
                     continue
+                self.parameters[key] = value
 
         # SAE reads E_edge and Z by name. Keep the positional fallback for
         # headers without those keys.
@@ -129,7 +131,13 @@ class FdmTxt:
                     atomic_number = float(metadata_fields[1])
                 except ValueError:
                     pass
-        self.atomic_number = None if atomic_number is None else int(atomic_number)
+        self.atomic_number = None
+        if atomic_number is not None:
+            try:
+                self.atomic_number = int(atomic_number)
+            except (ValueError, OverflowError):
+                pass
+        # 2020/2016 互換で、E_Fermi がないとき(2020)は互換値として 0.0 を入れる
         self.fermi_energy = self.parameters.get("E_Fermi", 0.0)
 
     def get_eng(self):

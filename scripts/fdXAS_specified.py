@@ -13,6 +13,13 @@ from fdmnes_util.plot.plot_fdm_xas import PlotFdmXas
 from fdmnes_util.fdm_conv import FdmConv
 from fdmnes_util.fdm_txt import FdmTxt
 
+__author__ = "Kengo NAKADA"
+__maintainer__ = "Kengo NAKADA"
+__credits__ = ["Kengo NAKADA"]
+__email__ = "kengo.nakada@gmail.com"
+__copyright__ = "Copyright 2015, Kengo NAKADA"
+__license__ = "MIT"
+
 
 def main(argv=None):
     """Create the Fermi-relative XAS figure.
@@ -54,14 +61,12 @@ def main(argv=None):
     )
 
     plotter = PlotFdmXas()
-    spectra = [(energy, absorption, "XAS")]
-    output = plotter.plot(
-        spectra,
+    return plotter.plot_convolved(
+        energy,
+        absorption,
         options.output,
-        xlabel="Energy above Fermi [eV]",
-        ylabel="Absorption [arb. unit]",
+        specified=True,
     )
-    return output
 
 
 if __name__ == "__main__":
