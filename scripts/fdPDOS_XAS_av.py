@@ -53,7 +53,7 @@ def main(argv=None):
         argv: Optional command-line arguments for testing or reuse.
     """
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("sd_files", nargs="+", help="SD files to average")
+    parser.add_argument("sd_files", nargs="*", help="SD files to average")
     parser.add_argument("--year", type=int)
     parser.add_argument("--orbitals", nargs="+", default=["s", "p_z"])
     parser.add_argument("--spin", type=int, default=0)
@@ -81,6 +81,7 @@ def main(argv=None):
         help="Label prefix for orbital curves (SAE --label)",
     )
     parser.add_argument(
+        "-a",
         "--atom",
         type=int,
         default=0,
@@ -114,8 +115,36 @@ def main(argv=None):
         type=float,
         help="Upper limit of the XAS panel (SAE --ymax)",
     )
-    parser.add_argument("-o", "--output", default="PDOS_average.pdf")
+    parser.add_argument("-o", "--output")
+    parser.add_argument("--outsuffix", default="")
+    parser.add_argument("--dosweight", type=float)
+    parser.add_argument("-x", "--xas", action="store_true")
+    parser.add_argument("-b", "--broad", action="store_true")
+    parser.add_argument("--nw", action="store_true")
     options = parser.parse_args(argv)
+
+    reference_raw = None
+    if not options.sd_files:
+        prefixes = (
+            "R5_fdm_ad_on_67/ZrO2Pd",
+            "R5_fdm_ad_on_68/ZrO2Pd",
+            "R5_fdm_ad_on_72/ZrO2Pd",
+        )
+        options.sd_files = [f"{prefix}_sd{options.atom}.txt" for prefix in prefixes]
+        if options.input is None:
+            options.input = "R5_fdm_ad_on_67/read_pdb.inp"
+        reference_raw = f"{prefixes[0]}.txt"
+        if options.xas_files is None and (options.xas or options.broad):
+            options.xas_files = [f"{prefix}_conv.txt" for prefix in prefixes]
+        if options.raw_xas_files is None and options.broad:
+            options.raw_xas_files = [f"{prefix}.txt" for prefix in prefixes]
+        if not options.sp:
+            options.spd = True
+    elif options.xas or options.broad:
+        if options.xas_files is None:
+            parser.error("--xas or --broad with explicit SD files requires --xas-files")
+        if options.broad and options.raw_xas_files is None:
+            parser.error("--broad with explicit SD files requires --raw-xas-files")
 
     # Reproduce the orbital blocks defined in the original SAE script.
     # A custom --orbitals selection keeps the simple ungrouped layout.
@@ -149,7 +178,10 @@ def main(argv=None):
 
     readers = []
     for filename in options.sd_files:
-        sd_file = FdmSd(filename, format_year=options.year)
+        reader_options = {"format_year": options.year}
+        if options.dosweight is not None:
+            reader_options["weight"] = options.dosweight
+        sd_file = FdmSd(filename, **reader_options)
         readers.append(sd_file.select_reader())
 
     analyzer = AnalyzeFdmAverage()
@@ -214,12 +246,15 @@ def main(argv=None):
     # and the edge/Fermi metadata in the unbroadened XAS file.
     energy_offset = options.energy_offset
     fermi_position = None
+    xlabel = "Photon Energy [eV]"
     if options.input is not None:
-        if options.raw_xas_files is None:
+        if options.raw_xas_files is not None:
+            reference_raw = options.raw_xas_files[0]
+        if reference_raw is None:
             parser.error("--input requires --raw-xas-files for energy metadata")
 
         input_file = FdmInp(options.input)
-        reference_spectrum = FdmTxt(options.raw_xas_files[0])
+        reference_spectrum = FdmTxt(reference_raw)
         reference_shift, absolute_fermi = analyzer.energy_reference(
             input_file,
             reference_spectrum,
@@ -230,6 +265,8 @@ def main(argv=None):
         fermi_position = options.energy_offset
         if not options.fermi:
             fermi_position += absolute_fermi
+        else:
+            xlabel = "Energy above Fermi [eV]"
     else:
         if options.fermi:
             parser.error("--fermi requires --input and --raw-xas-files")
@@ -237,7 +274,7 @@ def main(argv=None):
     plotter = PlotFdmAverage()
     plotter.plot(
         orbital_data,
-        options.output,
+        options.output or f"PDOS{options.atom}{options.outsuffix}.pdf",
         xas_data=xas_data,
         raw_xas_data=raw_xas_data,
         emin=options.emin,
@@ -247,6 +284,9 @@ def main(argv=None):
         energy_offset=energy_offset,
         orbital_groups=orbital_groups,
         fermi_position=fermi_position,
+        xlabel=xlabel,
+        extra_formats=options.output is None,
+        show=not options.nw,
     )
 
 

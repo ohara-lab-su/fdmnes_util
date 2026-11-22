@@ -20,6 +20,7 @@ extensions = [
 ]
 myst_enable_extensions = ["colon_fence"]
 autodoc_member_order = "bysource"
+autodoc_default_options = {"inherited-members": True}
 
 
 def _language_links(app, docname, source):

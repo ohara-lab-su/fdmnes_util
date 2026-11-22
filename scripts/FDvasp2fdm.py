@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright Kengo NAKADA; SAE class library.
+# SAE: sae/commands/FDvasp2fdm.py
 """Convert a VASP POSCAR file to a FDMNES structure section.
 
 This editable example demonstrates the external vasp_util POSCAR reader and
@@ -8,9 +10,8 @@ FDMNES structure writer. It also generates the original SAE calculation input te
 import argparse
 from pathlib import Path
 
-from fdmnes_util.vasp_poscar import VaspPoscarFile
-from fdmnes_util.fdm_structure import FdmStructure
 from fdmnes_util.fdm_inp import FdmInp
+from fdmnes_util.fdm_structure import FdmStructure
 
 
 def main() -> int:
@@ -38,7 +39,9 @@ def main() -> int:
     else:
         output_path = Path(args.output)
 
-    structure = VaspPoscarFile(str(input_path))
+    from vasp_util.vasp_poscar import VaspPoscar
+
+    structure = VaspPoscar(str(input_path))
     writer = FdmStructure(structure)
     writer.write(output_path, molecule=args.mol)
     FdmInp.write("read_pdb.inp", structure_writer=writer, molecule=args.mol)

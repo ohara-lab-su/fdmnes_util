@@ -13,63 +13,70 @@ import shutil
 from typing import Optional, Sequence
 
 
-def install_scripts(
-    directory: Path,
-    overwrite: bool = False,
-) -> tuple[list[Path], list[Path]]:
-    """Copy packaged example scripts to a user-selected directory.
+class ScriptInstaller:
+    """配布された編集用サンプルを作業ディレクトリに展開する。"""
 
-    Existing files are preserved unless ``overwrite`` is explicitly enabled.
-    The examples are ordinary Python source files, not console entry points.
+    @staticmethod
+    def install_scripts(
+        directory: Path,
+        overwrite: bool = False,
+    ) -> tuple[list[Path], list[Path]]:
+        """Copy packaged example scripts to a user-selected directory.
 
-    Args:
-        directory: Destination directory
-        usually the current directory.
-        overwrite: Replace existing script files when set to True.
+        Existing files are preserved unless ``overwrite`` is explicitly enabled.
+        The examples are ordinary Python source files, not console entry points.
 
-    Returns:
-        tuple[list[Path], list[Path]]: Copied paths and skipped paths.
+        Args:
+            directory: Destination directory
+            usually the current directory.
+            overwrite: Replace existing script files when set to True.
 
-    Raises:
-        FileNotFoundError: When the package does not contain its examples.
-        NotADirectoryError: When the destination is not a directory.
-    """
-    destination = Path(directory)
-    if not destination.is_dir():
-        raise NotADirectoryError(f"Destination is not a directory: {destination}")
+        Returns:
+            tuple[list[Path], list[Path]]: Copied paths and skipped paths.
 
-    # The scripts are installed through pyproject.toml data-files.
-    # They remain editable examples, not Python entry points.
-    data_directory = Path(sysconfig.get_path("data"))
-    scripts_resource = data_directory / "share" / "fdmnes_util" / "scripts"
+        Raises:
+            FileNotFoundError: When the package does not contain its examples.
+            NotADirectoryError: When the destination is not a directory.
+        """
+        destination = Path(directory)
+        if not destination.is_dir():
+            raise NotADirectoryError(f"Destination is not a directory: {destination}")
 
-    if not scripts_resource.is_dir():
-        # A source checkout is also supported during development.
-        project_scripts = Path(__file__).resolve().parents[2] / "scripts"
-        if not project_scripts.is_dir():
-            raise FileNotFoundError("Installed example scripts were not found")
-        scripts_resource = project_scripts
+        # The scripts are installed through pyproject.toml data-files.
+        # They remain editable examples, not Python entry points.
+        data_directory = Path(sysconfig.get_path("data"))
+        scripts_resource = data_directory / "share" / "fdmnes_util" / "scripts"
 
-    copied = []
-    skipped = []
+        if not scripts_resource.is_dir():
+            # A source checkout is also supported during development.
+            project_scripts = Path(__file__).resolve().parents[2] / "scripts"
+            if not project_scripts.is_dir():
+                raise FileNotFoundError("Installed example scripts were not found")
+            scripts_resource = project_scripts
 
-    # Sort by filename so installation order is predictable on all platforms.
-    source_files = sorted(scripts_resource.iterdir(), key=lambda item: item.name)
-    for source in source_files:
-        if not source.is_file():
-            continue
-        if source.suffix != ".py":
-            continue
+        copied = []
+        skipped = []
 
-        target = destination / source.name
-        if target.exists() and not overwrite:
-            skipped.append(target)
-            continue
+        # Sort by filename so installation order is predictable on all platforms.
+        source_files = sorted(scripts_resource.iterdir(), key=lambda item: item.name)
+        for source in source_files:
+            if not source.is_file():
+                continue
+            if source.suffix != ".py":
+                continue
 
-        shutil.copy2(source, target)
-        copied.append(target)
+            target = destination / source.name
+            if target.exists() and not overwrite:
+                skipped.append(target)
+                continue
 
-    return copied, skipped
+            shutil.copy2(source, target)
+            copied.append(target)
+
+        return copied, skipped
+
+
+install_scripts = ScriptInstaller.install_scripts
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -106,7 +113,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if args.resource != "script":
             parser.error("Unsupported install target")
 
-        copied, skipped = install_scripts(args.directory, overwrite=args.force)
+        copied, skipped = ScriptInstaller.install_scripts(
+            args.directory,
+            overwrite=args.force,
+        )
         for path in copied:
             print(f"Installed: {path}")
         for path in skipped:

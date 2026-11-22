@@ -27,6 +27,13 @@ from fdmnes_util.fdm_conv import FdmConv
 from fdmnes_util.fdm_txt import FdmTxt
 from fdmnes_util.plot.plot_fdm_xas import PlotFdmXas
 
+__author__ = "Kengo NAKADA"
+__maintainer__ = "Kengo NAKADA"
+__credits__ = ["Kengo NAKADA"]
+__email__ = "kengo.nakada@gmail.com"
+__copyright__ = "Copyright 2015, Kengo NAKADA"
+__license__ = "MIT"
+
 
 def main() -> None:
     """Read FDMNES and Athena files and save a comparison figure."""

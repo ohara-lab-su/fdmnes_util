@@ -55,24 +55,21 @@ class FdmConvolutionInputs:
             input_name = f"conv_{site_number}.inp"
             calculation_name = relpath(spectrum, output_directory)
             convolution_name = str(Path(calculation_name).with_suffix("")) + "_conv.txt"
-            input_lines = [
-                "",
-                " Filout",
-                "   " + job_prefix,
-                "",
-                " Calculation",
-                "   " + calculation_name,
-                "",
-                " Conv_out",
-                "   " + convolution_name,
-                "",
-                " Convolution",
-                "",
-                "END",
-            ]
-            input_text = "\n".join(input_lines) + "\n"
             input_path = output_directory / input_name
-            input_path.write_text(input_text, encoding="utf-8")
+            with input_path.open("w", encoding="utf-8") as convinp:
+                print("", file=convinp)
+                print(" Filout", file=convinp)
+                print("   " + job_prefix, file=convinp)
+                print("", file=convinp)
+                print(" Calculation", file=convinp)
+                print("   " + calculation_name, file=convinp)
+                print("", file=convinp)
+                print(" Conv_out", file=convinp)
+                print("   " + convolution_name, file=convinp)
+                print("", file=convinp)
+                print(" Convolution", file=convinp)
+                print("", file=convinp)
+                print("END", file=convinp)
             input_names.append(input_name)
 
         job_list_path = output_directory / "fdmfile.txt"

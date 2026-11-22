@@ -151,65 +151,68 @@ class FdmSd2016:
         if self.ispin not in (1, 2):
             raise ValueError("ispin must be 1 or 2")
 
-        labels = []
-        for token in self.header:
-            for number in re.findall(r"n\((\d+),", token):
-                labels.append(int(number))
-        if not labels:
+        tmp = self.header[-1]
+        tmp = re.sub(r".*\(", "", tmp)
+        try:
+            # nonmag 版
+            self.lmax = int(re.sub(r"\).*", "", tmp))
+        except ValueError:
+            # spin 版
+            try:
+                self.lmax = int(re.sub(r",.*\).*", "", tmp))
+            except ValueError as error:
+                raise ValueError("Cannot detect 2016 lmax") from error
+        if self.lmax < 0:
             raise ValueError("Cannot detect 2016 lmax")
-        self.lmax = max(labels)
 
         # 列名と同じ読込みから数値行を解析する。
         self.values = np.loadtxt(lines[1:], ndmin=2)
-        expected_columns = 1 + self.ispin
-        for angular_momentum in range(self.lmax + 1):
-            expected_columns += (2 * (2 * angular_momentum + 1) + 2) * self.ispin
-        if self.values.shape[1] != expected_columns:
+        tmmax = 0
+        for l in range(self.lmax + 1):
+            tmmax += (2 * l + 1) * self.ispin
+        total_orbit = tmmax
+        total_row = 1 + self.ispin + total_orbit * 2 + (l + 1) * 2 * self.ispin
+        if len(self.header) != total_row or self.values.shape[1] != total_row:
             raise ValueError(
-                f"2016 SD column mismatch: {self.values.shape[1]} != {expected_columns}"
+                f"2016 SD column mismatch: header has {len(self.header)} columns, "
+                f"data has {self.values.shape[1]}, expected {total_row}"
             )
 
         if weight is not None:
-            if not weight:
+            divisor = float(weight)
+            if divisor == 0:
                 raise ValueError("weight must be nonzero")
-            self.values[:, 1:] /= float(weight)
+            # Energy は除く
+            self.values[:, 1:] /= divisor
 
         self.energy = self.values[:, 0].copy()
         self._partial = {}
         self._ldos = {}
         self._intldos = {}
-        offset = 1 + self.ispin
-
-        # The 2016 format stores one orbital and its integrated value
-        # consecutively, then the l-projected values for each spin channel.
-        for angular_momentum in range(self.lmax + 1):
-            for magnetic_quantum_number in range(
-                -angular_momentum, angular_momentum + 1
-            ):
-                for spin in range(self.ispin):
-                    key = (angular_momentum, magnetic_quantum_number, spin)
-                    self._partial[key] = self.values[:, offset]
-                    # 個別軌道の積分列は元の数値表に保持する。
-                    offset += 2
-            for spin in range(self.ispin):
-                key = (angular_momentum, spin)
-                self._ldos[key] = self.values[:, offset]
-                offset += 1
-                self._intldos[key] = self.values[:, offset]
-                offset += 1
-
         self._total = {}
         self._integrated_total = {}
-        for spin in range(self.ispin):
-            total = np.zeros_like(self.energy)
-            # SAE starts with Int_t, then adds each angular-momentum integral.
-            integrated_total = self.values[:, 1 + spin].copy()
-            for angular_momentum in range(self.lmax + 1):
-                key = (angular_momentum, spin)
-                total += self._ldos[key]
-                integrated_total += self._intldos[key]
-            self._total[spin] = total
-            self._integrated_total[spin] = integrated_total
+        # INTTDOS  Int_t(u), Int_t(d)
+        row = 1
+        for s in range(self.ispin):
+            self._total[s] = np.zeros_like(self.energy)
+            self._integrated_total[s] = self.values[:, row].copy()
+            row += 1
+        # PDOS & INTPDOS
+        for ll in range(self.lmax + 1):
+            # m,spin成分分解 n(0,0),,,
+            for m in range(-ll, ll + 1):
+                for s in range(self.ispin):
+                    self._partial[ll, m, s] = self.values[:, row]
+                    # 個別軌道の積分列は数値表に保持する。
+                    row += 2
+            # l軌道のsum n_l(0,0),,,
+            for s in range(self.ispin):
+                self._ldos[ll, s] = self.values[:, row]
+                self._total[s] += self.values[:, row]
+                row += 1
+                self._intldos[ll, s] = self.values[:, row]
+                self._integrated_total[s] += self.values[:, row]
+                row += 1
 
     def get_densities(self):
         """Return all density and integral columns in file order."""

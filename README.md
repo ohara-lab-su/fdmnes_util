@@ -35,7 +35,7 @@ Classes are organized by file format, with reading and writing operations for a 
 
 Class and module names follow Python naming conventions: for example, `FdmSd2016` is defined in `fdm_sd_2016.py`. The 2016 and 2020 formats have separate classes. The 2022 format will not be assumed to be identical to the 2020 format until actual output files have been compared.
 
-Operations on values read from files are handled by analysis classes such as `AnalyzeFdmXas` and `AnalyzeFdmLog`. Plotting is handled by `PlotFdmXas` and `PlotFdmDos`. **Scripts call these classes rather than duplicating analysis formulas or plotting logic.**
+The version-specific BAV readers expose the calculation cluster. Classes such as `AnalyzeFdmXas` and `AnalyzeFdmAverage` handle numerical analysis. Plotting is handled by `PlotFdmXas` and `PlotFdmDos`. **Scripts call these classes rather than duplicating analysis formulas or plotting logic.**
 ## Class library API
 
 Use these references to call the public classes in `src/fdmnes_util` directly from Python.
@@ -105,7 +105,7 @@ The command outputs EPS, PDF, and PNG files. Unlike the original script, it does
 The `fdXAS_specified.py` example has also been added. Fermi-level-referenced energy conversion from the original SAE script is handled by an analysis class, and plotting uses a class in `plot/`.
 ## VASP integration
 
-POSCAR reading is delegated to the separate `vasp_util` package. No VASP parser is implemented within `fdmnes_util`. `FDvasp2fdm.py` is an example that reads POSCAR through `VaspPoscarFile` and writes the FDMNES structure section with `FdmStructure`.
+`FDvasp2fdm.py` reads POSCAR with `vasp_util.vasp_poscar.VaspPoscar` and writes the FDMNES structure section with `FdmStructure`. In the reverse direction, `FdmStructure` assembles the crystal or molecular structure for POSCAR output.
 
 ```console
 fdmnes_util install script

@@ -121,316 +121,334 @@ from fdmnes_util.fdm_txt import FdmTxt
 from fdmnes_util.fdmfile import Fdmfile
 from fdmnes_util.plot.plot_fdm_xas import PlotFdmXas
 
+__author__ = "Kengo NAKADA"
+__maintainer__ = "Kengo NAKADA"
+__credits__ = ["Kengo NAKADA"]
+__email__ = "kengo.nakada@gmail.com"
+__copyright__ = "Copyright 2015, Kengo NAKADA"
+__license__ = "MIT"
 
-def main(argv=None):
-    """Read calculated and measured spectra and draw the SAE comparison.
 
-    Args:
-        argv: Optional command-line argument sequence.
+class XasPlotSample:
+    """このサンプルの入力選択、サイト平均と描画をつなぐ。"""
 
-    Returns:
-        pathlib.Path: Path to the main figure.
-    """
-    parser = argparse.ArgumentParser(description="Plot FDMNES XAS")
-    parser.add_argument("prefix", nargs="?", help="Plot directly from a Filout prefix")
-    parser.add_argument("-i", "--inp", "--inpname", dest="input_file")
-    parser.add_argument("-f", "--filout", "--filoutname")
-    parser.add_argument("-c", "--conv", "--convolution")
-    parser.add_argument("-t", "--txt", "--textname")
-    parser.add_argument("-s", "--sd", "--sdname")
-    parser.add_argument("--filbav", "--bavname", dest="bav")
-    parser.add_argument("--name", help="Common prefix for the calculation outputs")
-    parser.add_argument("-o", dest="short_o", help="SAE Athena overlay path")
-    parser.add_argument("--obs", help="Athena overlay file")
-    parser.add_argument("--output", help="Figure path or SAE output prefix")
-    parser.add_argument("-a", "--absorber", nargs="*", type=int)
-    parser.add_argument("-w", "--weight", type=float)
-    parser.add_argument("-x", "--dosweight", type=float)
-    parser.add_argument("--year", type=int, choices=(2016, 2020))
-    parser.add_argument("-b", "--broad", action="store_true")
-    parser.add_argument("-d", "--dos", action="store_true")
-    parser.add_argument("-n", "--nonsubtract", action="store_true")
-    parser.add_argument("--dn", "--down", action="store_true")
-    for flag in ("xas", "fermi", "l2", "l3", "l23", "up", "spin", "pdf", "nw"):
-        parser.add_argument(f"--{flag}", action="store_true")
-    for limit in ("emin", "emax", "ymax", "dmax"):
-        parser.add_argument(f"--{limit}", type=float)
-    options = parser.parse_args(argv)
+    def run(self, argv=None):
+        """Read calculated and measured spectra and draw the SAE comparison.
 
-    input_file = None
-    if (
-        options.input_file is not None
-        or options.prefix is None
-        or options.fermi
-        or options.dos
-    ):
-        input_file = FdmInp(Fdmfile.select_input(options.input_file))
+        Args:
+            argv: Optional command-line argument sequence.
 
-    filout = options.filout or options.prefix
-    if filout is None and input_file is not None:
-        calculation = input_file.get_calculation()
-        filout = calculation.removesuffix(".txt") or input_file.get_filout()
-    if not filout and not options.name:
-        parser.error("Specify a Filout prefix or an input containing Filout")
-    sites = options.absorber or []
-    if any(site < 1 for site in sites) or len(set(sites)) != len(sites):
-        parser.error("Select distinct positive absorbing-site indices")
-
-    raw_name = options.name or options.txt or filout
-    conv_name = options.name or options.conv or filout
-    if input_file is not None and not (options.name or options.conv):
-        conv_name = input_file.get_conv_out() or conv_name
-    correct_energy = input_file is not None and not options.nonsubtract
-    show_raw = options.xas or not options.broad
-    show_convolved = not options.xas and (options.broad or input_file is not None)
-
-    raw_readers = []
-    if show_raw or correct_energy or sites:
-        raw_readers = [
-            FdmTxt(path) for path in _spectrum_paths(raw_name, ".txt", sites)
-        ]
-    convolved_readers = []
-    if show_convolved or sites:
-        convolved_readers = [
-            FdmConv(path) for path in _spectrum_paths(conv_name, "_conv.txt", sites)
-        ]
-
-    raw = None
-    if raw_readers:
-        raw = raw_readers[0]
-    average = AnalyzeFdmAverage()
-    raw_curves = []
-    if show_raw or sites:
-        raw_curves = _raw_curves(average, raw_readers, options)
-    convolved_curve = None
-    if convolved_readers:
-        grid, intensity = average.average(
-            convolved_readers, "get_xas", divisor=options.weight
+        Returns:
+            pathlib.Path: Path to the main figure.
+        """
+        parser = argparse.ArgumentParser(description="Plot FDMNES XAS")
+        parser.add_argument(
+            "prefix",
+            nargs="?",
+            help="Plot directly from a Filout prefix",
         )
-        convolved_curve = (grid, intensity, "XAS broad")
+        parser.add_argument("-i", "--inp", "--inpname", dest="input_file")
+        parser.add_argument("-f", "--filout", "--filoutname")
+        parser.add_argument("-c", "--conv", "--convolution")
+        parser.add_argument("-t", "--txt", "--textname")
+        parser.add_argument("-s", "--sd", "--sdname")
+        parser.add_argument("--filbav", "--bavname", dest="bav")
+        parser.add_argument("--name", help="Common prefix for the calculation outputs")
+        parser.add_argument("-o", dest="short_o", help="SAE Athena overlay path")
+        parser.add_argument("--obs", help="Athena overlay file")
+        parser.add_argument("--output", help="Figure path or SAE output prefix")
+        parser.add_argument("-a", "--absorber", nargs="*", type=int)
+        parser.add_argument("-w", "--weight", type=float)
+        parser.add_argument("-x", "--dosweight", type=float)
+        parser.add_argument("--year", type=int, choices=(2016, 2020))
+        parser.add_argument("-b", "--broad", action="store_true")
+        parser.add_argument("-d", "--dos", action="store_true")
+        parser.add_argument("-n", "--nonsubtract", action="store_true")
+        parser.add_argument("--dn", "--down", action="store_true")
+        for flag in ("xas", "fermi", "l2", "l3", "l23", "up", "spin", "pdf", "nw"):
+            parser.add_argument(f"--{flag}", action="store_true")
+        for limit in ("emin", "emax", "ymax", "dmax"):
+            parser.add_argument(f"--{limit}", type=float)
+        options = parser.parse_args(argv)
 
-    spectra = []
-    if show_raw:
-        spectra.extend(raw_curves)
-    if show_convolved:
-        spectra.append(convolved_curve)
-    if correct_energy:
-        spectra = _shift_curves(spectra, input_file, raw, options.fermi)
+        input_file = None
+        if (
+            options.input_file is not None
+            or options.prefix is None
+            or options.fermi
+            or options.dos
+        ):
+            input_file = FdmInp(Fdmfile.select_input(options.input_file))
 
-    xlabel = "Energy (eV)"
-    fermi_position = None
-    if correct_energy:
-        if options.fermi:
-            xlabel = "Energy above Fermi [eV]"
-            fermi_position = 0.0
-        else:
-            xlabel = "Photon Energy [eV]"
-            fermi_position = raw.get_eedge() + raw.get_efermi()
+        filout = options.filout or options.prefix
+        if filout is None and input_file is not None:
+            calculation = input_file.get_calculation()
+            filout = calculation.removesuffix(".txt") or input_file.get_filout()
+        if not filout and not options.name:
+            parser.error("Specify a Filout prefix or an input containing Filout")
+        sites = options.absorber or []
+        if any(site < 1 for site in sites) or len(set(sites)) != len(sites):
+            parser.error("Select distinct positive absorbing-site indices")
 
-    dos = []
-    if options.dos:
-        dos = _dos_curves(average, options, input_file, filout, raw)
-    if sites:
-        FdmTxt.write_spectrum(f"{filout}_0.txt", raw.metadata, raw_curves[0][:2])
-        FdmConv.write_spectrum(f"{filout}_0_conv.txt", convolved_curve[:2])
+        raw_name = options.name or options.txt or filout
+        conv_name = options.name or options.conv or filout
+        if input_file is not None and not (options.name or options.conv):
+            conv_name = input_file.get_conv_out() or conv_name
+        correct_energy = input_file is not None and not options.nonsubtract
+        show_raw = options.xas or not options.broad
+        show_convolved = not options.xas and (options.broad or input_file is not None)
 
-    observed_path = options.obs
-    output = options.output
-    if options.short_o:
-        # Older examples used -o for an explicit image filename.
-        if Path(options.short_o).suffix.lower() in (".pdf", ".png", ".eps"):
-            output = output or options.short_o
-        else:
-            observed_path = observed_path or options.short_o
-    observed = None
-    if observed_path:
-        path = Path(observed_path)
-        if not path.is_file():
-            path = Path(f"{filout}_obs.txt.nor")
-        experiment = AthenaNor(path)
-        observed = (experiment.get_eng(), experiment.get_nor(), "obs.")
+        raw_readers = []
+        if show_raw or correct_energy or sites:
+            raw_readers = [
+                FdmTxt(path) for path in self._spectrum_paths(raw_name, ".txt", sites)
+            ]
+        convolved_readers = []
+        if show_convolved or sites:
+            convolved_readers = [
+                FdmConv(path)
+                for path in self._spectrum_paths(conv_name, "_conv.txt", sites)
+            ]
 
-    if output is None:
-        output = "XAS"
-        if options.name:
-            output += f"_{Path(options.name).name}"
-        output += ".pdf"
-    elif Path(output).suffix.lower() not in (".pdf", ".eps", ".png"):
-        output += "_"
-        if options.name:
-            output += f"_{Path(options.name).name}"
-        output += ".pdf"
+        raw = None
+        if raw_readers:
+            raw = raw_readers[0]
+        average = AnalyzeFdmAverage()
+        raw_curves = []
+        if show_raw or sites:
+            raw_curves = self._raw_curves(average, raw_readers, options)
+        convolved_curve = None
+        if convolved_readers:
+            grid, intensity = average.average(
+                convolved_readers, "get_xas", divisor=options.weight
+            )
+            convolved_curve = (grid, intensity, "XAS broad")
 
-    plotter = PlotFdmXas()
-    if input_file is None and observed is None and not (sites or options.pdf):
-        return plotter.plot(
+        spectra = []
+        if show_raw:
+            spectra.extend(raw_curves)
+        if show_convolved:
+            spectra.append(convolved_curve)
+        if correct_energy:
+            spectra = self._shift_curves(spectra, input_file, raw, options.fermi)
+
+        xlabel = "Energy (eV)"
+        fermi_position = None
+        if correct_energy:
+            if options.fermi:
+                xlabel = "Energy above Fermi [eV]"
+                fermi_position = 0.0
+            else:
+                xlabel = "Photon Energy [eV]"
+                fermi_position = raw.get_eedge() + raw.get_efermi()
+
+        dos = []
+        if options.dos:
+            dos = self._dos_curves(average, options, input_file, filout, raw)
+        if sites:
+            FdmTxt.write_spectrum(f"{filout}_0.txt", raw.metadata, raw_curves[0][:2])
+            FdmConv.write_spectrum(f"{filout}_0_conv.txt", convolved_curve[:2])
+
+        observed_path = options.obs
+        output = options.output
+        if options.short_o:
+            # Older examples used -o for an explicit image filename.
+            if Path(options.short_o).suffix.lower() in (".pdf", ".png", ".eps"):
+                output = output or options.short_o
+            else:
+                observed_path = observed_path or options.short_o
+        observed = None
+        if observed_path:
+            path = Path(observed_path)
+            if not path.is_file():
+                path = Path(f"{filout}_obs.txt.nor")
+            experiment = AthenaNor(path)
+            observed = (experiment.get_eng(), experiment.get_nor(), "obs.")
+
+        if output is None:
+            output = "XAS"
+            if options.name:
+                output += f"_{Path(options.name).name}"
+            output += ".pdf"
+        elif Path(output).suffix.lower() not in (".pdf", ".eps", ".png"):
+            output += "_"
+            if options.name:
+                output += f"_{Path(options.name).name}"
+            output += ".pdf"
+
+        plotter = PlotFdmXas()
+        if input_file is None and observed is None and not (sites or options.pdf):
+            return plotter.plot(
+                spectra,
+                output,
+                xlabel=xlabel,
+                xmin=options.emin,
+                xmax=options.emax,
+                ymax=options.ymax,
+            )
+        return plotter.plot_composite(
             spectra,
             output,
+            observed=observed,
+            dos=dos,
             xlabel=xlabel,
             xmin=options.emin,
             xmax=options.emax,
             ymax=options.ymax,
+            dmax=options.dmax,
+            fermi_position=fermi_position,
+            extra_formats=options.pdf,
+            show=not options.nw,
         )
-    return plotter.plot_composite(
-        spectra,
-        output,
-        observed=observed,
-        dos=dos,
-        xlabel=xlabel,
-        xmin=options.emin,
-        xmax=options.emax,
-        ymax=options.ymax,
-        dmax=options.dmax,
-        fermi_position=fermi_position,
-        extra_formats=options.pdf,
-        show=not options.nw,
-    )
 
+    @staticmethod
+    def _spectrum_paths(prefix, suffix, sites):
+        """Construct raw or convolved paths for the selected calculations.
 
-def _spectrum_paths(prefix, suffix, sites):
-    """Construct raw or convolved paths for the selected calculations.
+        Args:
+            prefix: Spectrum name or filename.
+            suffix: Filename suffix identifying the spectrum format.
+            sites: Selected one-based absorber indices, if averaging.
 
-    Args:
-        prefix: Spectrum name or filename.
-        suffix: Filename suffix identifying the spectrum format.
-        sites: Selected one-based absorber indices, if averaging.
+        Returns:
+            list[str]: Source filenames in site order.
+        """
+        stem = prefix.removesuffix(suffix)
+        if sites:
+            return [f"{stem}_{site}{suffix}" for site in sites]
+        if prefix.endswith(".txt"):
+            return [prefix]
+        return [stem + suffix]
 
-    Returns:
-        list[str]: Source filenames in site order.
-    """
-    stem = prefix.removesuffix(suffix)
-    if sites:
-        return [f"{stem}_{site}{suffix}" for site in sites]
-    if prefix.endswith(".txt"):
-        return [prefix]
-    return [stem + suffix]
+    @staticmethod
+    def _raw_curves(average, readers, options):
+        """Select named absorption edges and spin channels, then average them.
 
+        Args:
+            average: Analyzer for grids and intensity divisors.
+            readers: Raw XAS files in site order.
+            options: Parsed edge, spin, and normalization options.
 
-def _raw_curves(average, readers, options):
-    """Select named absorption edges and spin channels, then average them.
+        Returns:
+            list[tuple]: Energy grids, intensities, and labels of raw curves.
+        """
+        spins = [0]
+        if options.dn and not options.up:
+            spins = [1]
+        elif options.spin and not options.up and readers[0].get_xas_all().shape[1] > 1:
+            spins = [0, 1]
+        edges = []
+        if options.l2 or options.l23:
+            edges.append("L2")
+        if options.l3 or options.l23:
+            edges.append("L3")
 
-    Args:
-        average: Analyzer for grids and intensity divisors.
-        readers: Raw XAS files in site order.
-        options: Parsed edge, spin, and normalization options.
-
-    Returns:
-        list[tuple]: Energy grids, intensities, and labels of raw curves.
-    """
-    spins = [0]
-    if options.dn and not options.up:
-        spins = [1]
-    elif options.spin and not options.up and readers[0].get_xas_all().shape[1] > 1:
-        spins = [0, 1]
-    edges = []
-    if options.l2 or options.l23:
-        edges.append("L2")
-    if options.l3 or options.l23:
-        edges.append("L3")
-
-    curves = []
-    for spin in spins:
-        suffix = ""
-        if options.spin or options.up or options.dn:
-            suffix = (" up", " down")[spin]
-        if edges:
-            for edge in edges:
-                grid, values = average.average(
-                    readers,
-                    "get_edge_xas",
-                    edge=edge,
-                    spin=spin,
-                    divisor=options.weight,
-                )
-                curves.append((grid, values, f"XAS ({edge}{suffix})"))
-        else:
-            grid, values = average.average(
-                readers, "get_xas", spin=spin, divisor=options.weight
-            )
-            curves.append((grid, values, "XAS" + suffix))
-    return curves
-
-
-def _dos_curves(average, options, input_file, filout, raw):
-    """Read or average the site's s/p LDOS on the SD energy grid.
-
-    Args:
-        average: Analyzer for SD grid validation and normalization.
-        options: Parsed LDOS, spin, reference, and filename options.
-        input_file: FDMNES input providing photon mode and spin settings.
-        filout: Default spectrum and SD prefix.
-        raw: Raw XAS reader providing edge and Fermi energies.
-
-    Returns:
-        list[tuple]: LDOS energy grids, density arrays, and curve labels.
-    """
-    prefix = options.name or options.sd or filout
-    ispin = input_file.get_ispin()
-    if options.spin or options.dn:
-        ispin = 2
-    readers = [
-        FdmSd(path, format_year=options.year, ispin=ispin).select_reader()
-        for path in _spectrum_paths(prefix, "_sd0.txt", options.absorber)
-    ]
-
-    spins = [0]
-    if options.dn and not options.up:
-        spins = [1]
-    elif options.spin and not options.up:
-        spins = [0, 1]
-    orbitals = ["s", "p"]
-    if options.spin:
-        orbitals = ["p"]
-    divisor = options.dosweight
-    if divisor is None and options.absorber:
-        divisor = options.weight
-
-    curves = []
-    for orbital in orbitals:
+        curves = []
         for spin in spins:
-            grid, density = average.average(
-                readers, "get_ldos", l=orbital, spin=spin, divisor=divisor
+            suffix = ""
+            if options.spin or options.up or options.dn:
+                suffix = (" up", " down")[spin]
+            if edges:
+                for edge in edges:
+                    grid, values = average.average(
+                        readers,
+                        "get_edge_xas",
+                        edge=edge,
+                        spin=spin,
+                        divisor=options.weight,
+                    )
+                    curves.append((grid, values, f"XAS ({edge}{suffix})"))
+            else:
+                grid, values = average.average(
+                    readers, "get_xas", spin=spin, divisor=options.weight
+                )
+                curves.append((grid, values, "XAS" + suffix))
+        return curves
+
+    def _dos_curves(self, average, options, input_file, filout, raw):
+        """Read or average the site's s/p LDOS on the SD energy grid.
+
+        Args:
+            average: Analyzer for SD grid validation and normalization.
+            options: Parsed LDOS, spin, reference, and filename options.
+            input_file: FDMNES input providing photon mode and spin settings.
+            filout: Default spectrum and SD prefix.
+            raw: Raw XAS reader providing edge and Fermi energies.
+
+        Returns:
+            list[tuple]: LDOS energy grids, density arrays, and curve labels.
+        """
+        prefix = options.name or options.sd or filout
+        ispin = input_file.get_ispin()
+        if options.spin or options.dn:
+            ispin = 2
+        readers = [
+            FdmSd(path, format_year=options.year, ispin=ispin).select_reader()
+            for path in self._spectrum_paths(prefix, "_sd0.txt", options.absorber)
+        ]
+
+        spins = [0]
+        if options.dn and not options.up:
+            spins = [1]
+        elif options.spin and not options.up:
+            spins = [0, 1]
+        orbitals = ["s", "p"]
+        if options.spin:
+            orbitals = ["p"]
+        divisor = options.dosweight
+        if divisor is None and options.absorber:
+            divisor = options.weight
+
+        curves = []
+        for orbital in orbitals:
+            for spin in spins:
+                grid, density = average.average(
+                    readers, "get_ldos", l=orbital, spin=spin, divisor=divisor
+                )
+                label = f"absorber-LDOS({orbital})"
+                if options.spin or options.dn or options.up:
+                    label += (" up", " down")[spin]
+                curves.append((grid, density, label))
+        if options.absorber:
+            columns = getattr(readers[0], "columns", None)
+            if columns is None:
+                columns = readers[0].header
+            for reader in readers[1:]:
+                names = getattr(reader, "columns", None)
+                if names is None:
+                    names = reader.header
+                if names != columns:
+                    raise ValueError("SD column labels differ between absorbing sites")
+            grid, densities = average.average(readers, "get_densities", divisor=divisor)
+            FdmSd.write_table(f"{filout}_0_sd0.txt", columns, grid, densities)
+        if not options.nonsubtract:
+            curves = self._shift_curves(curves, input_file, raw, options.fermi)
+        return curves
+
+    @staticmethod
+    def _shift_curves(curves, input_file, raw, fermi):
+        """Shift each curve on its own grid using the calculation's XAS metadata.
+
+        Args:
+            curves: Energy, intensity, and label tuples.
+            input_file: FDMNES input describing the original reference.
+            raw: Raw XAS file containing edge and Fermi energies.
+            fermi: Whether to request a Fermi-relative reference.
+
+        Returns:
+            list[tuple]: Curves in the selected energy reference.
+        """
+        shifted = []
+        for grid, intensity, label in curves:
+            energy = AnalyzeFdmXas.energy_reference(
+                grid, raw, input_is_photon=input_file.get_energygpho(), fermi=fermi
             )
-            label = f"absorber-LDOS({orbital})"
-            if options.spin or options.dn or options.up:
-                label += (" up", " down")[spin]
-            curves.append((grid, density, label))
-    if options.absorber:
-        columns = getattr(readers[0], "columns", None)
-        if columns is None:
-            columns = readers[0].header
-        for reader in readers[1:]:
-            names = getattr(reader, "columns", None)
-            if names is None:
-                names = reader.header
-            if names != columns:
-                raise ValueError("SD column labels differ between absorbing sites")
-        grid, densities = average.average(readers, "get_densities", divisor=divisor)
-        FdmSd.write_table(f"{filout}_0_sd0.txt", columns, grid, densities)
-    if not options.nonsubtract:
-        curves = _shift_curves(curves, input_file, raw, options.fermi)
-    return curves
+            shifted.append((energy, intensity, label))
+        return shifted
 
 
-def _shift_curves(curves, input_file, raw, fermi):
-    """Shift each curve on its own grid using the calculation's XAS metadata.
-
-    Args:
-        curves: Energy, intensity, and label tuples.
-        input_file: FDMNES input describing the original reference.
-        raw: Raw XAS file containing edge and Fermi energies.
-        fermi: Whether to request a Fermi-relative reference.
-
-    Returns:
-        list[tuple]: Curves in the selected energy reference.
-    """
-    shifted = []
-    for grid, intensity, label in curves:
-        energy = AnalyzeFdmXas.energy_reference(
-            grid, raw, input_is_photon=input_file.get_energygpho(), fermi=fermi
-        )
-        shifted.append((energy, intensity, label))
-    return shifted
+def main(argv=None):
+    return XasPlotSample().run(argv)
 
 
 if __name__ == "__main__":

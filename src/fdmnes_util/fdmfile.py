@@ -117,12 +117,11 @@ class Fdmfile:
         """
         input_names = list(filenames)
         output_path = Path(filename)
-        # SAE の FDmakeCconvAllsite.py と同じ件数行の書式。
-        output_lines = ["", f" {len(input_names)}"]
-
-        for input_name in input_names:
-            output_lines.append(str(input_name))
-
-        output_text = "\n".join(output_lines) + "\n"
-        output_path.write_text(output_text, encoding="utf-8")
+        ncal = len(input_names)
+        # FDmakeCconvAllsite.py の fdmfile.txt 出力。
+        with output_path.open("w", encoding="utf-8") as fdmlist:
+            print("", file=fdmlist)
+            print(" " + str(ncal), file=fdmlist)
+            for input_name in input_names:
+                print(input_name, file=fdmlist)
         return output_path

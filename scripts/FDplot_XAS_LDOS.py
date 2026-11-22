@@ -10,6 +10,14 @@ from fdmnes_util.fdm_conv import FdmConv
 from fdmnes_util.fdm_inp import FdmInp
 from fdmnes_util.fdm_sd import FdmSd
 from fdmnes_util.fdm_txt import FdmTxt
+from fdmnes_util.fdmfile import Fdmfile
+
+__author__ = "Kengo NAKADA"
+__maintainer__ = "Kengo NAKADA"
+__credits__ = ["Kengo NAKADA"]
+__email__ = "kengo.nakada@gmail.com"
+__copyright__ = "Copyright 2015, Kengo NAKADA"
+__license__ = "MIT"
 
 
 def main(argv=None):
@@ -24,15 +32,18 @@ def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Plot FDMNES XAS and site-resolved orbital LDOS"
     )
-    parser.add_argument("-i", "--inpname", default="read_pdb.inp")
+    parser.add_argument("input", nargs="?")
+    parser.add_argument("-i", "--inpname")
     parser.add_argument("-f", "--filout")
     parser.add_argument("-a", "--atom", type=int, default=0)
+    # SAE accepts --orbit, but this example always draws all the orbital panels.
+    parser.add_argument("-l", "--orbit", help=argparse.SUPPRESS)
     parser.add_argument("--fermi", action="store_true")
     parser.add_argument("--year", type=int, choices=[2016, 2020])
     parser.add_argument("--output")
     options = parser.parse_args(argv)
 
-    inp_path = Path(options.inpname)
+    inp_path = Fdmfile.select_input(options.input or options.inpname)
     inp = FdmInp(inp_path)
     filout = options.filout
     if not filout:

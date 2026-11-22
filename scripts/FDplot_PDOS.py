@@ -40,8 +40,15 @@
 """Plot PDOS and optional XAS from an FDMNES calculation."""
 # fmt: on
 
-from fdmnes_util.dos_plot_sample import dos_plot_arguments, plot_dos_sample
+from fdmnes_util.dos_plot_sample import DosPlotSample
 from fdmnes_util.plot.plot_fdm_dos import PlotFdmDos
+
+__author__ = "Kengo NAKADA"
+__maintainer__ = "Kengo NAKADA"
+__credits__ = ["Kengo NAKADA"]
+__email__ = "kengo.nakada@gmail.com"
+__copyright__ = "Copyright 2015, Kengo NAKADA"
+__license__ = "MIT"
 
 
 def main(argv=None):
@@ -53,9 +60,10 @@ def main(argv=None):
     Returns:
         pathlib.Path: Main saved figure.
     """
-    parser = dos_plot_arguments(projected=True)
+    sample = DosPlotSample(projected=True)
+    parser = sample.build_parser()
     options = parser.parse_args(argv)
-    return plot_dos_sample(PlotFdmDos(), options, projected=True)
+    return sample.plot(PlotFdmDos(), options)
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ Each original below is the matching `sae/commands/<filename>` in the supplied `s
 
 ## POSCAR reading and the vasp_util source
 
-The SAE `FDvasp2fdm.py` read POSCAR through ASE and used `AseInputOperations` for FDMNES structure conversion. Today, `VaspPoscarFile` calls the separately installed `vasp_util.vasp_poscar.VaspPoscar` class. Its `get_lattice_vectors()`, `get_coords_direct()`, and `get_atom_indices()` methods supply the lattice, fractional positions, and symbols in atom order. These methods are defined in `vasp_util/vasp_poscar.py` in `vasp_util_original.zip`. `FdmStructure` and `FdmInp` produce the FDMNES files. In the reverse direction, `FDfdm2vasp.py` reads the structure from FDMNES input and uses ASE to write POSCAR.
+The SAE `FDvasp2fdm.py` read POSCAR through ASE and used `AseInputOperations` for FDMNES structure conversion. The script uses the separately installed `vasp_util.vasp_poscar.VaspPoscar` class directly. Its `get_lattice_vectors()`, `get_coords_direct()`, and `get_atom_indices()` methods supply the lattice, fractional positions, and symbols in atom order. These methods are defined in `vasp_util/vasp_poscar.py` in `vasp_util_original.zip`. `FdmStructure` and `FdmInp` produce the FDMNES files. In the reverse direction, `FDfdm2vasp.py` reads the structure from FDMNES input and uses ASE to write POSCAR.
 
 ## Choose a composite plot
 
@@ -191,7 +191,7 @@ python FDplot_LDOS.py -i read_pdb.inp -a 0 --year 2020 --sp --total --intdos --x
 ```
 
 **Changes from SAE**
-The current script selects the SD layout from BAV or `--year`. Conversion from photon energy to the Fermi-relative axis subtracts both the edge and Fermi energies.
+The current script selects the SD layout from its column names. Use `--year` to select it explicitly. Conversion from photon energy to the Fermi-relative axis subtracts both the edge and Fermi energies.
 
 ### `FDplot_PDOS.py`
 
@@ -352,16 +352,16 @@ The current script retains the edge-energy shift and accepts file paths, axis bo
 SAE provided a minimal example for extracting and plotting LDOS for a site.
 
 **Current inputs and outputs**
-Pass the SD file directly to plot s, p, and d groups in `Fe_LDOS.pdf`. Add `--intdos` to plot stored integrals.
+The script reads `Filout` from `read_pdb.inp` and plots p-LDOS for site 1 by default. Use `-i` for the calculation input, `-a` for the site index, and `-l` for the orbital angular momentum index. Add `--intdos` to plot the stored integrals.
 
 **Example**
 
 ```bash
-python fdLDOS.py -i Fe_sd0.txt --year 2020 -o Fe_LDOS.pdf
+python fdLDOS.py -i read_pdb.inp -a 0 -l 1 --year 2020 -o Fe_LDOS.pdf
 ```
 
 **Changes from SAE**
-The current version takes the SD path and layout year directly, replacing the original calculation-input and site selection.
+You can also supply an SD file directly. Use `--year` to select the SD layout explicitly and `-o` to set the output path.
 
 ### `fdLDOS0_specified.py`
 
@@ -378,7 +378,7 @@ python fdLDOS0_specified.py -i read_pdb.inp --year 2020 --emin -10 --emax 10 --d
 ```
 
 **Changes from SAE**
-The original embedded a Pd6 path, sites, and a divisor. The current example plots the p-LDOS stored in the chosen calculation's `_sd0.txt`.
+With no input argument, the script sums the five Pd6 site spectra and divides by six, as in SAE. With an explicit calculation input, it plots that calculation's `_sd0.txt`.
 
 ### `fdLDOS_color.py`
 
@@ -395,7 +395,7 @@ python fdLDOS_color.py Fe_sd0.txt --year 2020 --orbital p --fermi 0 --output Fe_
 ```
 
 **Changes from SAE**
-The current example isolates shading for one orbital group from the original stacked DOS and XAS plotter.
+The calculation-input workflow retains SAE's stacked LDOS, TDOS, and XAS options. For example, `-i read_pdb.inp --p --total --xas --nw` plots p-LDOS, TDOS, and XAS.
 
 ### `fdLDOSmulti.py`
 
@@ -403,7 +403,7 @@ The current example isolates shading for one orbital group from the original sta
 The original compares Ba and Ti p-LDOS across three sites in `BaTiO3_R3m`.
 
 **Current inputs and outputs**
-The script uses `Fe.txt` and `Fe_sd0.txt` through `Fe_sd2.txt` to make a three-site figure. The default is `LDOSmulti.pdf`. The example's `--all-formats` adds EPS and PNG.
+The script uses `Fe.txt` and `Fe_sd0.txt` through `Fe_sd2.txt` to make a three-site figure. With no output path it saves EPS, PDF, and PNG using the original `LDOSmulti` basename.
 
 **Example**
 
@@ -412,7 +412,7 @@ python fdLDOSmulti.py --input Fe --year 2020 --orbital p --all-formats
 ```
 
 **Changes from SAE**
-The calculation prefix, orbital, and axis bounds are configurable. Site numbers and orbital names replace the original material-specific labels.
+The calculation prefix, orbital, and axis bounds are configurable. The default `BaTiO3_R3m` example uses the original Ba, Ba, and Ti site labels.
 
 ### `fdMulti_2_XAS+LDOS+EXP.py`
 
@@ -446,7 +446,7 @@ python fdMulti_3.py run1/Fe run2/Fe run3/Fe --year 2020 --site 0 --output Fe_thr
 ```
 
 **Changes from SAE**
-Three prefix arguments replace the embedded Pd paths. The orbital, site, and plot bounds are configurable.
+With no prefixes, the script uses the original Pd calculation paths. The calculation prefixes, orbital, site, and plot bounds are configurable.
 
 ### `fdPDOS_XAS_av.py`
 
@@ -463,7 +463,7 @@ python fdPDOS_XAS_av.py Fe_1_sd0.txt Fe_2_sd0.txt --year 2020 --sp --xas-files F
 ```
 
 **Changes from SAE**
-The input paths are configurable. Add `--raw-xas-files` for an unbroadened overlay. For Fermi-relative plotting, supply raw and convolved XAS, the calculation input with `--input`, and `--fermi`.
+With no SD paths, the script uses the original three calculations. Add `--xas` for convolved XAS and `--broad` to overlay raw XAS. For explicit SD paths, supply the matching `--xas-files` and `--raw-xas-files`. Use `--fermi` for Fermi-relative plots and, when providing explicit paths, supply `--input` to determine the energy reference.
 
 ### `fdXAS.py`
 
@@ -471,7 +471,7 @@ The input paths are configurable. Add `--raw-xas-files` for an unbroadened overl
 This is SAE's small standalone convolved XAS example, suitable as a starting point for adapting styles or curves.
 
 **Current inputs and outputs**
-The script plots the energy and first absorption column of `Fe_conv.txt` in `Fe_XAS.pdf`. Without `-o`, it writes `XAS.pdf`.
+The script plots the energy and first absorption column of `Fe_conv.txt` using SAE's layout and marks the Fermi level at 0 eV. Supply the input as a positional argument or with `-i`. If omitted, the script reads `POSCAR_conv.txt` or the only `*_conv.txt` file in the working directory. Without `-o`, it writes `XAS.pdf`.
 
 **Example**
 

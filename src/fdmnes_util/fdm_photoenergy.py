@@ -52,10 +52,13 @@ class FdmPhotoenergy:
             raise ValueError("Energy and intensity lengths differ")
 
         output_path = Path(filename)
-        output_values = np.column_stack((energy_values, intensity_values))
-
-        # Preserve the original command's numerical column precision.
-        with output_path.open("w", encoding="utf-8") as stream:
-            stream.write("\n")
-            np.savetxt(stream, output_values, fmt=" %13.5f  %14.10f")
+        # ---> convert to PhotoEnergy (EF0 + E_edge)
+        with output_path.open("w", encoding="utf-8") as convout:
+            print("", file=convout)
+            # 畳み込み強度には、同じ畳み込みスペクトルのエネルギー軸を使う。
+            for i in range(len(energy_values)):
+                print(
+                    f" {energy_values[i]:13.5f}  {intensity_values[i]:14.10f}",
+                    file=convout,
+                )
         return output_path

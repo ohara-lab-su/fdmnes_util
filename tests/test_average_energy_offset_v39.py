@@ -34,8 +34,8 @@ def test_energy_offset_applies_to_every_panel(tmp_path, monkeypatch):
     )
 
     np.testing.assert_allclose(recorded[0], energy + 3.5)
-    np.testing.assert_allclose(recorded[1], energy + 3.5)
-    np.testing.assert_allclose(recorded[2], raw_energy + 3.5)
+    np.testing.assert_allclose(recorded[1], raw_energy + 3.5)
+    np.testing.assert_allclose(recorded[2], energy + 3.5)
 
 
 def test_energy_offset_rejects_nonfinite(tmp_path):

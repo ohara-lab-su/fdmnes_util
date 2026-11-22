@@ -141,13 +141,15 @@ class FdmSd:
         year = self.format_year
         if year is None:
             with self.path.open(encoding="utf-8", errors="replace") as stream:
-                columns = set(stream.readline().split())
-            old_total = columns.intersection({"Int_t", "Int_t(u)", "Int_t(d)"})
+                columns = stream.readline().split()
+            old_total = {"Int_t", "Int_t(u)", "Int_t(d)"}.intersection(columns)
             if "Energy" in columns and old_total and any(
                 name.startswith("n(0,0") for name in columns
             ):
                 year = 2016
             elif {"Energy", "s", "Int(s)", "total", "Int(total)"}.issubset(columns):
+                year = 2020
+            elif FdmSd2020._magnetic_header(columns):
                 year = 2020
             else:
                 raise ValueError(f"Unverified SD layout: {self.path}")

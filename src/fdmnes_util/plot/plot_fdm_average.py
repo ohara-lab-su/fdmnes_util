@@ -5,10 +5,10 @@ SAE source: ``sae/commands/fdPDOS_XAS_av.py``. The original program
 uses a portrait layout with orbital blocks and an optional XAS panel.
 """
 
-from ._figure import save_figure
+from . import _PlotFigure
 
 
-class PlotFdmAverage:
+class PlotFdmAverage(_PlotFigure):
     """Draw averaged FDMNES orbital projections and absorption spectra."""
 
     def plot(
@@ -25,6 +25,9 @@ class PlotFdmAverage:
         energy_offset=0.0,
         orbital_groups=None,
         fermi_position=None,
+        xlabel="Photon Energy [eV]",
+        extra_formats=False,
+        show=False,
     ):
         """Save a stacked plot of orbital projections and optional XAS.
 
@@ -41,6 +44,9 @@ class PlotFdmAverage:
             orbital_groups: Optional orbital-name groups. Each group is
                 plotted in one panel, following the SAE orbital block layout.
             fermi_position: Fermi level in the displayed energy reference, in eV.
+            xlabel: Label for the displayed energy reference.
+            extra_formats: Save the same figure in PDF, EPS, and PNG.
+            show: Display the saved figure.
 
         Returns:
             pathlib.Path: Path to the generated figure.
@@ -67,9 +73,6 @@ class PlotFdmAverage:
         if not np.isfinite(energy_offset):
             raise ValueError("energy_offset must be finite")
 
-        import matplotlib
-
-        matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
         # The original SAE figure groups orbital curves into three panels.
@@ -99,59 +102,76 @@ class PlotFdmAverage:
         if xas_data is not None:
             panel_count += 1
 
-        figure, axes = plt.subplots(
-            panel_count,
-            1,
-            sharex=True,
-            figsize=(7.0, 9.89),
-            squeeze=False,
-        )
-        axis_index = 0
-        for panel_curves in panels:
-            axis = axes[axis_index, 0]
-            for label, energy, density in panel_curves:
-                # Each orbital retains its own original energy grid.
-                shifted_energy = np.asarray(energy) + energy_offset
-                axis.plot(shifted_energy, density, linewidth=1.8, label=label)
-            axis.set_ylabel("PDOS [states/eV]")
-            if dmax is not None:
-                axis.set_ylim(top=dmax)
-            axis.legend(loc="upper right")
-            axis_index += 1
-
-        if xas_data is not None:
-            energy, absorption = xas_data
-            axis = axes[axis_index, 0]
-            axis.plot(
-                np.asarray(energy) + energy_offset,
-                absorption,
-                linewidth=1.8,
-                color="black",
-                label="XAS (with broadening)",
-            )
-            if raw_xas_data is not None:
-                raw_energy, raw_absorption = raw_xas_data
-                axis.plot(
-                    np.asarray(raw_energy) + energy_offset,
-                    raw_absorption,
-                    linewidth=1.0,
-                    label="XAS (without broadening)",
+        with plt.rc_context():
+            plt.rcParams["font.family"] = "Times New Roman"
+            # ラベル等のフォントサイズ
+            plt.rcParams["font.size"] = 15
+            # レジェンドのフォントサイズ
+            plt.rcParams["legend.fontsize"] = 10
+            # 軸の太さを設定。目盛りは変わらない
+            plt.rcParams["axes.linewidth"] = 1.4
+            figure = plt.figure(figsize=(7.0, 9.89))
+            orgx = 0.17
+            orgy = 0.08
+            off = 0.016
+            xsize = 0.75
+            ysize0 = 0.81
+            ysize = ysize0 / panel_count
+            num = 0
+            if xas_data is not None:
+                plt.axes([orgx, orgy, xsize, ysize])
+                engx, xas = xas_data
+                plt.plot(
+                    np.asarray(engx) + energy_offset,
+                    xas,
+                    linewidth=2,
+                    color="black",
+                    label="XAS (with broadening)",
                 )
-            axis.legend(loc="lower right")
-            axis.set_ylabel("XAS [arb. unit]")
-            if ymax is not None:
-                axis.set_ylim(top=ymax)
-
-        for axis_row in axes:
-            axis = axis_row[0]
-            # SAE の平均図と同じく、全パネルにフェルミ準位を示す。
-            if fermi_position is not None:
-                axis.axvline(fermi_position, color="black", linewidth=1)
-            if emin is not None:
-                axis.set_xlim(left=emin)
-            if emax is not None:
-                axis.set_xlim(right=emax)
-
-        axes[-1, 0].set_xlabel("Energy [eV]")
-        figure.tight_layout()
-        return save_figure(figure, output)
+                if raw_xas_data is not None:
+                    eng_p, dos_p = raw_xas_data
+                    color = plt.cm.prism((num + 1) * 10)
+                    plt.plot(
+                        np.asarray(eng_p) + energy_offset,
+                        dos_p,
+                        linewidth=1,
+                        color=color,
+                        label="XAS",
+                    )
+                plt.ticklabel_format(axis="x", useOffset=False)
+                if fermi_position is not None:
+                    plt.axvline(x=fermi_position, color="black", linewidth=1)
+                plt.xlim(xmax=emax, xmin=emin)
+                plt.ylim(ymin=0, ymax=ymax)
+                leg = plt.legend(loc="lower right")
+                leg.get_frame().set_alpha(0.5)
+                plt.xlabel(xlabel)
+                plt.ylabel("Absorption [arb. unit]")
+                orgy = orgy + ysize + off
+            for index, panel_curves in enumerate(reversed(panels)):
+                plt.axes([orgx, orgy, xsize, ysize])
+                for label, energy, density in panel_curves:
+                    num += 1
+                    color = plt.cm.prism((num + 1) * 10)
+                    plt.plot(
+                        np.asarray(energy) + energy_offset,
+                        density,
+                        linewidth=2,
+                        color=color,
+                        label=label,
+                    )
+                plt.ticklabel_format(axis="x", useOffset=False)
+                if fermi_position is not None:
+                    plt.axvline(x=fermi_position, color="black", linewidth=1)
+                plt.xlim(xmax=emax, xmin=emin)
+                plt.ylim(ymin=0, ymax=dmax)
+                leg = plt.legend(loc="upper right")
+                leg.get_frame().set_alpha(0.5)
+                if index == min(1, len(panels) - 1):
+                    plt.ylabel("DOS [state/eV]")
+                if index == 0 and xas_data is None:
+                    plt.xlabel(xlabel)
+                else:
+                    plt.xticks([])
+                orgy = orgy + ysize + off
+            return self._save_figure(figure, output, extra_formats=extra_formats, show=show)

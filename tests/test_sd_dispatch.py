@@ -3,6 +3,7 @@
 
 from unittest.mock import patch
 
+import numpy as np
 import pytest
 
 from fdmnes_util.fdm_sd import FdmSd
@@ -53,3 +54,29 @@ def test_auto_dispatch_uses_sd_header(tmp_path, header, row, reader_type):
     path.write_text(f"{header}\n{row}\n", encoding="utf-8")
     reader = FdmSd(path, format_year=None).select_reader()
     assert isinstance(reader, reader_type)
+
+
+def test_magnetic_2020_sd_columns(tmp_path):
+    """Use the 31 columns recorded in the 2021 and 2026 Ni calculations."""
+    header = (
+        "Energy s_up Int(s)_up s_dn Int(s)_dn px_up px_dn py_up py_dn "
+        "pz_up pz_dn p_up Int(p)_up p_dn Int(p)_dn dx2-y2_up dx2-y2_dn "
+        "dz2_up dz2_dn dyz_up dyz_dn dxz_up dxz_dn dxy_up dxy_dn "
+        "d_up Int(d)_up d_dn Int(d)_dn total Int(total)"
+    )
+    path = tmp_path / "Ni_mag_sd1.txt"
+    row = " ".join(str(index) for index in range(1, 32))
+    path.write_text(f"{header}\n{row}\n", encoding="utf-8")
+
+    for year in (None, 2020):
+        reader = FdmSd(path, format_year=year, weight=2).select_reader()
+        assert reader.get_ispin() == 2
+        assert reader.get_lmax() == 2
+        np.testing.assert_array_equal(reader.get_eng(), [1])
+        np.testing.assert_array_equal(reader.get_densities(), [np.arange(2, 32) / 2])
+        assert reader.get_ldos("d", spin="down").tolist() == [14]
+        assert reader.get_intldos("d", spin="up").tolist() == [13.5]
+        assert reader.get_pdos(2, -2, spin="dn").tolist() == [12.5]
+        assert reader.get_tdos(spin=0).tolist() == [15]
+        assert reader.get_tdos(spin=1).tolist() == [15]
+        assert reader.get_inttdos(spin=1).tolist() == [15.5]

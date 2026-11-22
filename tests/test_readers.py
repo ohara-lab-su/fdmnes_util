@@ -254,10 +254,9 @@ def test_log_xyz_real_file():
         処理結果。
 
     """
-    from fdmnes_util.analyze_fdm_log import AnalyzeFdmLog
-
     log = FdmBav(F / "Fe_bav.txt").select_reader()
-    symbols, positions = AnalyzeFdmLog(log).positions()
+    symbols = log.get_atoms_index_j()
+    positions = log.get_position()
     assert symbols[0] == "Fe" and symbols[1] == "O"
     assert np.allclose(positions[0], [0, 0, 0])
     assert np.isclose(positions[1, 0], -1.4245090371)
@@ -353,9 +352,13 @@ def test_bav_ii_header_and_last_cluster(tmp_path):
         "Cluster: atom positions in order, in the internal R2 bases\n"
         " Z posx posy posz\n"
         "29 0 0 0\n\n"
+        "Transformation Crystal Bases, Bases R2\n"
+        " 1 0 0\n 0 1 0\n 0 0 1\n"
         "Cluster: atom positions in order, in the internal R2 bases\n"
         " Z posx posy posz\n"
-        " 8 1 2 3\n\n",
+        " 8 1 2 3\n\n"
+        "Transformation Crystal Bases, Bases R2\n"
+        " 1 2 3\n 4 5 6\n 7 8 9\n",
         encoding="utf-8",
     )
     log = FdmBav(path)
@@ -364,6 +367,7 @@ def test_bav_ii_header_and_last_cluster(tmp_path):
     assert reader.revision.startswith("FDMNES II program,")
     assert reader.get_atoms_index_j() == ["O"]
     np.testing.assert_array_equal(reader.get_position(), [[1, 2, 3]])
+    np.testing.assert_array_equal(reader.get_t(), [[1, 4, 7], [2, 5, 8], [3, 6, 9]])
 
 
 def test_input_scalar_getters_use_last_definition(tmp_path):
@@ -372,11 +376,11 @@ def test_input_scalar_getters_use_last_definition(tmp_path):
     path.write_text(
         "Filout first\nFile_out\n final\n"
         "Absorber 1\nAbsorber\n 3\n"
-        "Calculation first_result\nCalculation\n last_result\nEnd\n",
+        "Calculation first_result\nCalculation\n last_result 0.5 1.25\nEnd\n",
         encoding="utf-8",
     )
     reader = FdmInp(path)
     assert reader.get_filout() == "final"
     assert reader.get_absorber() == 3
     assert reader.get_calculation() == "last_result"
-    assert reader.tags["calculation"] == ["first_result", "last_result"]
+    assert reader.tags["calculation"] == ["first_result", "last_result 0.5 1.25"]
