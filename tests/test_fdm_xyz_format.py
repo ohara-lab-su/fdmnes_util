@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test XYZ output generated from FDMNES coordinates."""
+"""FDMNES の座標から生成した XYZ を検証する。"""
 
 import pytest
 
@@ -7,7 +7,7 @@ from fdmnes_util.xyz import Xyz
 
 
 def test_xyz_serialization(tmp_path):
-    """Verify XYZ record count, order, and Cartesian coordinate precision."""
+    """XYZ の原子数、順序、直交座標の精度を検証する。"""
     output_path = tmp_path / "atoms.xyz"
     symbols = ["Fe", "O"]
     positions = [(0.0, 1.25, -2.0), (3.0, 4.0, 5.0)]
@@ -25,7 +25,7 @@ def test_xyz_serialization(tmp_path):
 
 
 def test_xyz_rejects_mismatched_atom_counts(tmp_path):
-    """Reject mismatched element and coordinate sequences."""
+    """元素と座標の件数が違う場合に拒否することを検証する。"""
     output_path = tmp_path / "invalid.xyz"
 
     with pytest.raises(ValueError, match="count mismatch"):
@@ -35,7 +35,7 @@ def test_xyz_rejects_mismatched_atom_counts(tmp_path):
 
 
 def test_xyz_rejects_incomplete_coordinates(tmp_path):
-    """Reject incomplete Cartesian coordinates before writing the file."""
+    """直交座標の成分不足をファイル保存前に拒否することを検証する。"""
     output_path = tmp_path / "invalid.xyz"
 
     with pytest.raises(ValueError, match="three coordinates"):

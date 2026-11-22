@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Plot an explicitly selected FDMNES spectrum above the Fermi energy.
+"""``<Filout>.txt`` と ``*_conv.txt`` を読み、フェルミ準位基準の XAS 図を保存する。
 
-The original SAE example used the fixed input ``R3.0/Au``. The input
-prefix is now configurable so that users can edit and reuse this example.
+SAE 原版は入力接頭辞を R3.0/Au に固定していた。この例では別の接頭辞を指定して利用できる。
 """
 
 import argparse
@@ -22,13 +21,13 @@ __license__ = "MIT"
 
 
 def main(argv=None):
-    """Create the Fermi-relative XAS figure.
+    """フェルミ準位基準の XAS 図を作る。
 
     Args:
-        argv: Optional command-line arguments. If omitted, parse sys.argv.
+        argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
 
     Returns:
-        pathlib.Path: Location of the generated PDF.
+        pathlib.Path: 生成した PDF のパス。
     """
     parser = argparse.ArgumentParser(
         description="Plot a selected FDMNES spectrum above the Fermi energy"

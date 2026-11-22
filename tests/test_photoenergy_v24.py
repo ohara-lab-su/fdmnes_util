@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for the original SAE photon-energy conversion command."""
+"""SAE の光子エネルギー変換コマンドを回帰検証する。"""
 
 import numpy as np
 import pytest
@@ -9,25 +9,25 @@ from fdmnes_util.fdm_photoenergy import FdmPhotoenergy
 
 
 class Spectrum:
-    """Provide a minimal spectrum with an independently sampled energy grid."""
+    """独立したエネルギー格子を持つ最小限のスペクトルを提供する。"""
 
     def __init__(self):
-        """Initialize raw-XAS metadata used by the conversion."""
+        """変換に用いる生 XAS のメタデータを初期化する。"""
         self.edge_energy = 7100.0
         self.energy = np.array([-1.0, 0.0])
 
 
 class Convolution:
-    """Provide convolution values with a different grid length."""
+    """異なる長さの格子で畳み込みの値を提供する。"""
 
     def __init__(self):
-        """Initialize three energy points and their absorption values."""
+        """3点のエネルギーと対応する吸収強度を初期化する。"""
         self.energy = np.array([-2.0, 0.0, 2.0])
         self.xas = np.array([[0.1], [0.5], [0.9]])
 
 
 def test_photon_energy_uses_convolution_grid(tmp_path):
-    """Keep energy and intensity aligned when raw and conv grids differ."""
+    """生 XAS と畳み込みの格子が違ってもエネルギーと強度の対応を保つことを検証する。"""
     energy, intensity = AnalyzeFdmXas.photon_energy(
         Convolution(),
         Spectrum(),
@@ -47,7 +47,7 @@ def test_photon_energy_uses_convolution_grid(tmp_path):
 
 
 def test_photoenergy_rejects_mismatched_arrays(tmp_path):
-    """Reject energy and intensity arrays of different lengths."""
+    """エネルギーと強度の配列長が異なる場合に拒否することを検証する。"""
     with pytest.raises(ValueError, match="lengths differ"):
         FdmPhotoenergy().write(
             [1.0, 2.0],

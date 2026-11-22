@@ -18,7 +18,10 @@
 ################################################################################
 ################################################################################
 # ---- End of SAE original header ----
-"""Extract atomic positions from a FDMNES calculation log as XYZ data."""
+"""``*_bav.txt`` のクラスタ座標を読み、``*.xyz`` へ保存するか標準出力に表示する。
+
+FdmBav でログの形式を判定し、Xyz で元素記号と直交座標を書き出す。
+"""
 # fmt: on
 
 import argparse
@@ -29,10 +32,10 @@ from fdmnes_util.xyz import Xyz
 
 
 def main(argv=None):
-    """Load one calculation log and generate an XYZ file or print XYZ data.
+    """計算ログを読み、XYZ を保存または標準出力に書く。
 
     Args:
-        argv: Optional command-line argument sequence.
+        argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
     """
     parser = argparse.ArgumentParser(description="Convert FDMNES log to XYZ")
     parser.add_argument("name", nargs="?", help="Output prefix or *_bav.txt file")

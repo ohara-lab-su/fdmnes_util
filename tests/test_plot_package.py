@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression checks for the plotting package location and combined plot."""
+"""描画クラスの配置と複合図の生成を回帰検証する。"""
 
 from pathlib import Path
 import shutil
@@ -18,14 +18,14 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 
 def test_plot_classes_live_under_plot_package():
-    """Check that all public plotting classes are in the plot package."""
+    """公開描画クラスが plot パッケージにあることを検証する。"""
     assert PlotFdmDos.__module__ == "fdmnes_util.plot.plot_fdm_dos"
     assert PlotFdmXas.__module__ == "fdmnes_util.plot.plot_fdm_xas"
     assert PlotFdmXasLdos.__module__ == "fdmnes_util.plot.plot_fdm_xas_ldos"
 
 
 def test_combined_xas_ldos_cli(tmp_path):
-    """Generate a combined plot from real SAE Fe sample output files."""
+    """SAE の Fe 実出力から複合図を生成することを検証する。"""
     pytest.importorskip("matplotlib")
     for name in ("Fe.txt", "Fe_conv.txt", "Fe_sd0.txt"):
         shutil.copy(FIXTURES / name, tmp_path / name)

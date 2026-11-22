@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Plot averaged orbital-resolved DOS and optional XAS.
+"""``*_sdN.txt`` と対応する XAS から平均済みの数値配列を受け取り、図を保存する。
 
-SAE source: ``sae/commands/fdPDOS_XAS_av.py``. The original program
-uses a portrait layout with orbital blocks and an optional XAS panel.
+PlotFdmAverage は軌道群と任意の生・畳み込み XAS を別のパネルに描く。同じ図を ``*.pdf``・``*.eps``・``*.png`` に保存できる。
+
+SAE の `sae/commands/fdPDOS_XAS_av.py` と同じ縦長配置で軌道群を描き、必要に応じて XAS パネルを加える。
 """
 
 from . import _PlotFigure
 
 
 class PlotFdmAverage(_PlotFigure):
-    """Draw averaged FDMNES orbital projections and absorption spectra."""
-
+    """``*_sdN.txt`` と XAS 出力から平均済みの数値配列を受け取り、複合図を保存する。"""
     def plot(
         self,
         orbital_data,
@@ -29,30 +29,29 @@ class PlotFdmAverage(_PlotFigure):
         extra_formats=False,
         show=False,
     ):
-        """Save a stacked plot of orbital projections and optional XAS.
+        """軌道射影と任意の XAS を縦に並べた図を保存する。
 
         Args:
-            orbital_data: Sequence of (label, energy, DOS) records.
-            output: Destination image filename.
-            xas_data: Optional (energy, absorption) pair after broadening.
-            raw_xas_data: Optional (energy, absorption) pair before broadening.
-            emin: Optional minimum energy.
-            emax: Optional maximum energy.
-            dmax: Optional upper bound for each PDOS panel.
-            ymax: Optional upper bound for the XAS panel.
-            energy_offset: Energy shift in eV applied to every plotted curve.
-            orbital_groups: Optional orbital-name groups. Each group is
-                plotted in one panel, following the SAE orbital block layout.
-            fermi_position: Fermi level in the displayed energy reference, in eV.
-            xlabel: Label for the displayed energy reference.
-            extra_formats: Save the same figure in PDF, EPS, and PNG.
-            show: Display the saved figure.
+            orbital_data: 軌道ラベル、エネルギー、状態密度の組の並び。
+            output: 保存先ファイルのパス。拡張子で出力形式を指定する。
+            xas_data: 任意の畳み込み XAS のエネルギーと吸収強度。
+            raw_xas_data: 任意の生 XAS のエネルギーと吸収強度。
+            emin: 省略可能なエネルギー軸の下限。
+            emax: 省略可能なエネルギー軸の上限。
+            dmax: 省略可能な状態密度の上限。
+            ymax: 省略可能な吸収強度の上限。
+            energy_offset: 全曲線のエネルギー軸に加える値（eV）。
+            orbital_groups: 軌道名のグループの並び。各グループを一段に描く。
+            fermi_position: 表示に用いる基準でのフェルミ準位（eV）。縦線の位置に使う。
+            xlabel: エネルギー軸のラベル。
+            extra_formats: 同じ図を PDF・EPS・PNG でも保存する指定。
+            show: 保存後に描画バックエンドで図を表示する指定。
 
         Returns:
-            pathlib.Path: Path to the generated figure.
+            pathlib.Path: 保存したファイルのパス。
 
         Raises:
-            ValueError: If no orbital data are provided.
+            ValueError: 軌道データが空の場合。
         """
         if raw_xas_data is not None and xas_data is None:
             raise ValueError("Raw XAS overlay requires convolved XAS")

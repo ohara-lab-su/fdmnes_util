@@ -587,13 +587,13 @@ energy, density = AnalyzeFdmAverage().average(readers, "get_pdos", lm="p_z")
 output = PlotFdmAverage().plot([("p_z", energy, density)], "Fe_PDOS_mean.pdf")
 ```
 
-## Result files
+## Result file operations and convolution job preparation
 
-### `FdmConvolutionInputs`
+### `SiteConvolutionJobPreparer`
 
-`from fdmnes_util.fdm_convolution_inputs import FdmConvolutionInputs`
+`from fdmnes_util.util.site_convolution_job_preparer import SiteConvolutionJobPreparer`
 
-Create one convolution input per numbered all-site XAS spectrum.
+Prepare site-by-site convolution jobs by selecting numbered raw XAS spectra in filename order and writing one input per spectrum plus a shared job list. `FDmakeCconvAllsite.py` uses this utility.
 
 With input files `Fe_1.txt` and `Fe_2.txt`, the example writes `conv_1.inp`, `conv_2.inp`, and `fdmfile.txt` in `convolution_jobs/`.
 
@@ -604,14 +604,14 @@ With input files `Fe_1.txt` and `Fe_2.txt`, the example writes `conv_1.inp`, `co
 **Example**
 
 ```python
-from fdmnes_util.fdm_convolution_inputs import FdmConvolutionInputs
-jobs = FdmConvolutionInputs().write("Fe", output_dir="convolution_jobs")
+from fdmnes_util.util.site_convolution_job_preparer import SiteConvolutionJobPreparer
+jobs = SiteConvolutionJobPreparer().write("Fe", output_dir="convolution_jobs")
 print(jobs)
 ```
 
-### `FdmResultFiles`
+### `ResultFileOperations`
 
-`from fdmnes_util.fdm_result_files import FdmResultFiles`
+`from fdmnes_util.util.result_file_operations import ResultFileOperations`
 
 Find, clean, rename, or archive files associated with a Filout prefix.
 
@@ -627,8 +627,8 @@ Find, clean, rename, or archive files associated with a Filout prefix.
 **Example**
 
 ```python
-from fdmnes_util.fdm_result_files import FdmResultFiles
-results = FdmResultFiles("Fe")
+from fdmnes_util.util.result_file_operations import ResultFileOperations
+results = ResultFileOperations("Fe")
 print(results.outputs())
 ```
 

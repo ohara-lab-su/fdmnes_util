@@ -22,20 +22,22 @@
 ################################################################################
 ################################################################################
 # ---- End of SAE original header ----
-"""Generate all-site convolution input files from an existing calculation."""
+"""``*.inp`` の Filout で ``<Filout>_N.txt`` を探し、``conv_N.inp`` と ``fdmfile.txt`` を作る。
 
+各サイトを個別に畳み込むためのジョブを生成する。
+"""
 import argparse
 from pathlib import Path
 
 from fdmnes_util.fdm_inp import FdmInp
-from fdmnes_util.fdm_convolution_inputs import FdmConvolutionInputs
+from fdmnes_util.util.site_convolution_job_preparer import SiteConvolutionJobPreparer
 
 
 def main(argv=None):
-    """Read Filout and create all-site convolution job files.
+    """Filout を読み、全サイトの畳み込みジョブを作る。
 
     Args:
-        argv: Optional command-line argument sequence.
+        argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
     """
     parser = argparse.ArgumentParser(description="Prepare all-site convolutions")
     parser.add_argument("-i", "--input", default="read_pdb.inp", type=Path)
@@ -49,8 +51,8 @@ def main(argv=None):
     if not filout:
         raise ValueError("Filout is missing")
 
-    writer = FdmConvolutionInputs()
-    generated_paths = writer.write(filout)
+    preparer = SiteConvolutionJobPreparer()
+    generated_paths = preparer.write(filout)
     for path in generated_paths:
         print(path)
 

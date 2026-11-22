@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for the FDMNES class library."""
+"""FDMNES クラスライブラリを回帰検証する。"""
 
 from pathlib import Path
 import numpy as np

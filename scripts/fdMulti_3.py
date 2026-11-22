@@ -6,11 +6,9 @@
 # 2015.08.18 startup
 # 2018.08.17 Python2/3 両対応
 # Copyright 2015, Kengo NAKADA. MIT license.
-"""Compare LDOS from three independent FDMNES calculations.
+"""独立した三つの計算の ``<Filout>.txt`` と ``*_sdN.txt`` を読み、フェルミ準位を揃えて図を保存する。
 
-The SAE example compared Pd55_1, Pd55_5 and FCC/Pd. Replace these
-calculation prefixes with your own data. Each spectrum is shifted by
-its own Fermi energy, unlike a three-site plot from one calculation.
+SAE の例では Pd55_1、Pd55_5、FCC/Pd を比較した。接頭辞は利用者の計算結果に変更できる。各スペクトルは計算ごとのフェルミエネルギーで移動する。
 """
 
 import argparse
@@ -29,13 +27,13 @@ __license__ = "MIT"
 
 
 def main(argv=None):
-    """Read three calculations and save their Fermi-aligned LDOS panels.
+    """三つの計算結果を読み、フェルミ準位を揃えた LDOS 図を保存する。
 
     Args:
-        argv: Optional command-line arguments.
+        argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
 
     Returns:
-        list[pathlib.Path]: Paths to the EPS, PDF and PNG figures.
+        list[pathlib.Path]: EPS・PDF・PNG の保存先パス。
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("prefixes", nargs="*", help="Three calculation prefixes")

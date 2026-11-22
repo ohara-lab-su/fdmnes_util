@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for the independent-calculation LDOS comparison."""
+"""独立した計算の LDOS 比較を回帰検証する。"""
 
 import numpy as np
 import pytest
@@ -8,21 +8,21 @@ from fdmnes_util.plot.plot_fdm_dos import PlotFdmDos
 
 
 class ExampleSd:
-    """Supply a minimal SD reader for plotting tests."""
+    """描画テスト用の最小限の SD リーダーを提供する。"""
 
     def get_eng(self):
-        """Return the energy grid."""
+        """エネルギー格子を返す。"""
         return np.array([0.0, 1.0, 2.0])
 
     def get_ldos(self, orbital):
-        """Return a sample LDOS channel."""
+        """テスト用の LDOS 列を返す。"""
         if orbital != "p":
             raise ValueError("Only p is available")
         return np.array([0.0, 1.0, 0.0])
 
 
 def test_three_calculations_saves_pdf(tmp_path, monkeypatch):
-    """Generate a PDF from three independent Fermi references."""
+    """独立した三つのフェルミ準位を基準に PDF を作ることを検証する。"""
     from matplotlib.figure import Figure
 
     grids = []
@@ -50,7 +50,7 @@ def test_three_calculations_saves_pdf(tmp_path, monkeypatch):
 
 
 def test_three_calculations_rejects_bad_inputs(tmp_path):
-    """Reject an incomplete set of calculations."""
+    """計算結果が必要数に満たないときに拒否することを検証する。"""
     with pytest.raises(ValueError, match="Three SD readers"):
         PlotFdmDos().plot_three_calculations(
             [ExampleSd()],

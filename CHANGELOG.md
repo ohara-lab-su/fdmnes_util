@@ -1,5 +1,19 @@
 # 変更履歴
 
+## v0.1.1（2026-11-22）
+
+### 入力の準備と順次実行
+
+- `FdmInp` から2026年形式の `*.inp` を作成・編集できます。`from_text()` で入力本文を開き、`from_poscar()` では `vasp_util` と `FdmStructure` で POSCAR の構造を取り込みます。キーワードブロックの追加・置換・削除や、切替エネルギーごとの計算半径の指定ができ、`save()` で保存します。読み込み形式の既定は2016年のままです。
+- `FdmRun.run_inputs()` は Python で指定した順に複数の入力を実行します。一時的に使った `fdmfile.txt` は、終了時に以前の内容へ戻します。マニュアルの FCC 銅・磁鉄鉱・FeO₆ と POSCAR からの入力作成を例示する `FDmanual_examples.py` を収録しました。 [使い方](docs/ja/usage.md)
+- v0.1.0 の変更履歴で案内した `FDrun.py`、`FDconv_sites.py`、`FDplot_SD.py`、`FDplot_SCF.py` を配布対象に収録しました。これらのスクリプトは v0.1.0 タグに含まれていませんでした。
+
+### スクリプトの共通処理とドキュメント
+
+- `FDmakeCconvAllsite.py` が使う `FdmConvolutionInputs` を `fdmnes_util.util.site_convolution_job_preparer.SiteConvolutionJobPreparer` に移し、改名しました。番号付きの生 XAS からサイト別の `conv_N.inp` と `fdmfile.txt` をまとめて準備します。
+- `DosPlotSample` は `fdmnes_util.util.dos_plot_workflow.DosPlotWorkflow` に、`FdmResultFiles` は `fdmnes_util.util.result_file_operations.ResultFileOperations` に移し、改名しました。前者は LDOS・PDOS 描画の準備、後者は計算結果の一括整理を担当します。各コマンドの呼び出し先を更新しました。
+- クラスとモジュールの docstring を日本語で整え、対応する入力・出力ファイルの名前やパターンを明記しました。日英の API リファレンスとコマンド監査表を更新しました。 [API リファレンス](docs/ja/manual_reference.md) · [コマンド監査表](scripts/COMMAND_AUDIT.md)
+
 ## v0.1.0（2026-11-22）
 
 FDMNES の暫定的な順次実行機能と、2026年11月5日版で確認した入出力形式への対応を追加しました。

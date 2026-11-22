@@ -29,11 +29,9 @@
 # __email__ = "kengo.nakada@gmail.com"
 # __copyright__ = "Copyright 2015, Kengo NAKADA"
 # __license__ = "MIT"
-"""Example: average orbital-projected DOS from multiple FDMNES calculations.
+"""複数の ``*_sdN.txt`` と、必要に応じて ``*_conv.txt`` や生 XAS を読み、平均したスペクトルの図を保存する。
 
-This is a user-editable example, not a hidden command implementation.
-The original SAE script used three hard-coded calculations. Supply the
-corresponding SD paths explicitly to adapt this example to new systems.
+三つの固定計算を使っていた SAE 原版を、SD パスを指定して別の系にも利用できるようにした編集用の例。
 """
 
 import argparse
@@ -47,10 +45,10 @@ from fdmnes_util.plot.plot_fdm_average import PlotFdmAverage
 
 
 def main(argv=None):
-    """Average site PDOS and optional convolved XAS, then save a figure.
+    """サイト別 PDOS と任意の畳み込み XAS を平均し、図を保存する。
 
     Args:
-        argv: Optional command-line arguments for testing or reuse.
+        argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("sd_files", nargs="*", help="SD files to average")

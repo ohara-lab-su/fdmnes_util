@@ -36,22 +36,23 @@
 # 固定
 # Copyright Kengo NAKADA; SAE class library.
 # ---- End of SAE original header ----
-"""Read and write the FDMNES batch list of calculation inputs."""
+"""FDMNES が起動時に読むジョブ一覧 ``fdmfile.txt`` を読み書きする。
 
+Fdmfile は件数と順序付きの ``*.inp`` パスを保持する。単一入力の選択では明示したパスを優先し、指定がなければ一覧の先頭または ``read_pdb.inp`` を使う。
+"""
 from pathlib import Path
 
 
 class Fdmfile:
-    """Represent the ordered input filenames in an FDMNES batch list."""
-
+    """FDMNES が起動時に読む ``fdmfile.txt`` を読み書きし、実行順の計算入力パスを保持する。"""
     def __init__(self, filename="fdmfile.txt"):
-        """Load the batch list.
+        """ジョブ一覧を読み込む。
 
         Args:
-            filename: Path to ``fdmfile.txt``.
+            filename: FDMNES のジョブ一覧のパス。
 
         Raises:
-            ValueError: If the list is empty or incomplete.
+            ValueError: ジョブ一覧が空または不完全な場合。
         """
         self.path = Path(filename)
         lines = []
@@ -70,25 +71,24 @@ class Fdmfile:
             raise ValueError("Incomplete fdmfile.txt")
 
     def get_filout(self) -> str:
-        """Return the filename of the first job, or an empty string."""
+        """最初のジョブのファイル名を返す。ジョブがなければ空文字列。"""
         if self.filenames:
             return self.filenames[0]
         return ""
 
     @classmethod
     def select_input(cls, filename: str | Path | None = None) -> Path:
-        """Select a calculation input in the current working directory.
+        """現在の作業フォルダから計算入力を選ぶ。
 
         Args:
-            filename: Explicit calculation input. If omitted, use the first
-                job in ``fdmfile.txt`` or default to ``read_pdb.inp``.
+            filename: 計算入力の明示指定。省略時は fdmfile.txt の先頭ジョブ、なければ read_pdb.inp。
 
         Returns:
-            The selected calculation input path.
+            選択した計算入力のパス。
 
         Raises:
-            ValueError: If the batch list is invalid or contains no jobs.
-            FileNotFoundError: If the selected input is not a file.
+            ValueError: ジョブ一覧が不正またはジョブがない場合。
+            FileNotFoundError: 選択した入力がファイルでない場合。
         """
         if filename is not None:
             path = Path(filename)
@@ -106,14 +106,14 @@ class Fdmfile:
 
     @staticmethod
     def write(filenames, filename="fdmfile.txt"):
-        """Write the job count and each input filename.
+        """ジョブ総数と各入力ファイル名を書き出す。
 
         Args:
-            filenames: Iterable of FDMNES input filenames.
-            filename: Destination path for the job-list file.
+            filenames: 計算入力のファイル名を実行順に並べたもの。
+            filename: 対象ファイルのパス。
 
         Returns:
-            Path: Path of the generated job-list file.
+            Path: 保存したファイルのパス。
         """
         input_names = list(filenames)
         output_path = Path(filename)

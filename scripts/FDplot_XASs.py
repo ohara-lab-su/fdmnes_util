@@ -22,7 +22,7 @@
 ################################################################################
 ################################################################################
 # ---- End of SAE original header ----
-"""Plot convolved spectra from all-site FDMNES calculations."""
+"""``*.inp`` を基に複数サイトの ``*_conv.txt`` と生 XAS ``<Filout>_N.txt`` を読み、必要に応じて ``*.nor`` を重ねて図を保存する。"""
 # fmt: on
 
 import argparse
@@ -44,13 +44,13 @@ __license__ = "MIT"
 
 
 def main(argv=None):
-    """Execute the multiple-site XAS plotting command.
+    """複数サイトの XAS 描画を実行する。
 
     Args:
-        argv: Optional command-line arguments. Defaults to ``sys.argv``.
+        argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
 
     Returns:
-        pathlib.Path: Path to the generated PDF file.
+        pathlib.Path: 保存したファイルのパス。
     """
     parser = argparse.ArgumentParser(
         description="Plot FDMNES all-site convolved XAS spectra"

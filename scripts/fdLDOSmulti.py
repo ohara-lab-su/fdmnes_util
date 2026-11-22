@@ -6,11 +6,9 @@
 # 2015.08.18 startup
 # 2018.08.17 Python2/3 両対応
 # Copyright 2015, Kengo NAKADA. MIT license.
-"""Plot three FDMNES site-resolved LDOS spectra.
+"""生 XAS ``<Filout>.txt`` と3サイトの ``*_sdN.txt`` を読み、LDOS を並べた図を保存する。
 
-This editable example reproduces the three-panel p-LDOS layout of the
-original SAE script. The input prefix and output name can be changed
-without modifying the installed library.
+SAE 原版の三段 p-LDOS を再現する。入力の接頭辞と出力名をサンプルで変更できる。
 """
 
 import argparse
@@ -29,13 +27,13 @@ __license__ = "MIT"
 
 
 def main(argv=None):
-    """Read three site files and save a multi-panel LDOS figure.
+    """3サイトのファイルを読み、複数パネルの LDOS 図を保存する。
 
     Args:
-        argv: Optional command-line arguments.
+        argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
 
     Returns:
-        pathlib.Path: Generated figure path.
+        pathlib.Path: 保存したファイルのパス。
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", default="BaTiO3_R3m")

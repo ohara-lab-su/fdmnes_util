@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for the SAE averaged-plot energy reference."""
+"""SAE の平均図のエネルギー基準を回帰検証する。"""
 
 import pytest
 
@@ -7,26 +7,26 @@ from fdmnes_util.analyze_fdm_average import AnalyzeFdmAverage
 
 
 class ExampleInput:
-    """Provide the calculation-mode accessor used by FdmInp."""
+    """FdmInp の計算モード取得メソッドを模擬する。"""
 
     def __init__(self, photon_mode):
-        """Store whether the example calculation uses photon energy."""
+        """テスト計算が光子エネルギーを使うかを保持する。"""
         self.photon_mode = photon_mode
 
     def get_energygpho(self):
-        """Return the example input calculation mode."""
+        """テスト入力の計算モードを返す。"""
         return self.photon_mode
 
 
 class ExampleSpectrum:
-    """Provide the metadata accessors used by FdmTxt."""
+    """FdmTxt のメタデータ取得メソッドを模擬する。"""
 
     def get_eedge(self):
-        """Return the absorption-edge energy in eV."""
+        """吸収端エネルギーを eV 単位で返す。"""
         return 100.0
 
     def get_efermi(self):
-        """Return the Fermi energy relative to the edge in eV."""
+        """吸収端に対するフェルミエネルギーを eV 単位で返す。"""
         return 5.0
 
 
@@ -40,7 +40,7 @@ class ExampleSpectrum:
     ],
 )
 def test_sae_energy_reference_modes(photon_mode, fermi, expected_shift):
-    """Check all four combinations of calculation and display modes."""
+    """計算と表示のエネルギー基準の4通りの組み合わせを検証する。"""
     analyzer = AnalyzeFdmAverage()
     shift, absolute_fermi = analyzer.energy_reference(
         ExampleInput(photon_mode),

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Integration tests for the editable averaged PDOS/XAS example."""
+"""編集用の平均 PDOS・XAS サンプルの結合テストを行う。"""
 
 import importlib.util
 from pathlib import Path
@@ -9,37 +9,37 @@ import pytest
 
 
 class FakeSdReader:
-    """Provide orbital data with the same interface as an SD reader."""
+    """SD リーダーと同じ I/F で軌道データを提供する。"""
 
     def get_eng(self):
-        """Return the synthetic SD energy grid."""
+        """テスト用の SD エネルギー格子を返す。"""
         return np.array([0.0, 1.0, 2.0])
 
     def get_pdos(self, lm=None, spin=0):
-        """Return a synthetic orbital-projected density."""
+        """テスト用の軌道射影状態密度を返す。"""
         return np.array([1.0, 2.0, 3.0])
 
 
 class FakeSd:
-    """Replace the SD file dispatcher in an isolated CLI integration test."""
+    """CLI の結合テスト用に SD の形式選択を差し替える。"""
 
     def __init__(self, filename, format_year):
-        """Accept the same arguments as the real SD dispatcher.
+        """実際の SD 形式選択クラスと同じ引数を受け取る。
 
         Args:
-            filename: Name of a synthetic SD file.
-            format_year: Requested FDMNES output format year.
+            filename: 対象ファイルのパス。
+            format_year: 対応する形式年。None なら列名で判定する。
         """
         self.filename = filename
         self.format_year = format_year
 
     def select_reader(self):
-        """Return a synthetic SD reader."""
+        """テスト用の SD リーダーを返す。"""
         return FakeSdReader()
 
 
 def load_example():
-    """Import the distributed script from the repository's scripts folder."""
+    """リポジトリの scripts フォルダから配布用サンプルを取り込む。"""
     script_path = Path(__file__).resolve().parents[1] / "scripts" / "fdPDOS_XAS_av.py"
     spec = importlib.util.spec_from_file_location("fd_pdos_xas_example", script_path)
     module = importlib.util.module_from_spec(spec)
@@ -48,11 +48,11 @@ def load_example():
 
 
 def write_conv(path, absorption):
-    """Create a minimal real FDMNES convolution file for the reader.
+    """リーダーのテスト用に最小限の FDMNES 畳み込みファイルを作る。
 
     Args:
-        path: Output file path.
-        absorption: Absorption values at three energy points.
+        path: 対象ファイルのパス。
+        absorption: 対応するエネルギー点の吸収強度。
     """
     lines = ["Energy XAS"]
     energies = [0.0, 1.0, 2.0]
@@ -64,7 +64,7 @@ def write_conv(path, absorption):
 
 
 def test_example_generates_average_xas_figure(tmp_path, monkeypatch):
-    """Exercise the CLI, real convolution reader, averaging, and plotting."""
+    """CLI、畳み込みの読み取り、平均化、描画をまとめて検証する。"""
     module = load_example()
     monkeypatch.setattr(module, "FdmSd", FakeSd)
 
@@ -95,7 +95,7 @@ def test_example_generates_average_xas_figure(tmp_path, monkeypatch):
 
 
 def test_example_rejects_unpaired_xas_files(tmp_path, monkeypatch):
-    """Reject mismatched SD/XAS file counts before reading XAS files."""
+    """XAS を読む前に SD と XAS のファイル数の不一致を検出することを検証する。"""
     module = load_example()
     monkeypatch.setattr(module, "FdmSd", FakeSd)
     with pytest.raises(SystemExit) as error:
@@ -118,7 +118,7 @@ def test_example_rejects_unpaired_xas_files(tmp_path, monkeypatch):
 def test_example_draws_fermi_marker_on_displayed_axis(
     tmp_path, monkeypatch, fermi, expected,
 ):
-    """Pass the Fermi level to the figure in the chosen energy reference."""
+    """選択したエネルギー基準でフェルミ準位を描画に渡すことを検証する。"""
     from matplotlib.figure import Figure
 
     module = load_example()
@@ -166,21 +166,21 @@ def test_example_draws_fermi_marker_on_displayed_axis(
 
 
 def test_example_preserves_sae_orbital_label_rules(monkeypatch, tmp_path):
-    """Use the SAE atom prefix unless the user supplies --label."""
+    """--label がない場合は SAE の原子接頭辞が使われることを検証する。"""
     module = load_example()
     monkeypatch.setattr(module, "FdmSd", FakeSd)
     recorded_labels = []
 
     class RecordingPlotter:
-        """Record the curves passed from the editable example."""
+        """編集用サンプルから渡される曲線を記録する。"""
 
         def plot(self, orbital_data, output, **kwargs):
-            """Store labels without rendering a figure.
+            """描画せずにラベルを保持する。
 
             Args:
-                orbital_data: Orbital curves passed by the script.
-                output: Unused output path.
-                **kwargs: Other plotting options.
+                orbital_data: 軌道ラベル、エネルギー、状態密度の組の並び。
+                output: 保存先ファイルのパス。拡張子で出力形式を指定する。
+                **kwargs: 対象のメソッドに渡す追加のキーワード引数。
             """
             for label, energy, density in orbital_data:
                 recorded_labels.append(label)

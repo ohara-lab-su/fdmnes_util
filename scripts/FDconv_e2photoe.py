@@ -9,8 +9,10 @@
 #
 # 2018.08.17
 #   Python2/3 両対応
-"""Convert convolution energy values to photon-energy values."""
+"""``*.inp``、生 XAS ``<Filout>.txt``、畳み込み XAS ``*_conv.txt`` を読み、``*_conv_photoe.txt`` を書く。
 
+吸収端のエネルギーを使って、畳み込みスペクトルの軸を光子エネルギーに変換する。
+"""
 import argparse
 
 from fdmnes_util.analyze_fdm_xas import AnalyzeFdmXas
@@ -21,10 +23,10 @@ from fdmnes_util.fdm_photoenergy import FdmPhotoenergy
 
 
 def main(argv=None):
-    """Convert the convolved spectrum and write the resulting text file.
+    """畳み込みスペクトルを変換し、結果をテキストに保存する。
 
     Args:
-        argv: Optional command-line argument sequence.
+        argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
     """
     parser = argparse.ArgumentParser(description="Convert XAS energy units")
     parser.add_argument("input", nargs="?", help="FDMNES input file")

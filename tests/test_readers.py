@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for the FDMNES class library."""
+"""FDMNES クラスライブラリを回帰検証する。"""
 
 from pathlib import Path
 import numpy as np
@@ -94,7 +94,7 @@ def test_2020_bav_version():
 
 
 def test_bav_recognizes_truncated_september_2016_revision(tmp_path):
-    """The September 2016 binary writes its revision into 50 characters."""
+    """2016年9月版の実行ファイルが改訂行を50文字で出力する場合を検証する。"""
     path = tmp_path / "old_bav.txt"
     path.write_text("   FDMNES II program, Revision 1st of September 20\n")
     log = FdmBav(path)
@@ -246,13 +246,13 @@ def test_conv_allsite(tmp_path):
         処理結果。
 
     """
-    from fdmnes_util.fdm_convolution_inputs import FdmConvolutionInputs
+    from fdmnes_util.util.site_convolution_job_preparer import SiteConvolutionJobPreparer
     from fdmnes_util.fdmfile import Fdmfile
 
     for i in (1, 2):
         (tmp_path / f"Fe_{i}.txt").write_text("data")
     (tmp_path / "Fe_bav.txt").write_text("ignore")
-    files = FdmConvolutionInputs().write(tmp_path / "Fe", tmp_path)
+    files = SiteConvolutionJobPreparer().write(tmp_path / "Fe", tmp_path)
     assert len(files) == 2
     assert Fdmfile(tmp_path / "fdmfile.txt").filenames == files
 
@@ -267,11 +267,11 @@ def test_result_clean_and_move_different_sets(tmp_path):
         処理結果。
 
     """
-    from fdmnes_util.fdm_result_files import FdmResultFiles
+    from fdmnes_util.util.result_file_operations import ResultFileOperations
 
     for name in ("Fe.txt", "Fe_bav.txt", "Fe_sd0.txt", "fdm.out"):
         (tmp_path / name).write_text("x")
-    obj = FdmResultFiles(tmp_path / "Fe")
+    obj = ResultFileOperations(tmp_path / "Fe")
     moved = obj.move(tmp_path / "dest")
     assert len(moved) == 3 and (tmp_path / "fdm.out").exists()
     deleted = obj.clean()
@@ -291,7 +291,7 @@ def test_fermi_metadata():
 
 
 def test_xas_metadata_uses_parameter_names(tmp_path):
-    """Use the original SAE value-to-name mapping for edge energy and Z."""
+    """吸収端エネルギーと Z を SAE と同じく項目名で対応づけることを検証する。"""
     path = tmp_path / "sample.txt"
     path.write_text(
         "26 7112.0 4.5 = Z, E_edge, E_Fermi\nEnergy <xanes>\n0 1\n",
@@ -323,7 +323,7 @@ def test_log_xyz_real_file():
 
 @pytest.mark.parametrize("year", [2016, 2020])
 def test_bav_scf_records(tmp_path, year):
-    """Read SAE's final cycle index, configured limit, and SCF energies."""
+    """SAE の最終サイクル番号、反復上限、SCF エネルギーの読み取りを検証する。"""
     log_path = tmp_path / "test_bav.txt"
     log_path.write_text(
         f"FDMNES program, Revision 1st of June {year}\n"
@@ -344,7 +344,7 @@ def test_bav_scf_records(tmp_path, year):
 
 @pytest.mark.parametrize("record", ["", "Absorber 3\n", "Absorber\n3\n"])
 def test_absorber_index(tmp_path, record):
-    """Read inline and multiline SAE absorber records with the default of one."""
+    """SAE のインライン・次行指定の吸収原子番号と既定値1を検証する。"""
     path = tmp_path / "test.inp"
     path.write_text(record + "End\n")
     expected = 1
@@ -354,7 +354,7 @@ def test_absorber_index(tmp_path, record):
 
 
 def test_2020_does_not_return_up_dos_for_down_spin():
-    """Apply channel validation to every DOS accessor."""
+    """全 DOS 取得メソッドでスピンを検証することを確認する。"""
     sd = FdmSd2020(F / "Fe_sd0.txt")
     methods = [sd.get_ldos, sd.get_intldos, sd.get_pdos, sd.get_tdos, sd.get_inttdos]
     for method in methods:
@@ -363,7 +363,7 @@ def test_2020_does_not_return_up_dos_for_down_spin():
 
 
 def test_2016_spin_aliases(tmp_path):
-    """Compare the original SAE spin names against explicit column indices."""
+    """SAE のスピン名と明示した列インデックスの結果を比較する。"""
     source = tmp_path / "spin_sd0.txt"
     source.write_text(
         "Energy Int_t(u) Int_t(d) n(0,0,u) Intn(0,0,u) "
@@ -379,21 +379,21 @@ def test_2016_spin_aliases(tmp_path):
 
 
 def test_batch_list_reads_original_sae_fixture():
-    """Skip the original comment preamble and honor the declared job count."""
+    """冒頭コメントを読み飛ばし、宣言されたジョブ数を使うことを検証する。"""
     from fdmnes_util.fdmfile import Fdmfile
 
     assert Fdmfile(F / "fdmfile.txt").filenames == ["read_pdb.inp"]
 
 
 def test_magnetism_sets_spin_channels(tmp_path):
-    """Recognize SAE's Magnetism keyword when selecting SD spin columns."""
+    """SAE の Magnetism を認識して SD のスピン列を選べることを検証する。"""
     path = tmp_path / "test.inp"
     path.write_text("Magnetism\nEnd\n", encoding="utf-8")
     assert FdmInp(path).get_ispin() == 2
 
 
 def test_bav_rejects_unverified_revision(tmp_path):
-    """Keep the 2022 BAV format distinct until its layout can be verified."""
+    """書式未確認の2022年 BAV を従来版に割り当てないことを検証する。"""
     path = tmp_path / "test_bav.txt"
     path.write_text("FDMNES program, Revision 1st of June 2022\n", encoding="utf-8")
     with pytest.raises(ValueError, match="Unverified BAV layout"):
@@ -401,7 +401,7 @@ def test_bav_rejects_unverified_revision(tmp_path):
 
 
 def test_bav_ii_header_and_last_cluster(tmp_path):
-    """Use SAE's revision recognition and last cluster in a multi-site log."""
+    """SAE の改訂行認識と、複数サイトログの最終クラスタの採用を検証する。"""
     path = tmp_path / "sample_bav.txt"
     path.write_text(
         "FDMNES II program, Revision 29th of January 2019\n"
@@ -427,7 +427,7 @@ def test_bav_ii_header_and_last_cluster(tmp_path):
 
 
 def test_input_scalar_getters_use_last_definition(tmp_path):
-    """Keep all records while returning the last value as SAE does."""
+    """全記録を保持しつつ、SAE と同じく最後の値を返すことを検証する。"""
     path = tmp_path / "sample.inp"
     path.write_text(
         "Filout first\nFile_out\n final\n"

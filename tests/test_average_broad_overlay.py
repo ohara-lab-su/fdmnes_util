@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for the SAE averaged-XAS broadening overlay."""
+"""SAE の平均 XAS 図での畳み込みスペクトルの重ね描きを回帰検証する。"""
 
 import matplotlib
 import numpy as np
@@ -11,7 +11,7 @@ matplotlib.use("Agg")
 
 
 def test_average_plot_overlays_distinct_energy_grids(tmp_path):
-    """Plot raw and broadened XAS on their respective energy grids."""
+    """生 XAS と畳み込み XAS がそれぞれのエネルギー格子を使うことを検証する。"""
     orbital_data = [
         ("s", np.array([0.0, 1.0]), np.array([1.0, 2.0])),
     ]
@@ -38,7 +38,7 @@ def test_average_plot_overlays_distinct_energy_grids(tmp_path):
 
 
 def test_raw_overlay_requires_convolved_xas(tmp_path):
-    """Reject raw-XAS overlays when the XAS panel is absent."""
+    """XAS パネルがない場合に生 XAS の重ね描きを拒否することを検証する。"""
     orbital_data = [
         ("s", np.array([0.0, 1.0]), np.array([1.0, 2.0])),
     ]

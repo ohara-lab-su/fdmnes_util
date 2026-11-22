@@ -32,14 +32,11 @@
 ################################################################################
 ################################################################################
 
-"""Historical SAE example retained to document a known-bug version.
+"""POSCAR から FDMNES の ``*.inp`` への変換を停止した、SAE の旧スクリプトを保存する。
 
-The original SAE script was deliberately frozen after a critical defect was
-identified. Its conversion calls were commented out, so this example does
-not attempt to convert structures or generate a FDMNES input file.
+重大な不具合が判明した時点の SAE 原版を保存した例。原版では構造変換と FDMNES 入力の生成を呼び出す行がコメントアウトされている。
 
-For actual POSCAR conversion, use FDvasp2fdm.py, which delegates POSCAR
-parsing to the external vasp_util package.
+POSCAR の変換には、読み取りを vasp_util に委譲する FDvasp2fdm.py を使う。
 """
 
 import argparse
@@ -47,10 +44,10 @@ from pathlib import Path
 
 
 def main() -> int:
-    """Reproduce the original script's non-converting frozen behavior.
+    """変換を停止したままの原版の動作を再現する。
 
     Returns:
-        int: Zero after reporting that this is the historical bug version.
+        int: 旧版であることを報告して0を返す。
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("-i", "--ipput", dest="input_file", default="POSCAR")

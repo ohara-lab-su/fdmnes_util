@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""Plot FDMNES density-of-states data read by the SD file classes."""
+"""``*_sdN.txt`` を読んだリーダーから状態密度を取得し、図として保存する。
 
+PlotFdmDos は LDOS・PDOS・積分値の配置や、占有領域の塗り分けを担当する。SD の形式判定は FdmSd が行う。
+"""
 from pathlib import Path
 
 from ..analyze_fdm_average import AnalyzeFdmAverage
@@ -8,8 +10,7 @@ from . import _PlotFigure
 
 
 class PlotFdmDos(_PlotFigure):
-    """Create density-of-states figures without parsing an SD file."""
-
+    """``*_sdN.txt`` を読んだリーダーや数値配列から状態密度を描き、図として保存する。"""
     def plot_local(self, reader, output, *, orbit=1, integrated=False):
         """SAE の fdLDOS.py と同じ配置で一つの軌道を描く。
 
@@ -64,22 +65,22 @@ class PlotFdmDos(_PlotFigure):
         divisor=None,
         extra_outputs=(),
     ):
-        """Draw a selected LDOS channel with optional axis limits.
+        """指定した LDOS を任意の軸範囲で描く。
 
         Args:
-            reader: SD reader or list of absorber-site SD readers.
-            output: Destination image path. Matplotlib infers its format.
-            orbital: Orbital channel to plot, such as ``p``.
-            emin: Optional minimum energy for the horizontal axis.
-            emax: Optional maximum energy for the horizontal axis.
-            dmax: Optional maximum density for the vertical axis.
-            edge_offset: Offset added to the computed energy axis (eV).
-            fermi_position: Position of the vertical Fermi marker (eV).
-            divisor: Optional normalization divisor for multiple sites.
-            extra_outputs: Additional paths to save the same figure.
+            reader: SD リーダー、または複数の吸収サイトの SD リーダーのリスト。
+            output: 保存先ファイルのパス。拡張子で出力形式を指定する。
+            orbital: 対象の軌道名。
+            emin: 省略可能なエネルギー軸の下限。
+            emax: 省略可能なエネルギー軸の上限。
+            dmax: 省略可能な状態密度の上限。
+            edge_offset: 計算のエネルギー軸に加える量（eV）。
+            fermi_position: 表示に用いる基準でのフェルミ準位（eV）。縦線の位置に使う。
+            divisor: 合計を割る正の値。必要に応じて原子あたりの値に換算する。
+            extra_outputs: 同じ図を追加保存するパスの並び。
 
         Returns:
-            pathlib.Path: The generated image file.
+            pathlib.Path: 保存した画像ファイルのパス。
         """
         import matplotlib.pyplot as plt
 
@@ -130,24 +131,22 @@ class PlotFdmDos(_PlotFigure):
         emax=None,
         dmax=None,
     ):
-        """Plot LDOS with the occupied states shaded below the Fermi level.
+        """フェルミ準位より下の占有領域を塗り分けて LDOS を描く。
 
-        SAE's ``fdLDOS_color.py`` draws the LDOS in black and shades the
-        occupied region in gray. The energy and Fermi reference must use
-        the same coordinate system.
+        SAE の fdLDOS_color.py と同じく LDOS を黒線で、占有領域を灰色で描く。エネルギー軸とフェルミ準位の基準は揃えて渡す。
 
         Args:
-            reader: FDMNES SD object for the selected format year.
-            output: Destination figure path.
-            orbital: Orbital channel whose LDOS is plotted.
-            edge_offset: Energy offset added to SD energies, in eV.
-            fermi_position: Fermi level in the shifted energy axis, in eV.
-            emin: Optional lower energy limit, in eV.
-            emax: Optional upper energy limit, in eV.
-            dmax: Optional upper density limit.
+            reader: 状態密度データを取得する SD リーダー。
+            output: 保存先ファイルのパス。拡張子で出力形式を指定する。
+            orbital: 対象の軌道名。
+            edge_offset: 計算のエネルギー軸に加える量（eV）。
+            fermi_position: 表示に用いる基準でのフェルミ準位（eV）。縦線の位置に使う。
+            emin: 省略可能なエネルギー軸の下限。
+            emax: 省略可能なエネルギー軸の上限。
+            dmax: 省略可能な状態密度の上限。
 
         Returns:
-            pathlib.Path: Destination of the saved figure.
+            pathlib.Path: 図の保存先。
         """
         import matplotlib
 
@@ -186,16 +185,16 @@ class PlotFdmDos(_PlotFigure):
         return self._save_figure(figure, output)
 
     def plot(self, reader, output, orbitals=("s", "p", "d"), *, integrated=False):
-        """Plot orbital-resolved density-of-states curves.
+        """軌道群別の状態密度曲線を描く。
 
         Args:
-            reader: A version-specific SD reader exposing the ``get_*dos`` API.
-            output: Path of the output image or PDF.
-            orbitals: Orbital channels to draw in the requested order.
-            integrated: Plot integrated LDOS instead of LDOS when True.
+            reader: get_*dos メソッドを持つ年別 SD リーダー。
+            output: 保存先ファイルのパス。拡張子で出力形式を指定する。
+            orbitals: 描画する軌道の順序付きの並び。
+            integrated: 積分値を描く指定。
 
         Returns:
-            pathlib.Path: Path to the figure written to disk.
+            pathlib.Path: 保存したファイルのパス。
         """
         import matplotlib
 
@@ -238,29 +237,26 @@ class PlotFdmDos(_PlotFigure):
         emin=None,
         emax=None,
     ):
-        """Save the three-site LDOS figure in several image formats.
+        """3サイトの LDOS 図を複数の画像形式で保存する。
 
-        The original SAE ``fdLDOSmulti.py`` exports EPS, PDF, and PNG.
-        This method exposes that behavior without repeating the data
-        preparation in an editable example script.
+        SAE の fdLDOSmulti.py と同様に、同じデータから EPS・PDF・PNG に保存する。
 
         Args:
-            readers: Exactly three year-specific SD reader objects.
-            labels: Three site labels in the same order as the readers.
-            output_prefix: Output path without a filename extension.
-            formats: Sequence of image extensions supported by Matplotlib.
-            edge_energy: Absorption-edge energy in eV.
-            fermi_energy: Fermi energy relative to the edge in eV.
-            orbital: Orbital channel to plot.
-            emin: Optional minimum photon energy in eV.
-            emax: Optional maximum photon energy in eV.
+            readers: 三つのサイトに対応する年別 SD リーダー。
+            labels: 各リーダーに対応するラベルの並び。
+            output_prefix: 保存先の拡張子なしのパス。
+            formats: Matplotlib が対応する保存形式の並び。
+            edge_energy: 吸収端エネルギー（eV）。
+            fermi_energy: エネルギー軸の基準に対応するフェルミエネルギー（eV）。
+            orbital: 対象の軌道名。
+            emin: 省略可能なエネルギー軸の下限。
+            emax: 省略可能なエネルギー軸の上限。
 
         Returns:
-            list[pathlib.Path]: Paths to the generated image files.
+            list[pathlib.Path]: 生成した画像ファイルのパスの並び。
 
         Raises:
-            ValueError: If formats is empty, contains duplicates, or
-                includes an unsupported output format.
+            ValueError: 保存形式が空、重複あり、または非対応形式を含む場合。
         """
         supported_formats = {"eps", "pdf", "png"}
         output_paths = []
@@ -303,27 +299,25 @@ class PlotFdmDos(_PlotFigure):
         emin=None,
         emax=None,
     ):
-        """Plot three site-resolved LDOS panels on a shared energy axis.
+        """共通のエネルギー軸で3サイトの LDOS を別々のパネルに描く。
 
-        The layout follows the three-panel arrangement in SAE's
-        ``fdLDOSmulti.py``. Energy values are converted to photon energy
-        using the absorption-edge energy from the corresponding XAS file.
+        SAE の fdLDOSmulti.py と同じ三段構成。該当する XAS の吸収端エネルギーを使い、エネルギー軸を光子エネルギーに変換する。
 
         Args:
-            readers: Three version-specific SD reader instances.
-            labels: Three labels corresponding to the SD files.
-            output: Path of the image to save.
-            edge_energy: Absorption-edge energy in eV.
-            fermi_energy: Fermi energy relative to the absorption edge in eV.
-            orbital: Orbital channel to display, defaulting to p.
-            emin: Optional lower photon-energy limit in eV.
-            emax: Optional upper photon-energy limit in eV.
+            readers: 三つのサイトに対応する年別 SD リーダー。
+            labels: 各リーダーに対応するラベルの並び。
+            output: 保存先ファイルのパス。拡張子で出力形式を指定する。
+            edge_energy: 吸収端エネルギー（eV）。
+            fermi_energy: エネルギー軸の基準に対応するフェルミエネルギー（eV）。
+            orbital: 対象の軌道名。
+            emin: 省略可能なエネルギー軸の下限。
+            emax: 省略可能なエネルギー軸の上限。
 
         Returns:
-            pathlib.Path: Path of the saved figure.
+            pathlib.Path: 保存したファイルのパス。
 
         Raises:
-            ValueError: If exactly three readers and labels are not supplied.
+            ValueError: リーダーまたはラベルが3件でない場合。
         """
         figure = self._multiple_sites_figure(
             readers,
@@ -347,6 +341,7 @@ class PlotFdmDos(_PlotFigure):
         emin,
         emax,
     ):
+        """三つのサイトの LDOS を光子エネルギー軸上に並べた図を組み立てる。"""
         if len(readers) != 3:
             raise ValueError("Exactly three SD readers are required")
         if len(labels) != 3:
@@ -398,29 +393,26 @@ class PlotFdmDos(_PlotFigure):
         density_max=5.0,
         extra_outputs=(),
     ):
-        """Compare p-LDOS from three independent FDMNES calculations.
+        """独立した三つの FDMNES 計算の p-LDOS を比較する。
 
-        This follows SAE ``fdMulti_3.py`` rather than ``fdLDOSmulti.py``.
-        Each calculation has its own Fermi energy. Its energy axis is
-        shifted independently so that the Fermi level is at zero.
+        SAE の fdMulti_3.py に従い、各計算の軸を独立に移動してその計算のフェルミ準位をゼロに揃える。
 
         Args:
-            readers: Three SD readers, one per calculation.
-            fermi_energies: Three Fermi energies from the corresponding
-                ``FdmTxt`` objects, expressed in the SD energy reference.
-            labels: Labels for the three independent calculations.
-            output: Destination image path.
-            orbital: LDOS channel to plot.
-            emin: Optional minimum Fermi-relative energy in eV.
-            emax: Optional maximum Fermi-relative energy in eV.
-            density_max: Upper bound of the LDOS axis.
-            extra_outputs: Additional paths for saving the same figure.
+            readers: 各計算に対応する三つの SD リーダー。
+            fermi_energies: 対応する三つの FdmTxt から取得した、SD 軸と同じ基準のフェルミエネルギー。
+            labels: 各リーダーに対応するラベルの並び。
+            output: 保存先ファイルのパス。拡張子で出力形式を指定する。
+            orbital: 対象の軌道名。
+            emin: 省略可能なエネルギー軸の下限。
+            emax: 省略可能なエネルギー軸の上限。
+            density_max: 状態密度軸の上限。
+            extra_outputs: 同じ図を追加保存するパスの並び。
 
         Returns:
-            pathlib.Path: Path to the saved figure.
+            pathlib.Path: 保存したファイルのパス。
 
         Raises:
-            ValueError: If input lengths are not three or limits are invalid.
+            ValueError: 入力が3件でないか、軸範囲が不正な場合。
         """
         if len(readers) != 3:
             raise ValueError("Three SD readers are required")
@@ -497,36 +489,34 @@ class PlotFdmDos(_PlotFigure):
         show=False,
         shade_occupied=False,
     ):
-        """Draw the SAE portrait DOS stack, with optional XAS at the bottom.
+        """SAE の縦長 DOS 図を描き、指定があれば最下段に XAS を配置する。
 
         Args:
-            reader: SD reader supplying densities on its own energy grid.
-            output: Main figure filename.
-            groups: Bottom-to-top groups of orbital names. Use ("total",)
-                for a total DOS panel.
-            spins: Spin channel order within each group, from bottom to top.
-            spin_labels: Label suffixes indexed by spin channel.
-            projected: Use individual orbital projections (PDOS).
-            integrated: Add stored integral curves on right-hand axes.
-            xas: Energy, intensity and label tuples for the absorption panel.
-            shift: Reference-frame shift applied only to the SD grid, in eV.
-            fermi_position: Position of the vertical energy marker, in eV.
-            xlabel: Energy reference label shown on the bottom axis.
-            limits: Lower and upper energy limits, with None for SD bounds.
-            density_max: Default upper limit on DOS magnitudes.
-            orbital_max: Optional mapping of group names to DOS limits.
-            xas_max: Maximum intensity on the absorption panel.
-            label: Site or material label used on the DOS curves.
-            extra_formats: Also save PDF, EPS, and PNG.
-            show: Display the figure after saving.
-            shade_occupied: Shade LDOS below the displayed Fermi level.
+            reader: 状態密度データを取得する SD リーダー。
+            output: 保存先ファイルのパス。拡張子で出力形式を指定する。
+            groups: 下から上へ並べる軌道名のグループ。全状態密度の段は ("total",)。
+            spins: 各グループ内で下から上へ並べるスピンの順序。
+            spin_labels: スピン番号に対応するラベルの接尾辞。
+            projected: True の場合は個々の軌道射影を描く。
+            integrated: 積分値を描く指定。
+            xas: 吸収パネルに渡すエネルギー、強度、ラベルの組の並び。
+            shift: SD にのみ加えるエネルギー移動量（eV）。
+            fermi_position: 表示に用いる基準でのフェルミ準位（eV）。縦線の位置に使う。
+            xlabel: エネルギー軸のラベル。
+            limits: エネルギー軸の下限と上限。None の箇所は SD の範囲を使う。
+            density_max: 状態密度軸の上限。
+            orbital_max: 軌道群名ごとの状態密度の上限。省略可能。
+            xas_max: XAS パネルの吸収強度の上限。
+            label: 状態密度曲線に付けるサイト名または試料名。
+            extra_formats: 同じ図を PDF・EPS・PNG でも保存する指定。
+            show: 保存後に描画バックエンドで図を表示する指定。
+            shade_occupied: 表示するフェルミ準位より下の LDOS を塗る指定。
 
         Returns:
-            pathlib.Path: Main saved figure.
+            pathlib.Path: 主図の保存先。
 
         Raises:
-            ValueError: If there are no DOS panels or if integrals are
-                requested for magnetic-sublevel projections.
+            ValueError: DOS パネルが空、または磁気副準位ごとの射影に積分が指定された場合。
         """
         import matplotlib.pyplot as plt
 

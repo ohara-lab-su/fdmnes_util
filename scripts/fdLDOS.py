@@ -12,8 +12,7 @@
 #
 ################################################################################
 ################################################################################
-"""Create an LDOS plot from a version-specific FDMNES SD file."""
-
+"""``*.inp`` または ``*_sdN.txt`` を指定して LDOS を描き、既定で ``LDOS.pdf`` に保存する。"""
 import argparse
 from pathlib import Path
 
@@ -30,13 +29,13 @@ __license__ = "MIT"
 
 
 def main(argv=None):
-    """Read an SD file and draw its local density of states.
+    """SD ファイルを読み、局所状態密度を描く。
 
     Args:
-        argv: Optional command-line argument sequence.
+        argv: コマンド名を除いた引数列。省略時はコマンドライン引数を使う。
 
     Returns:
-        pathlib.Path: Path to the created figure.
+        pathlib.Path: 保存したファイルのパス。
     """
     parser = argparse.ArgumentParser(description="Plot FDMNES LDOS")
     parser.add_argument("name", nargs="?")

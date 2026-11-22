@@ -14,7 +14,7 @@
 | `StructureConversion.fdm_to_atoms()`、`poscar_to_atoms()`、`other_to_atoms()` | 前二者は **同名**の `FdmStructure` メソッド。最後のメソッドは ASE の委譲だけだったため、同等の呼び出しは `ase.io.read(filename, format=...)` | `FDfdm2vasp.py` は `FdmStructure.fdm_to_atoms()`。CIF/PDB の読み取りは該当形式クラス |
 | `FdmXyz().render()`、`FdmXyz().write()` | [`xyz.py`](../src/fdmnes_util/xyz.py) の `Xyz.render()` と `Xyz.write()`。標準 XYZ の読み取りも `Xyz` が担当 | `FDbav2xyz.py` は `Xyz.render/write`、`FDxyz2fdm.py` は `Xyz(filename)` |
 | `plot/_figure.py` の `save_figure()` | [`plot/__init__.py`](../src/fdmnes_util/plot/__init__.py) の描画クラス共通 `_save_figure()`。描画結果の保存・表示・終了を受け持つ | `PlotFdmDos`、`PlotFdmXas`、`PlotFdmXasLdos`、`PlotFdmAverage` を使うコマンド |
-| `dos_plot_arguments()`、`plot_dos_sample()` とその補助関数 | [`DosPlotSample`](../src/fdmnes_util/dos_plot_sample.py) の `build_parser()`、`plot()` と非公開メソッド。ファイル選択と表示オプションをまとめる | `FDplot_LDOS.py`、`FDplot_PDOS.py`、`fdLDOS_color.py` |
+| `dos_plot_arguments()`、`plot_dos_sample()` とその補助関数 | [`DosPlotWorkflow`](../src/fdmnes_util/util/dos_plot_workflow.py) の `build_parser()`、`plot()` と非公開メソッド。ファイル選択と表示オプションをまとめる | `FDplot_LDOS.py`、`FDplot_PDOS.py`、`fdLDOS_color.py` |
 | `FDplot_XAS.py` の `_spectrum_paths`、`_raw_curves`、`_dos_curves`、`_shift_curves` | 同じスクリプトの `XasPlotSample` のメソッド。格子検査、平均・変換の計算は既存解析クラスに委譲 | `main()` が `XasPlotSample.run()` を呼ぶ |
 | `fdLDOS_color.py` の `_main_sd_file` | 同じスクリプトの `OccupiedLdosSample._run_sd_file()` | `main()` が `OccupiedLdosSample.run()` を呼ぶ |
 | `cli.install_scripts()` | `ScriptInstaller.install_scripts()`。既存の import 名は同じメソッドへの別名 | `fdmnes_util install script` の実行経路を維持 |
@@ -36,7 +36,7 @@ SAE の `ReadFdmInp` と `WriteFdmInp` は `FdmInp`、`ReadFdmFdmfile` と `Writ
 | `read_fdm_inp.py`、`write_fdm_inp.py` | `fdm_inp.FdmInp` の読取りと `render/write` |
 | `read_fdmfile.py`、`write_fdmfile.py` | `fdmfile.Fdmfile` の読取りと `write` |
 | `read_vasp_poscar.py` | 外部 `vasp_util.vasp_poscar.VaspPoscar` |
-| `write_fdm_convolution_inputs.py`、`write_fdm_photoenergy.py` | `fdm_convolution_inputs.FdmConvolutionInputs.write`、`fdm_photoenergy.FdmPhotoenergy.write` |
+| `write_fdm_convolution_inputs.py`、`write_fdm_photoenergy.py` | `util.site_convolution_job_preparer.SiteConvolutionJobPreparer.write`、`fdm_photoenergy.FdmPhotoenergy.write` |
 | `write_fdm_structure.py`、`write_fdm_xyz.py` | `fdm_structure.FdmStructure.write`、`xyz.Xyz.write` |
 
 ## 配布スクリプト28本の呼び出しと動作差
@@ -47,15 +47,15 @@ SAE の `ReadFdmInp` と `WriteFdmInp` は `FdmInp`、`ReadFdmFdmfile` と `Writ
 | --- | --- | --- |
 | [FDbav2xyz.py](FDbav2xyz.py) | `ReadFdmBav.get_natom/get_position/get_atoms_index_j` と直接出力 → `FdmBav.select_reader`、年別 getter、`Xyz.render/write` | Fe 実 BAV の227原子 XYZ が原版とバイト一致。現在もファイル出力と標準出力を選択できる。 |
 | [FDcif2fdm.py](FDcif2fdm.py) | ASE の CIF 読み取り → `Cif` の ASE 読み取り、`FdmStructure.render/render_xyz_molecule` | 原版は ASE 読み取り後に `bug version` と表示して停止。現行の Crystal/Molecule 出力は追加実装。ASE で読み取った元素と座標を比較し、現行の CIF→構造節も実行。 |
-| [FDclean.py](FDclean.py) | `ReadFdmInp/ReadFdmFdmfile` と glob・削除 → `Fdmfile.select_input`、`FdmInp.get_filout`、`FdmResultFiles.clean` | Fe の一時ディレクトリで原版と現行の削除後のファイル一覧が一致。補助ファイルの探索先は現行では Filout のディレクトリ。 |
+| [FDclean.py](FDclean.py) | `ReadFdmInp/ReadFdmFdmfile` と glob・削除 → `Fdmfile.select_input`、`FdmInp.get_filout`、`ResultFileOperations.clean` | Fe の一時ディレクトリで原版と現行の削除後のファイル一覧が一致。補助ファイルの探索先は現行では Filout のディレクトリ。 |
 | [FDconv_e2photoe.py](FDconv_e2photoe.py) | `ReadFdmInp/ReadFdmTxt/ReadFdmConv` の軸を書き換えて出力 → `FdmInp/FdmTxt/FdmConv`、`AnalyzeFdmXas.photon_energy`、`FdmPhotoenergy.write` | 原版105行目が読取り専用 `txt.eng` への代入で停止。さらに原版の出力は生 XAS の軸を畳み込み強度に対応させる。現行は畳み込み自身の軸を変換し、実 Fe の131行で強度と桁幅を検証。 |
 | [FDfdm2vasp.py](FDfdm2vasp.py) | `sae.structure.document.Read` と `cell.write` → `FdmStructure.fdm_to_atoms`、ASE の `write(format="vasp")` | Fe の結晶サンプルで原版・現行の元素順、格子、位置が一致。現行の分子経路は ASE で真空層を付け、座標の距離とセルをテスト。原版にある POSCAR 内容の標準出力は現行ではファイル保存と結果表示。 |
 | [FDgetfermi.py](FDgetfermi.py) | `ReadFdmInp/ReadFdmFdmfile`、`ReadFdmTxt.E_Fermi/E_edge`、`ReadFdmBav.edge` → `Fdmfile.select_input`、`FdmInp`、`FdmTxt.get_efermi/get_eedge`、BAV の `get_edge()` | Fe の数値は両方 0.0、7112.0。表示ラベルは原版 `K1`、現行 `Iron K1 edge`。現行は v0.0.0 からの BAV 公開 API の完全ラベルを表示。 |
-| [FDmakeCconvAllsite.py](FDmakeCconvAllsite.py) | `ReadFdmInp.get_filout`、glob と直接書き出し → `FdmInp.get_filout`、`FdmConvolutionInputs.write`、`Fdmfile.write` | Fe の2サイトで `fdmfile.txt`、`conv_1.inp`、`conv_2.inp` が原版とバイト一致。現行は出力ディレクトリに対してジョブの相対パスを計算。 |
-| [FDmove.py](FDmove.py) | `ReadFdmInp/ReadFdmFdmfile`、`os.rename` 相当 → `Fdmfile.select_input`、`FdmInp`、`FdmResultFiles.rename/move` | `Fe New` で原版と移動後の名前が一致し、現行の各ファイル内容は移動前と同一。現行の衝突拒否と `--destination` のアーカイブ経路は追加。 |
+| [FDmakeCconvAllsite.py](FDmakeCconvAllsite.py) | `ReadFdmInp.get_filout`、glob と直接書き出し → `FdmInp.get_filout`、`SiteConvolutionJobPreparer.write`、`Fdmfile.write` | Fe の2サイトで `fdmfile.txt`、`conv_1.inp`、`conv_2.inp` が原版とバイト一致。現行は出力ディレクトリに対してジョブの相対パスを計算。 |
+| [FDmove.py](FDmove.py) | `ReadFdmInp/ReadFdmFdmfile`、`os.rename` 相当 → `Fdmfile.select_input`、`FdmInp`、`ResultFileOperations.rename/move` | `Fe New` で原版と移動後の名前が一致し、現行の各ファイル内容は移動前と同一。現行の衝突拒否と `--destination` のアーカイブ経路は追加。 |
 | [FDpbd2fdm.py](FDpbd2fdm.py) | ASE の `read(format="pdb")`、`StructureExtraction.chk_pdb_cryst1`、`FdmnesStructureWriter.print_fdmnes0` → `Pdb`、`FdmStructure.render/render_xyz_molecule` | 検証環境の ASE で原版が `UnknownFileTypeError: pdb`。現行は `proteindatabank` で読み取り、CRYST1 有無による結晶・分子の選択を維持。形式名を補った原版処理と座標・セルを比較し、現行のコマンド出力も確認。 |
-| [FDplot_LDOS.py](FDplot_LDOS.py) | `ReadFdmInp/ReadFdmSd/ReadFdmTxt/ReadFdmConv` と直接描画 → `DosPlotSample` 経由で `FdmInp/FdmSd/FdmTxt/FdmConv`、`PlotFdmDos.plot_composite` | 実 Fe で図を出力。回帰テストは全 DOS・積分・反転した下スピン・XAS の曲線を照合。磁性2020形式では実ファイルの共通 TDOS を1段に描く。 |
-| [FDplot_PDOS.py](FDplot_PDOS.py) | `ReadFdmSd.get_pdos` と直接描画 → `DosPlotSample`、`FdmSd.get_pdos`、`PlotFdmDos.plot_composite` | 実 Fe で図を出力し、s/p/d のブロックおよび p の分割を回帰検証。2020形式には磁気量子数ごとの積分列がないため個別 PDOS 積分を作らない。 |
+| [FDplot_LDOS.py](FDplot_LDOS.py) | `ReadFdmInp/ReadFdmSd/ReadFdmTxt/ReadFdmConv` と直接描画 → `DosPlotWorkflow` 経由で `FdmInp/FdmSd/FdmTxt/FdmConv`、`PlotFdmDos.plot_composite` | 実 Fe で図を出力。回帰テストは全 DOS・積分・反転した下スピン・XAS の曲線を照合。磁性2020形式では実ファイルの共通 TDOS を1段に描く。 |
+| [FDplot_PDOS.py](FDplot_PDOS.py) | `ReadFdmSd.get_pdos` と直接描画 → `DosPlotWorkflow`、`FdmSd.get_pdos`、`PlotFdmDos.plot_composite` | 実 Fe で図を出力し、s/p/d のブロックおよび p の分割を回帰検証。2020形式には磁気量子数ごとの積分列がないため個別 PDOS 積分を作らない。 |
 | [FDplot_XAS.py](FDplot_XAS.py) | `ReadFdmTxt/Conv/Sd`、`ReadAthenaNor` と直接描画 → `XasPlotSample`、各リーダー、`AnalyzeFdmAverage`、`AnalyzeFdmXas`、`PlotFdmXas.plot_composite` | 実 Fe で出力。サイト平均は系列内の格子一致を確認し、生・畳み込み・SD・実験データにはそれぞれの軸を使う。回帰テストで平均の書出し、吸収端・スピン、観測曲線を確認。 |
 | [FDplot_XAS_LDOS.py](FDplot_XAS_LDOS.py) | `ReadFdmTxt/Conv/Sd` と直接描画 → `FdmTxt/FdmConv/FdmSd`、`AnalyzeFdmXas.energy_reference`、`PlotFdmXasLdos.plot` | 実 Fe の出力、原版処理と曲線・フェルミ線を照合。フェルミ基準を選ぶ場合は軸と縦線を同じ基準に置く。 |
 | [FDplot_XASs.py](FDplot_XASs.py) | `ReadFdmInp/ReadFdmTxt/ReadFdmConv/ReadAthenaNor` → `FdmInp`、`AnalyzeFdmXas.site_spectra`、`AthenaNor`、`PlotFdmXas.plot_sites` | 現行は `-a` に指定したサイト番号をファイル名に使う。原版のループは指定された個数だけ1から順に読む。実 Fe のコピーで観測付き EPS・PDF・PNG を生成。 |
@@ -66,7 +66,7 @@ SAE の `ReadFdmInp` と `WriteFdmInp` は `FdmInp`、`ReadFdmFdmfile` と `Writ
 | [fdExp_comp_XAS.py](fdExp_comp_XAS.py) | `ReadFdmConv/ReadFdmTxt/ReadAthenaNor` と直接描画 → `FdmConv/FdmTxt/AthenaNor`、`PlotFdmXas.plot_experiment_comparison` | Fe の計算データを同一ファイル名の試料として与え、原版と配置・曲線・軸ラベル・線幅が一致。現行ではファイル名と表示範囲を指定できる。 |
 | [fdLDOS.py](fdLDOS.py) | `ReadFdmInp.get_filout`、`ReadFdmSd.get_ldos` → `FdmInp/FdmSd`、`PlotFdmDos.plot_local` | 既定で `read_pdb.inp`、サイト1、p-LDOS、0 eV の縦線。Fe コピーで同じ軌道列と配置を確認。現行は図のファイル保存も行う。 |
 | [fdLDOS0_specified.py](fdLDOS0_specified.py) | `ReadFdmSd(..., absorber=(1,2,3,4,5), weight=6.0)` → 各 `FdmSd`、`AnalyzeFdmAverage.average`、`PlotFdmDos.plot_single_orbital` | Pd6 の既定ファイル名・5サイトの和÷6を維持。Fe のコピーを同じファイル名で配置し、EPS・PDF・PNG を生成。実 Pd6 の数値比較は未実施。 |
-| [fdLDOS_color.py](fdLDOS_color.py) | `ReadFdmInp/Conv/Txt/Sd` と `fill_between` → `DosPlotSample`、`PlotFdmDos.plot_composite` または SD 直接入力の `plot_occupied_ldos` | 計算入力経路で原版の多段構成とフェルミ準位より下の灰色塗りを使用。Fe の多段 XAS・TDOS・p-LDOS と積分付き PDF を生成。 |
+| [fdLDOS_color.py](fdLDOS_color.py) | `ReadFdmInp/Conv/Txt/Sd` と `fill_between` → `DosPlotWorkflow`、`PlotFdmDos.plot_composite` または SD 直接入力の `plot_occupied_ldos` | 計算入力経路で原版の多段構成とフェルミ準位より下の灰色塗りを使用。Fe の多段 XAS・TDOS・p-LDOS と積分付き PDF を生成。 |
 | [fdLDOSmulti.py](fdLDOSmulti.py) | `ReadFdmTxt/ReadFdmSd` と3段描画 → `FdmTxt/FdmSd`、`PlotFdmDos.plot_multiple_sites/save_multiple_formats` | 3サイトの同じ図を3形式で保存。原版描画処理と Fe の曲線・フェルミ線を比較。原版既定の Ba/Ba/Ti ラベルを維持。 |
 | [fdMulti_2_XAS+LDOS+EXP.py](fdMulti_2_XAS+LDOS+EXP.py) | `ReadFdmConv/ReadFdmTxt/ReadFdmSd/ReadAthenaNor` → 各現行リーダー、`PlotFdmXasLdos.plot_experiment_ldos` | 実験強度の 1/39 と +0.015、計算軸 +4.5 eV は原版既定。原版が生 XAS・LDOSにも畳み込み軸を使う箇所は各データ自身の軸に訂正。Fe コピーで PDF 生成。原版の `options()` は実行部で呼ばれていない。 |
 | [fdMulti_3.py](fdMulti_3.py) | `ReadFdmSd/ReadFdmTxt`、固定3計算の直接描画 → `FdmSd/FdmTxt`、`PlotFdmDos.plot_three_calculations` | 原版の2番目の曲線は1番目の Fermi を使う。現行は各計算の Fermi でシフトし、同じ図を3形式で保存。Fe コピー3組で実行し、独立シフトを回帰テスト。 |

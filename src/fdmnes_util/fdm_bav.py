@@ -47,8 +47,10 @@
 #       print position[i][0],position[i][1],position[i][2]
 # Copyright Kengo NAKADA; SAE class library.
 # ---- End of SAE original header ----
-"""Select a version-specific reader for an FDMNES calculation log."""
+"""FDMNES の計算ログ ``*_bav.txt`` を読み、改訂行に対応するリーダーを選ぶ。
 
+FdmBav は既存形式と確認済みの2026年11月5日版を振り分ける。クラスタ座標や SCF の取得処理は選択した年別リーダーに委譲する。
+"""
 from __future__ import annotations
 
 import re
@@ -63,16 +65,16 @@ if TYPE_CHECKING:
 
 
 class FdmBav:
-    """Inspect a ``_bav.txt`` header and select its version-specific parser."""
+    """FDMNES の計算ログ `*_bav.txt` の改訂行から年別リーダーを選ぶ。"""
 
     def __init__(self, filename):
-        """Read the revision marker from a calculation log.
+        """計算ログの改訂行を読み込む。
 
         Args:
-            filename: Calculation-log filename.
+            filename: FDMNES 計算ログのパス。
 
         Raises:
-            ValueError: If the revision marker or its year cannot be found.
+            ValueError: 改訂行またはその年を特定できない場合。
         """
         self.path = Path(filename)
         self.lines = self.path.read_text(errors="replace").splitlines()
@@ -93,13 +95,13 @@ class FdmBav:
             raise ValueError(f"Unknown FDMNES version: {self.revision}")
 
     def select_reader(self) -> FdmBav2016 | FdmBav2020 | FdmBav2026:
-        """Return the implementation selected by the revision year.
+        """改訂年と改訂行に対応するリーダーを返す。
 
         Returns:
-            FdmBav2016 | FdmBav2020 | FdmBav2026: Reader for the revision.
+            FdmBav2016 | FdmBav2020 | FdmBav2026: 改訂行に対応するリーダー。
 
         Raises:
-            ValueError: For an unverified revision from 2022 onwards.
+            ValueError: 2022年以降の未検証の改訂版の場合。
         """
         if self.year >= 2022:
             from .fdm_bav_2026 import FdmBav2026
@@ -119,6 +121,7 @@ class FdmBav:
 
     @cached_property
     def _reader(self) -> FdmBav2016 | FdmBav2020 | FdmBav2026:
+        """直接呼び出された取得メソッドが共有する年別リーダーを返す。"""
         return self.select_reader()
 
     def get_edge(self):

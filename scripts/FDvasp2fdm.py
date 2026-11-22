@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # Copyright Kengo NAKADA; SAE class library.
 # SAE: sae/commands/FDvasp2fdm.py
-"""Convert a VASP POSCAR file to a FDMNES structure section.
+"""VASP POSCAR を読み、FDMNES の構造節と計算入力 ``read_pdb.inp`` を書き出す。
 
-This editable example demonstrates the external vasp_util POSCAR reader and
-FDMNES structure writer. It also generates the original SAE calculation input template as read_pdb.inp.
+vasp_util の POSCAR リーダーと FDMNES 構造ライターを使う。SAE の計算入力テンプレートも read_pdb.inp に出力する。
 """
 
 import argparse
@@ -15,10 +14,10 @@ from fdmnes_util.fdm_structure import FdmStructure
 
 
 def main() -> int:
-    """Read POSCAR and write a FDMNES structure file.
+    """POSCAR を読み、FDMNES の構造ファイルを保存する。
 
     Returns:
-        int: Zero when conversion succeeds.
+        int: 変換が成功した場合は0。
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("name", nargs="?")

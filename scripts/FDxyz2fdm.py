@@ -5,11 +5,9 @@
 # 2018.08.21 Python2/3 両対応
 # 2015.06.30 == None --> is None
 # 2015.05.18 startup
-"""Convert a standard XYZ molecule to a FDMNES molecule section.
+"""標準 ``*.xyz`` を読み、FDMNES の Molecule 節を ``*.fdmnes`` などへ書き出す。
 
-This editable example shows how to combine a file parser with the FDMNES
-structure formatter. Unlike SAE's original command, OpenMX MD files and the
-full calculation-input template are not yet supported.
+ファイルリーダーと FDMNES 構造ライターを組み合わせる例。対象は標準 XYZ と構造節の生成。
 """
 
 import argparse
@@ -20,7 +18,7 @@ from fdmnes_util.xyz import Xyz
 
 
 def main() -> None:
-    """Read XYZ coordinates and write a FDMNES molecule section."""
+    """XYZ 座標を読み、FDMNES の Molecule 節を書き出す。"""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path, nargs="?", help="Standard XYZ file")
     parser.add_argument("-i", "--input", type=Path, dest="input_option")
