@@ -93,6 +93,15 @@ def test_2020_bav_version():
     assert type(log.select_reader()).__name__ == "FdmBav2020"
 
 
+def test_bav_recognizes_truncated_september_2016_revision(tmp_path):
+    """The September 2016 binary writes its revision into 50 characters."""
+    path = tmp_path / "old_bav.txt"
+    path.write_text("   FDMNES II program, Revision 1st of September 20\n")
+    log = FdmBav(path)
+    assert log.year == 2016
+    assert type(log.select_reader()).__name__ == "FdmBav2016"
+
+
 def test_xas_and_conversion(tmp_path):
     """test_xas_and_conversionの処理を実行する。
 
@@ -225,6 +234,19 @@ def test_fermi_metadata():
     assert reader.parameters["E_edge"] == reader.edge_energy
 
 
+def test_xas_metadata_uses_parameter_names(tmp_path):
+    """Use the original SAE value-to-name mapping for edge energy and Z."""
+    path = tmp_path / "sample.txt"
+    path.write_text(
+        "26 7112.0 4.5 = Z, E_edge, E_Fermi\nEnergy <xanes>\n0 1\n",
+        encoding="utf-8",
+    )
+    reader = FdmTxt(path)
+    assert reader.atomic_number == 26
+    assert reader.get_eedge() == 7112.0
+    assert reader.get_efermi() == 4.5
+
+
 def test_log_xyz_real_file():
     """test_log_xyz_real_fileの処理を実行する。
 
@@ -321,3 +343,40 @@ def test_bav_rejects_unverified_revision(tmp_path):
     path.write_text("FDMNES program, Revision 1st of June 2022\n", encoding="utf-8")
     with pytest.raises(ValueError, match="Unverified BAV layout"):
         FdmBav(path).select_reader()
+
+
+def test_bav_ii_header_and_last_cluster(tmp_path):
+    """Use SAE's revision recognition and last cluster in a multi-site log."""
+    path = tmp_path / "sample_bav.txt"
+    path.write_text(
+        "FDMNES II program, Revision 29th of January 2019\n"
+        "Cluster: atom positions in order, in the internal R2 bases\n"
+        " Z posx posy posz\n"
+        "29 0 0 0\n\n"
+        "Cluster: atom positions in order, in the internal R2 bases\n"
+        " Z posx posy posz\n"
+        " 8 1 2 3\n\n",
+        encoding="utf-8",
+    )
+    log = FdmBav(path)
+    assert log.year == 2019
+    reader = log.select_reader()
+    assert reader.revision.startswith("FDMNES II program,")
+    assert reader.get_atoms_index_j() == ["O"]
+    np.testing.assert_array_equal(reader.get_position(), [[1, 2, 3]])
+
+
+def test_input_scalar_getters_use_last_definition(tmp_path):
+    """Keep all records while returning the last value as SAE does."""
+    path = tmp_path / "sample.inp"
+    path.write_text(
+        "Filout first\nFile_out\n final\n"
+        "Absorber 1\nAbsorber\n 3\n"
+        "Calculation first_result\nCalculation\n last_result\nEnd\n",
+        encoding="utf-8",
+    )
+    reader = FdmInp(path)
+    assert reader.get_filout() == "final"
+    assert reader.get_absorber() == 3
+    assert reader.get_calculation() == "last_result"
+    assert reader.tags["calculation"] == ["first_result", "last_result"]

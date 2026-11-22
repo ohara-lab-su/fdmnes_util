@@ -40,6 +40,10 @@ def test_photon_energy_uses_convolution_grid(tmp_path):
     values = np.loadtxt(output)
     np.testing.assert_allclose(values[:, 0], [7098.0, 7100.0, 7102.0])
     np.testing.assert_allclose(values[:, 1], [0.1, 0.5, 0.9])
+    assert output.read_text().splitlines()[:2] == [
+        "",
+        "    7098.00000    0.1000000000",
+    ]
 
 
 def test_photoenergy_rejects_mismatched_arrays(tmp_path):

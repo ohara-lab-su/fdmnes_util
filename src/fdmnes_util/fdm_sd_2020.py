@@ -174,7 +174,8 @@ class FdmSd2020:
         if column_count not in (5, 10, 17):
             raise ValueError(f"Not a 2020 SD header ({column_count} columns)")
 
-        self.values = np.loadtxt(self.path, skiprows=1, ndmin=2)
+        # 列名と同じ読込みから数値行を解析する。
+        self.values = np.loadtxt(lines[1:], ndmin=2)
         if self.values.shape[1] != column_count:
             raise ValueError("SD column count mismatch")
 

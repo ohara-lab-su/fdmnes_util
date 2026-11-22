@@ -114,6 +114,57 @@ def test_example_rejects_unpaired_xas_files(tmp_path, monkeypatch):
     assert error.value.code == 2
 
 
+@pytest.mark.parametrize("fermi, expected", [(False, 107.0), (True, 2.0)])
+def test_example_draws_fermi_marker_on_displayed_axis(
+    tmp_path, monkeypatch, fermi, expected,
+):
+    """Pass the Fermi level to the figure in the chosen energy reference."""
+    from matplotlib.figure import Figure
+
+    module = load_example()
+    monkeypatch.setattr(module, "FdmSd", FakeSd)
+    markers = []
+
+    def record_figure(figure, *args, **kwargs):
+        for axis in figure.axes:
+            positions = []
+            for line in axis.lines:
+                x = line.get_xdata()
+                if len(x) == 2 and x[0] == x[1]:
+                    positions.append(x[0])
+            markers.append(positions)
+
+    monkeypatch.setattr(Figure, "savefig", record_figure)
+    inp = tmp_path / "read_pdb.inp"
+    inp.write_text("Filout Fe\nEnd\n")
+    raw = tmp_path / "Fe.txt"
+    raw.write_text(
+        "100.0 26 5.0 = E_edge Z E_Fermi\n"
+        "Energy XAS\n0.0 1.0\n1.0 2.0\n2.0 3.0\n"
+    )
+    conv = tmp_path / "Fe_conv.txt"
+    write_conv(conv, [1.0, 2.0, 3.0])
+    args = [
+        "Fe_sd0.txt",
+        "--orbitals",
+        "s",
+        "--input",
+        str(inp),
+        "--energy-offset",
+        "2.0",
+        "--xas-files",
+        str(conv),
+        "--raw-xas-files",
+        str(raw),
+        "--output",
+        str(tmp_path / "out.pdf"),
+    ]
+    if fermi:
+        args.append("--fermi")
+    module.main(args)
+    assert markers == [[expected], [expected]]
+
+
 def test_example_preserves_sae_orbital_label_rules(monkeypatch, tmp_path):
     """Use the SAE atom prefix unless the user supplies --label."""
     module = load_example()

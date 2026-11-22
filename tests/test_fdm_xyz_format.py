@@ -17,8 +17,8 @@ def test_xyz_serialization(tmp_path):
     lines = output_path.read_text(encoding="utf-8").splitlines()
     assert lines[0] == "2"
     assert lines[1] == ""
-    assert lines[2] == "Fe 0.0000000000 1.2500000000 -2.0000000000"
-    assert lines[3] == "O 3.0000000000 4.0000000000 5.0000000000"
+    assert lines[2] == " Fe   0.0000000000   1.2500000000  -2.0000000000"
+    assert lines[3] == " O   3.0000000000   4.0000000000   5.0000000000"
 
 
 def test_xyz_rejects_mismatched_atom_counts(tmp_path):

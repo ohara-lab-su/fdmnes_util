@@ -32,7 +32,7 @@ def main(argv=None):
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("prefixes", nargs=3, help="Three calculation prefixes")
-    parser.add_argument("--year", type=int, choices=(2016, 2020), required=True)
+    parser.add_argument("--year", type=int, choices=(2016, 2020))
     parser.add_argument("--site", type=int, default=0)
     parser.add_argument("--orbital", default="p")
     parser.add_argument("--emin", type=float)

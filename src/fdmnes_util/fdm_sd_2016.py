@@ -159,7 +159,8 @@ class FdmSd2016:
             raise ValueError("Cannot detect 2016 lmax")
         self.lmax = max(labels)
 
-        self.values = np.loadtxt(self.path, skiprows=1, ndmin=2)
+        # 列名と同じ読込みから数値行を解析する。
+        self.values = np.loadtxt(lines[1:], ndmin=2)
         expected_columns = 1 + self.ispin
         for angular_momentum in range(self.lmax + 1):
             expected_columns += (2 * (2 * angular_momentum + 1) + 2) * self.ispin
@@ -175,7 +176,6 @@ class FdmSd2016:
 
         self.energy = self.values[:, 0].copy()
         self._partial = {}
-        self._integrated_partial = {}
         self._ldos = {}
         self._intldos = {}
         offset = 1 + self.ispin
@@ -189,9 +189,8 @@ class FdmSd2016:
                 for spin in range(self.ispin):
                     key = (angular_momentum, magnetic_quantum_number, spin)
                     self._partial[key] = self.values[:, offset]
-                    offset += 1
-                    self._integrated_partial[key] = self.values[:, offset]
-                    offset += 1
+                    # 個別軌道の積分列は元の数値表に保持する。
+                    offset += 2
             for spin in range(self.ispin):
                 key = (angular_momentum, spin)
                 self._ldos[key] = self.values[:, offset]

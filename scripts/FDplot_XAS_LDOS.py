@@ -28,7 +28,7 @@ def main(argv=None):
     parser.add_argument("-f", "--filout")
     parser.add_argument("-a", "--atom", type=int, default=0)
     parser.add_argument("--fermi", action="store_true")
-    parser.add_argument("--year", type=int, required=True, choices=[2016, 2020])
+    parser.add_argument("--year", type=int, choices=[2016, 2020])
     parser.add_argument("--output")
     options = parser.parse_args(argv)
 

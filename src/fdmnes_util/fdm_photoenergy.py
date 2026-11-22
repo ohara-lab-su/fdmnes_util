@@ -55,10 +55,7 @@ class FdmPhotoenergy:
         output_values = np.column_stack((energy_values, intensity_values))
 
         # Preserve the original command's numerical column precision.
-        np.savetxt(
-            output_path,
-            output_values,
-            fmt="%13.5f  %14.10f",
-            header="Energy    <xanes>",
-        )
+        with output_path.open("w", encoding="utf-8") as stream:
+            stream.write("\n")
+            np.savetxt(stream, output_values, fmt=" %13.5f  %14.10f")
         return output_path

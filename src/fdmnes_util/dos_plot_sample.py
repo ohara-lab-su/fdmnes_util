@@ -93,8 +93,6 @@ def plot_dos_sample(plotter, options, *, projected):
         kind = "PDOS"
     input_path = options.source or options.input_file
     if options.source and options.input_file is None and _is_sd_table(options.source):
-        if options.year is None:
-            raise ValueError("Specify --year when plotting an SD file directly")
         reader = FdmSd(options.source, format_year=options.year).select_reader()
         output = options.output or f"{kind}.pdf"
         return plotter.plot(reader, output, integrated=options.intdos)
@@ -108,16 +106,11 @@ def plot_dos_sample(plotter, options, *, projected):
     sd_name = options.name or options.sd or prefix
     if not sd_name.endswith(".txt"):
         sd_name += sd_suffix
-    year = options.year
-    if year is None:
-        bav = options.bav or prefix
-        year = FdmSd.format_from_bav(bav.removesuffix("_bav.txt") + "_bav.txt")
-
     ispin = input_file.get_ispin()
     if options.spin or options.dn:
         ispin = 2
     reader = FdmSd(
-        sd_name, format_year=year, ispin=ispin, weight=options.dosweight
+        sd_name, format_year=options.year, ispin=ispin, weight=options.dosweight
     ).select_reader()
     spins = (0,)
     spin_labels = ("", "")

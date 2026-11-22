@@ -82,25 +82,23 @@ class AnalyzeFdmAverage:
         if not np.isfinite(divisor) or divisor <= 0:
             raise ValueError("The averaging divisor must be positive and finite")
 
-        reference_energy = np.asarray(readers[0].get_eng(), dtype=float)
-        if reference_energy.ndim != 1:
-            raise ValueError("Energy grid must be one-dimensional")
-        if reference_energy.size == 0:
-            raise ValueError("Energy grid must not be empty")
-        if not np.all(np.isfinite(reference_energy)):
-            raise ValueError("Energy grid contains non-finite values")
-
+        reference_energy = None
         sum_values = None
 
         for reader in readers:
             energy = np.asarray(reader.get_eng(), dtype=float)
             if energy.ndim != 1:
                 raise ValueError("Energy grid must be one-dimensional")
+            if energy.size == 0 and reference_energy is None:
+                raise ValueError("Energy grid must not be empty")
             if not np.all(np.isfinite(energy)):
                 raise ValueError("Energy grid contains non-finite values")
-            if energy.shape != reference_energy.shape:
+            # 最初の計算を基準にし、各計算のエネルギー軸を一度だけ取得する。
+            if reference_energy is None:
+                reference_energy = energy
+            elif energy.shape != reference_energy.shape:
                 raise ValueError("Energy grid lengths differ between calculations")
-            if not np.allclose(energy, reference_energy, rtol=0.0, atol=1e-8):
+            elif not np.allclose(energy, reference_energy, rtol=0.0, atol=1e-8):
                 raise ValueError("Energy grids differ between calculations")
 
             accessor = getattr(reader, value_method)

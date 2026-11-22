@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Plot XAS and site-resolved LDOS as a vertically stacked figure."""
 
-from pathlib import Path
+from ._figure import save_figure
 
 
 class PlotFdmXasLdos:
@@ -63,9 +63,7 @@ class PlotFdmXasLdos:
                 axis.axvline(fermi_position, color="black", linewidth=1)
 
         figure.tight_layout()
-        figure.savefig(output)
-        plt.close(figure)
-        return Path(output)
+        return save_figure(figure, output)
 
     def plot_experiment_ldos(
         self,
@@ -157,7 +155,4 @@ class PlotFdmXasLdos:
                 axis.set_xlim(left=xmin, right=xmax)
 
         figure.tight_layout()
-        destination = Path(output)
-        figure.savefig(destination)
-        plt.close(figure)
-        return destination
+        return save_figure(figure, output)

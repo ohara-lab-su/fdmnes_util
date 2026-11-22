@@ -103,7 +103,7 @@ class FdmSd:
 
     Attributes:
         path: Path to the SD output file.
-        format_year: Explicitly selected, supported file format year.
+        format_year: Supported file format year, or None to inspect the header.
         ispin: Spin channel used for the 2016 layout.
         weight: Optional site-averaging weight.
     """
@@ -113,14 +113,15 @@ class FdmSd:
 
         Args:
             filename: Path to the FDMNES site-resolved DOS file.
-            format_year: Supported SD layout year (2016 or 2020).
+            format_year: Supported SD layout year (2016 or 2020), or None to
+                select by SD column names.
             ispin: Spin channel for the 2016 layout.
             weight: Optional weighting factor passed to the parser.
 
         Raises:
             ValueError: If the requested SD format is not verified.
         """
-        if format_year not in (2016, 2020):
+        if format_year not in (None, 2016, 2020):
             raise ValueError(
                 f"Unverified SD layout for year {format_year}; "
                 "explicitly choose a tested format"
@@ -137,7 +138,21 @@ class FdmSd:
         Returns:
             FdmSd2016 | FdmSd2020: Parser for the selected SD format.
         """
-        if self.format_year == 2016:
+        year = self.format_year
+        if year is None:
+            with self.path.open(encoding="utf-8", errors="replace") as stream:
+                columns = set(stream.readline().split())
+            old_total = columns.intersection({"Int_t", "Int_t(u)", "Int_t(d)"})
+            if "Energy" in columns and old_total and any(
+                name.startswith("n(0,0") for name in columns
+            ):
+                year = 2016
+            elif {"Energy", "s", "Int(s)", "total", "Int(total)"}.issubset(columns):
+                year = 2020
+            else:
+                raise ValueError(f"Unverified SD layout: {self.path}")
+
+        if year == 2016:
             return FdmSd2016(
                 self.path,
                 ispin=self.ispin,
@@ -148,7 +163,10 @@ class FdmSd:
 
     @staticmethod
     def format_from_bav(filename):
-        """Select an SD layout from the matching calculation's BAV revision.
+        """Return the historical SD layout estimate based on a BAV revision.
+
+        Construct ``FdmSd`` with ``format_year=None`` to identify the layout
+        from the actual SD columns instead.
 
         Args:
             filename: Path to the companion BAV file.

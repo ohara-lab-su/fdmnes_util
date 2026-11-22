@@ -54,7 +54,7 @@ def main(argv=None):
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("sd_files", nargs="+", help="SD files to average")
-    parser.add_argument("--year", type=int, required=True)
+    parser.add_argument("--year", type=int)
     parser.add_argument("--orbitals", nargs="+", default=["s", "p_z"])
     parser.add_argument("--spin", type=int, default=0)
     parser.add_argument(
@@ -213,6 +213,7 @@ def main(argv=None):
     # SAE determines the energy reference from the input calculation mode
     # and the edge/Fermi metadata in the unbroadened XAS file.
     energy_offset = options.energy_offset
+    fermi_position = None
     if options.input is not None:
         if options.raw_xas_files is None:
             parser.error("--input requires --raw-xas-files for energy metadata")
@@ -225,6 +226,10 @@ def main(argv=None):
             fermi=options.fermi,
         )
         energy_offset += reference_shift
+        # フェルミ基準の軸では縦線も原点に移し、ユーザー指定のシフトを適用する。
+        fermi_position = options.energy_offset
+        if not options.fermi:
+            fermi_position += absolute_fermi
     else:
         if options.fermi:
             parser.error("--fermi requires --input and --raw-xas-files")
@@ -241,6 +246,7 @@ def main(argv=None):
         ymax=options.ymax,
         energy_offset=energy_offset,
         orbital_groups=orbital_groups,
+        fermi_position=fermi_position,
     )
 
 

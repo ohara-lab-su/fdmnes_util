@@ -90,28 +90,14 @@ class FdmTxt:
 
         self.metadata = lines[0]
         self.header = lines[1].split()
-        self.values = np.loadtxt(self.path, skiprows=2, ndmin=2)
+        # 吸収端などのメタデータと同じ読込みから数値行を解析する。
+        self.values = np.loadtxt(lines[2:], ndmin=2)
 
         if self.values.shape[1] < 2:
             raise ValueError("FDMNES XAS output requires an absorption column")
 
         self.energy = self.values[:, 0]
         self.xas = self.values[:, 1:]
-        self.edge_energy = None
-        self.atomic_number = None
-
-        metadata_fields = lines[0].split()
-        if metadata_fields:
-            try:
-                self.edge_energy = float(metadata_fields[0])
-            except ValueError:
-                pass
-
-        if len(metadata_fields) > 1:
-            try:
-                self.atomic_number = int(float(metadata_fields[1]))
-            except ValueError:
-                pass
 
         # The first line pairs values before "=" with names after it.
         self.parameters = {}
@@ -127,6 +113,23 @@ class FdmTxt:
                 except ValueError:
                     continue
 
+        # SAE reads E_edge and Z by name. Keep the positional fallback for
+        # headers without those keys.
+        self.edge_energy = self.parameters.get("E_edge")
+        atomic_number = self.parameters.get("Z")
+        if atomic_number is None or self.edge_energy is None:
+            metadata_fields = lines[0].split()
+            if metadata_fields and self.edge_energy is None:
+                try:
+                    self.edge_energy = float(metadata_fields[0])
+                except ValueError:
+                    pass
+            if len(metadata_fields) > 1 and atomic_number is None:
+                try:
+                    atomic_number = float(metadata_fields[1])
+                except ValueError:
+                    pass
+        self.atomic_number = None if atomic_number is None else int(atomic_number)
         self.fermi_energy = self.parameters.get("E_Fermi", 0.0)
 
     def get_eng(self):
@@ -193,6 +196,6 @@ class FdmTxt:
             filename,
             np.column_stack(spectrum),
             fmt="  %14.3f %14.8f",
-            header=metadata + "\n    Energy    <xanes>",
+            header=metadata + "\n    Energy    <xanes>  ",
             comments="",
         )

@@ -64,7 +64,7 @@ def main() -> None:
         type=Path,
         default=Path("Cu_K_Cu_foil_Si311_50ms_140625.txt.nor"),
     )
-    parser.add_argument("--year", type=int, choices=[2016, 2020], default=2020)
+    parser.add_argument("--year", type=int, choices=[2016, 2020])
     parser.add_argument("--energy-offset", type=float, default=4.5)
     parser.add_argument("--experiment-scale", type=float, default=39.0)
     parser.add_argument("--experiment-offset", type=float, default=0.015)

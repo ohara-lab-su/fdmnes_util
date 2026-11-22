@@ -77,6 +77,7 @@ class AthenaNor:
         energies = []
         normalized = []
         self.e0 = None
+        e0_field = re.compile(r"\bE0\s*=\s*([-+]?\d+(?:\.\d*)?(?:[eE][-+]?\d+)?)")
 
         with self.path.open(encoding="utf-8", errors="replace") as stream:
             for line in stream:
@@ -85,7 +86,9 @@ class AthenaNor:
                     continue
 
                 if stripped.startswith("#"):
-                    self._read_e0_comment(stripped)
+                    match = e0_field.search(stripped)
+                    if match is not None:
+                        self.e0 = float(match.group(1))
                     continue
 
                 values = stripped.split()
@@ -101,16 +104,6 @@ class AthenaNor:
 
         self.energy = np.asarray(energies, dtype=float)
         self.normalized = np.asarray(normalized, dtype=float)
-
-    def _read_e0_comment(self, comment):
-        """Extract the optional ``E0=`` field from an Athena comment.
-
-        Args:
-            comment: One comment line from the source file.
-        """
-        match = re.search(r"\bE0\s*=\s*([-+]?\d+(?:\.\d*)?(?:[eE][-+]?\d+)?)", comment)
-        if match is not None:
-            self.e0 = float(match.group(1))
 
     def get_eng(self):
         """Return the photon-energy axis.

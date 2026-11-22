@@ -238,11 +238,11 @@ python FDplot_XAS.py -i read_pdb.inp --obs Fe_obs.txt.nor --dos --year 2020 --nw
 **実行例**
 
 ```bash
-python FDplot_XAS_LDOS.py -i read_pdb.inp -a 0 --year 2020
+python FDplot_XAS_LDOS.py -i read_pdb.inp -a 0
 ```
 
 **原本からの変更点**
-現行版は `--year` が必須で、利用できる s・p・d 群を描きます。軌道指定の `--orbit` と `-l` は原本にあります。
+現行版は SD の列名で形式を判定し、利用できる s・p・d 群を描きます。`--year` で形式を明示することもできます。軌道指定の `--orbit` と `-l` は原本にあります。
 
 ### `FDplot_XASs.py`
 

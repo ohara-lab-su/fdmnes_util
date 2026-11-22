@@ -15,15 +15,15 @@
 | メソッドと引数の既定値 | 引数の意味 | 戻り値 |
 | --- | --- | --- |
 | `__init__(filename='read_pdb.inp')` | filename は計算入力ファイル。 | None |
-| `get_filout()` | — | str。結果の接頭辞。未指定なら空文字列。 |
-| `get_absorber()` | — | int。1 始まりの吸収原子番号。未指定なら 1。不正な番号は ValueError。 |
+| `get_filout()` | — | str。最後の `Filout` または `File_out` の値。未指定なら空文字列。 |
+| `get_absorber()` | — | int。最後の `Absorber` で指定した1始まりの吸収原子番号。未指定なら 1。不正な番号は ValueError。 |
 | `get_ispin()` | — | int。`Spin` または `Magnetism` があれば 2、なければ 1。 |
 | `get_allsite()` | — | bool。`Allsite` の有無。 |
 | `get_energygpho()` | — | bool。`Energpho` または `Energygpho` の有無。 |
 | `get_nonexc()` | — | bool。`Nonexc` の有無。 |
 | `get_convolution()` | — | bool。`Convolution` の有無。 |
 | `get_conv_out()` | — | str。`Conv_out` の値。未指定なら空文字列。 |
-| `get_calculation()` | — | str。`Calculation` の値。未指定なら空文字列。 |
+| `get_calculation()` | — | str。最後の `Calculation` の値。未指定なら空文字列。 |
 | `get_cellparam()` | — | list[float] または None。結晶の格子長 3 個と角度 3 個。 |
 | `get_crystal_atoms()` | — | ase.Atoms。周期構造。 |
 | `get_molecule_atoms()` | — | ase.Atoms。非周期構造。分率・円筒・球座標の入力に対応。 |
@@ -152,21 +152,20 @@ output = FdmPhotoenergy().write([7112.0, 7113.0], [0.2, 0.5], "Fe_conv_photoe.tx
 
 `from fdmnes_util.fdm_sd import FdmSd`
 
-SD ファイルの形式を選択し、対応するリーダーを作ります。
+SD ファイルの形式を選択し、対応するリーダーを作ります。2019年Cuのように改訂年とSDの列構成が対応しない場合があります。ファイルを判定するには `format_year=None` を指定します。
 
 | メソッドと引数の既定値 | 引数の意味 | 戻り値 |
 | --- | --- | --- |
-| `__init__(filename, *, format_year, ispin=1, weight=None)` | filename は SD ファイル、format_year は 2016 または 2020、ispin は 2016 形式のスピン数、weight は密度・積分列の除数（None なら除算なし）。 | None |
+| `__init__(filename, *, format_year, ispin=1, weight=None)` | filename は SD ファイル、format_year は 2016、2020、または列名で判定する場合は None、ispin は 2016 形式のスピン数、weight は密度・積分列の除数（None なら除算なし）。 | None |
 | `select_reader()` | — | FdmSd2016 または FdmSd2020。選んだ形式のリーダー。 |
-| `format_from_bav(filename)` (静的) | filename は同じ計算の BAV ファイル。 | int。2016 または 2020。未検証のリビジョンでは ValueError。 |
+| `format_from_bav(filename)` (静的) | filename は同じ計算の BAV ファイル。改訂年から推定する従来のメソッド。 | int。2016 または 2020。未検証のリビジョンでは ValueError。 |
 | `write_table(filename, columns, grid, densities)` (静的) | filename は保存先、columns はエネルギー列から始まる列名、grid は一次元のエネルギー軸、densities はエネルギー列を除く二次元の値。 | None。SD 表を保存。 |
 
 **使用例**
 
 ```python
 from fdmnes_util.fdm_sd import FdmSd
-year = FdmSd.format_from_bav("Fe_bav.txt")
-sd = FdmSd("Fe_sd0.txt", format_year=year).select_reader()
+sd = FdmSd("Fe_sd0.txt", format_year=None).select_reader()
 energy, p_ldos = sd.get_eng(), sd.get_ldos("p")
 ```
 
@@ -307,6 +306,26 @@ edge, last_cycle = log.get_edge(), log.get_n_scf_loop()
 from fdmnes_util.fdm_bav_2020 import FdmBav2020
 log = FdmBav2020("Fe_bav.txt")
 symbols, positions = log.get_atoms_index_j(), log.get_position()
+```
+
+### `FdmBav2026`
+
+`from fdmnes_util.fdm_bav_2026 import FdmBav2026`
+
+`FdmBav2020` を継承し、2026.11.05版のBAVにある `Cycle n, Fermi energy = ...` と `Total energy = ... eV, Delta energy = ...` からSCF履歴を取得します。ファイルを直接指定して使います。座標や吸収端などの共通メソッドと既定値は同ページの `FdmBav2020` と同じです。
+
+| メソッドと引数の既定値 | 引数の意味 | 戻り値 |
+| --- | --- | --- |
+| `__init__(filename)`（継承） | BAVファイルのパス。 | `None`。 |
+| `get_n_scf_loop()` | 引数なし。 | `int`。最後に記録されたSCFサイクル。記録がなければ `0`。 |
+| `get_scf_toten()` | 引数なし。 | `list[float]`。記録順のSCF全エネルギー（eV）。記録がなければ空リスト。 |
+
+```python
+from fdmnes_util.fdm_bav_2026 import FdmBav2026
+
+log = FdmBav2026("Fe_SCF_bav.txt")
+print(log.get_n_scf_loop())
+print(log.get_scf_toten())
 ```
 
 ## 構造の入出力
@@ -612,7 +631,7 @@ output = PlotFdmXasLdos().plot(xas, ldos, "Fe_XAS_LDOS.pdf")
 
 | メソッドと引数の既定値 | 引数の意味 | 戻り値 |
 | --- | --- | --- |
-| `plot(orbital_data, output, *, xas_data=None, raw_xas_data=None, emin=None, emax=None, dmax=None, ymax=None, energy_offset=0.0, orbital_groups=None)` | orbital_data は (label, energy, DOS) の並び、output は保存先。xas_data・raw_xas_data は畳み込み・生 XAS の (energy, intensity) で、生 XAS には畳み込み XAS も必要。emin・emax・dmax・ymax は各軸の範囲。energy_offset は全系列への軸の移動量（eV）、orbital_groups は同じ段に描く軌道名のグループ。 | Path。平均 PDOS と任意の XAS を含む図の保存先。 |
+| `plot(orbital_data, output, *, xas_data=None, raw_xas_data=None, emin=None, emax=None, dmax=None, ymax=None, energy_offset=0.0, orbital_groups=None, fermi_position=None)` | orbital_data は (label, energy, DOS) の並び、output は保存先。xas_data・raw_xas_data は畳み込み・生 XAS の (energy, intensity) で、生 XAS には畳み込み XAS も必要。emin・emax・dmax・ymax は各軸の範囲。energy_offset は全系列への軸の移動量（eV）、orbital_groups は同じ段に描く軌道名のグループ。fermi_position は表示軸上のフェルミ準位（eV）。指定すると全パネルに縦線を描く。 | Path。平均 PDOS と任意の XAS を含む図の保存先。 |
 
 **使用例**
 
@@ -678,8 +697,7 @@ print(results.outputs())
 ```python
 from fdmnes_util.fdm_sd import FdmSd
 
-year = FdmSd.format_from_bav("Fe_bav.txt")
-sd = FdmSd("Fe_sd0.txt", format_year=year).select_reader()
+sd = FdmSd("Fe_sd0.txt", format_year=None).select_reader()
 energy = sd.get_eng()
 p_ldos = sd.get_ldos("p")
 pz_pdos = sd.get_pdos(lm="p_z")

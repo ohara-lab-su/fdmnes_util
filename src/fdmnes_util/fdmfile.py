@@ -117,7 +117,8 @@ class Fdmfile:
         """
         input_names = list(filenames)
         output_path = Path(filename)
-        output_lines = ["", str(len(input_names))]
+        # SAE の FDmakeCconvAllsite.py と同じ件数行の書式。
+        output_lines = ["", f" {len(input_names)}"]
 
         for input_name in input_names:
             output_lines.append(str(input_name))
