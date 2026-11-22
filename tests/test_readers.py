@@ -246,13 +246,13 @@ def test_conv_allsite(tmp_path):
         処理結果。
 
     """
-    from fdmnes_util.fdm_convolution_inputs import FdmConvolutionInputs
+    from fdmnes_util.util.site_convolution_job_preparer import SiteConvolutionJobPreparer
     from fdmnes_util.fdmfile import Fdmfile
 
     for i in (1, 2):
         (tmp_path / f"Fe_{i}.txt").write_text("data")
     (tmp_path / "Fe_bav.txt").write_text("ignore")
-    files = FdmConvolutionInputs().write(tmp_path / "Fe", tmp_path)
+    files = SiteConvolutionJobPreparer().write(tmp_path / "Fe", tmp_path)
     assert len(files) == 2
     assert Fdmfile(tmp_path / "fdmfile.txt").filenames == files
 
@@ -267,11 +267,11 @@ def test_result_clean_and_move_different_sets(tmp_path):
         処理結果。
 
     """
-    from fdmnes_util.fdm_result_files import FdmResultFiles
+    from fdmnes_util.util.result_file_operations import ResultFileOperations
 
     for name in ("Fe.txt", "Fe_bav.txt", "Fe_sd0.txt", "fdm.out"):
         (tmp_path / name).write_text("x")
-    obj = FdmResultFiles(tmp_path / "Fe")
+    obj = ResultFileOperations(tmp_path / "Fe")
     moved = obj.move(tmp_path / "dest")
     assert len(moved) == 3 and (tmp_path / "fdm.out").exists()
     deleted = obj.clean()

@@ -3,20 +3,22 @@
 # SAE: K.NAKADA, kengo.nakada@gmail.com
 # SAE: 2018.08.17 - Python2/3 両対応
 # SAE: 2015.06.30 startup
-"""生 XAS ``<Filout>_N.txt`` を参照する ``conv_N.inp`` と ``fdmfile.txt`` を生成する。
+"""番号付きの生 XAS ``<Filout>_N.txt`` からサイト別の畳み込みジョブを準備する。
 
-FdmConvolutionInputs は番号付きのスペクトルをファイル名順に探し、各サイトの畳み込み入力を SAE 由来の書式で組み立てる。
+スペクトルをファイル名順に選び、SAE の書式で ``conv_N.inp`` と
+``fdmfile.txt`` をまとめて生成する。
 """
 from glob import escape
 from os.path import relpath
 from pathlib import Path
 import re
 
-from .fdmfile import Fdmfile
+from ..fdmfile import Fdmfile
 
 
-class FdmConvolutionInputs:
-    """生 XAS ``<Filout>_N.txt`` を参照して、``conv_N.inp`` と ``fdmfile.txt`` を生成する。"""
+class SiteConvolutionJobPreparer:
+    """生 XAS ``<Filout>_N.txt`` に対応する ``conv_N.inp`` と ``fdmfile.txt`` を揃える。"""
+
     def write(self, filout, output_dir="."):
         """サイト別の畳み込み入力とジョブ一覧を生成する。
 

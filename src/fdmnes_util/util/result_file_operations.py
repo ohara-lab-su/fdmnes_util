@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""``<Filout>.txt``、``*_bav.txt``、``*_conv.txt``、``*_sdN.txt`` と補助ログを管理する。
+"""``<Filout>.txt``、``*_bav.txt``、``*_conv.txt``、``*_sdN.txt`` と補助ログを一括整理する。
 
-FdmResultFiles は Filout からファイルのパスを探し、整理・移動・削除する。スペクトルやログの本文は読み込まない。
+ResultFileOperations は Filout から対象ファイルを探し、名前変更・移動・削除をまとめて行う。
 """
 import shutil
 from glob import escape
 from pathlib import Path
 
 
-class FdmResultFiles:
-    """``<Filout>.txt``、``*_bav.txt``、``*_conv.txt``、``*_sdN.txt`` と補助ログのパスを管理する。"""
+class ResultFileOperations:
+    """``<Filout>.txt``、``*_bav.txt``、``*_conv.txt``、``*_sdN.txt`` と補助ログの一括操作を担当する。"""
     def __init__(self, filout: str | Path) -> None:
         """計算出力の接頭辞を保持する。
 

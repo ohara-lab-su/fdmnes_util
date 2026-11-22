@@ -43,7 +43,7 @@
 """
 # fmt: on
 
-from fdmnes_util.dos_plot_sample import DosPlotSample
+from fdmnes_util.util.dos_plot_workflow import DosPlotWorkflow
 from fdmnes_util.plot.plot_fdm_dos import PlotFdmDos
 
 __author__ = "Kengo NAKADA"
@@ -63,10 +63,10 @@ def main(argv=None):
     Returns:
         pathlib.Path: 主図の保存先。
     """
-    sample = DosPlotSample(projected=True)
-    parser = sample.build_parser()
+    workflow = DosPlotWorkflow(projected=True)
+    parser = workflow.build_parser()
     options = parser.parse_args(argv)
-    return sample.plot(PlotFdmDos(), options)
+    return workflow.plot(PlotFdmDos(), options)
 
 
 if __name__ == "__main__":

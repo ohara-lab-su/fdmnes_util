@@ -30,7 +30,7 @@ import argparse
 from pathlib import Path
 
 from fdmnes_util.fdm_inp import FdmInp
-from fdmnes_util.fdm_convolution_inputs import FdmConvolutionInputs
+from fdmnes_util.util.site_convolution_job_preparer import SiteConvolutionJobPreparer
 
 
 def main(argv=None):
@@ -51,8 +51,8 @@ def main(argv=None):
     if not filout:
         raise ValueError("Filout is missing")
 
-    writer = FdmConvolutionInputs()
-    generated_paths = writer.write(filout)
+    preparer = SiteConvolutionJobPreparer()
+    generated_paths = preparer.write(filout)
     for path in generated_paths:
         print(path)
 

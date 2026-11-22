@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""``*.inp``・``fdmfile.txt`` から ``*_sdN.txt`` と対応する XAS のパスを解決する描画サンプル用モジュール。
+"""``*.inp``・``fdmfile.txt`` から ``*_sdN.txt`` と対応する XAS のパスを解決するDOS 描画の準備処理。
 
-DosPlotSample は ``<Filout>.txt`` や ``*_conv.txt`` を各リーダーに渡し、指定された軌道・スピン・エネルギー基準で図を組み立てる。保存は描画クラスに委譲する。
+DosPlotWorkflow は ``<Filout>.txt`` や ``*_conv.txt`` を各リーダーに渡し、指定された軌道・スピン・エネルギー基準で図を組み立てる。保存は描画クラスに委譲する。
 """
 import argparse
 from pathlib import Path
 
-from .analyze_fdm_average import AnalyzeFdmAverage
-from .fdm_conv import FdmConv
-from .fdm_inp import FdmInp
-from .fdm_sd import FdmSd
-from .fdm_txt import FdmTxt
-from .fdmfile import Fdmfile
+from ..analyze_fdm_average import AnalyzeFdmAverage
+from ..fdm_conv import FdmConv
+from ..fdm_inp import FdmInp
+from ..fdm_sd import FdmSd
+from ..fdm_txt import FdmTxt
+from ..fdmfile import Fdmfile
 
 
-class DosPlotSample:
+class DosPlotWorkflow:
     """``*.inp``・``fdmfile.txt`` を手掛かりに ``*_sdN.txt``、生 XAS ``<Filout>.txt``、必要に応じて ``*_conv.txt`` を選び、描画に渡す。"""
 
     def __init__(self, *, projected, shade_occupied=False):
@@ -31,7 +31,7 @@ class DosPlotSample:
             self._kind = "PDOS"
 
     def build_parser(self):
-        """DOS サンプル用の SAE 共通オプションを定義する。
+        """DOS 描画コマンドの SAE 共通オプションを定義する。
 
         Returns:
             argparse.ArgumentParser: 原版のオプション名を採用したパーサー。
@@ -90,7 +90,7 @@ class DosPlotSample:
         return parser
 
     def plot(self, plotter, options):
-        """DOS サンプルの入力ファイルを決定して複合図を描く。
+        """DOS 描画に使うファイルを決定して複合図を描く。
 
         Args:
             plotter: 図を作る PlotFdmDos インスタンス。

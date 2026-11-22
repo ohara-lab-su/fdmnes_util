@@ -30,7 +30,7 @@
 
 import argparse
 
-from fdmnes_util.fdm_result_files import FdmResultFiles
+from fdmnes_util.util.result_file_operations import ResultFileOperations
 from fdmnes_util.fdm_inp import FdmInp
 from fdmnes_util.fdmfile import Fdmfile
 
@@ -51,7 +51,7 @@ def main(argv=None):
     if not filout:
         raise ValueError("The FDMNES input file has no Filout value")
 
-    results = FdmResultFiles(filout)
+    results = ResultFileOperations(filout)
     deleted_files = results.clean()
     for path in deleted_files:
         print(f"DELETE: {path}")

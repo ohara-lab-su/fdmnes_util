@@ -587,13 +587,13 @@ energy, density = AnalyzeFdmAverage().average(readers, "get_pdos", lm="p_z")
 output = PlotFdmAverage().plot([("p_z", energy, density)], "Fe_PDOS_mean.pdf")
 ```
 
-## 結果ファイルの管理
+## 計算結果の整理と畳み込みジョブの準備
 
-### `FdmConvolutionInputs`
+### `SiteConvolutionJobPreparer`
 
-`from fdmnes_util.fdm_convolution_inputs import FdmConvolutionInputs`
+`from fdmnes_util.util.site_convolution_job_preparer import SiteConvolutionJobPreparer`
 
-番号付きの生 XAS から、サイト別の畳み込みジョブを生成します。
+番号付きの生 XAS をファイル名順に選び、サイト別の畳み込み入力とジョブ一覧をまとめて生成します。`FDmakeCconvAllsite.py` が使う処理です。
 
 入力に `Fe_1.txt`、`Fe_2.txt` がある場合、例は `convolution_jobs/` に `conv_1.inp`、`conv_2.inp` と `fdmfile.txt` を書きます。
 
@@ -604,14 +604,14 @@ output = PlotFdmAverage().plot([("p_z", energy, density)], "Fe_PDOS_mean.pdf")
 **使用例**
 
 ```python
-from fdmnes_util.fdm_convolution_inputs import FdmConvolutionInputs
-jobs = FdmConvolutionInputs().write("Fe", output_dir="convolution_jobs")
+from fdmnes_util.util.site_convolution_job_preparer import SiteConvolutionJobPreparer
+jobs = SiteConvolutionJobPreparer().write("Fe", output_dir="convolution_jobs")
 print(jobs)
 ```
 
-### `FdmResultFiles`
+### `ResultFileOperations`
 
-`from fdmnes_util.fdm_result_files import FdmResultFiles`
+`from fdmnes_util.util.result_file_operations import ResultFileOperations`
 
 一つの `Filout` に対応する結果ファイルを検索、移動、改名、削除します。
 
@@ -627,8 +627,8 @@ print(jobs)
 **使用例**
 
 ```python
-from fdmnes_util.fdm_result_files import FdmResultFiles
-results = FdmResultFiles("Fe")
+from fdmnes_util.util.result_file_operations import ResultFileOperations
+results = ResultFileOperations("Fe")
 print(results.outputs())
 ```
 

@@ -23,7 +23,7 @@
 """
 import argparse
 
-from fdmnes_util.fdm_result_files import FdmResultFiles
+from fdmnes_util.util.result_file_operations import ResultFileOperations
 from fdmnes_util.fdm_inp import FdmInp
 from fdmnes_util.fdmfile import Fdmfile
 
@@ -51,7 +51,7 @@ def main(argv=None):
         input_file = FdmInp(Fdmfile.select_input(options.input))
         filout = input_file.get_filout()
 
-    result_files = FdmResultFiles(filout)
+    result_files = ResultFileOperations(filout)
     if options.prefixes:
         moved_paths = result_files.rename(options.prefixes[-1])
     else:

@@ -15,7 +15,7 @@ SAE の LDOS、TDOS、XAS の組み合わせと占有状態の塗り分けを扱
 import argparse
 import sys
 
-from fdmnes_util.dos_plot_sample import DosPlotSample
+from fdmnes_util.util.dos_plot_workflow import DosPlotWorkflow
 from fdmnes_util.fdm_sd import FdmSd
 from fdmnes_util.plot.plot_fdm_dos import PlotFdmDos
 
@@ -44,9 +44,9 @@ class OccupiedLdosSample:
         if arguments and arguments[0].endswith(".txt"):
             return self._run_sd_file(arguments)
 
-        sample = DosPlotSample(projected=False, shade_occupied=True)
-        parser = sample.build_parser()
-        return sample.plot(PlotFdmDos(), parser.parse_args(arguments))
+        workflow = DosPlotWorkflow(projected=False, shade_occupied=True)
+        parser = workflow.build_parser()
+        return workflow.plot(PlotFdmDos(), parser.parse_args(arguments))
 
     @staticmethod
     def _run_sd_file(argv):
