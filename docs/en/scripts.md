@@ -8,6 +8,16 @@ SAE used uppercase `FD*.py` names for general-purpose commands and lowercase `fd
 
 Each original below is the matching `sae/commands/<filename>` in the supplied `sae_original.zip`. See the [command audit](https://github.com/ohara-lab-su/fdmnes_util/blob/main/.PROGRESS/COMMAND_AUDIT.md) for option differences and the scope of behavioral verification.
 
+## 2026 output and calculation runner
+
+```console
+python FDrun.py read_pdb.inp --executable /path/to/fdmnes
+python FDplot_SD.py Au_sd0.txt --orbital '(3,0)' --nw -o Au_f.pdf
+python FDplot_SCF.py Fe_bav.txt --nw -o Fe_scf.pdf
+python FDconv_sites.py --site Fe_1.txt 1 0.2 --site Fe_2.txt 1 -0.2 --header --energy-step 0.25 --per-atom
+python FDrun.py conv.inp
+```
+
 ## POSCAR reading and the vasp_util source
 
 The SAE `FDvasp2fdm.py` read POSCAR through ASE and used `AseInputOperations` for FDMNES structure conversion. The script uses the separately installed `vasp_util.vasp_poscar.VaspPoscar` class directly. Its `get_lattice_vectors()`, `get_coords_direct()`, and `get_atom_indices()` methods supply the lattice, fractional positions, and symbols in atom order. These methods are defined in `vasp_util/vasp_poscar.py` in `vasp_util_original.zip`. `FdmStructure` and `FdmInp` produce the FDMNES files. In the reverse direction, `FDfdm2vasp.py` reads the structure from FDMNES input and uses ASE to write POSCAR.

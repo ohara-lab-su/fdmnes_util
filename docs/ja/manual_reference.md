@@ -12,9 +12,11 @@
 
 計算入力を読み込み、計算条件の取得や新しい入力の生成を行います。
 
+入力には改訂行がないため、`FdmInp(filename, format_year=2026)` で拡張形式を選びます。既定は2016です。`get_absorbers()` はサイト番号のリスト、`get_calculations()` は（ファイル名、重み、シフト、カットオフ）のリストを返します。`FdmInp.write(..., format_year=2026)` では `absorber=[1, 2]`、`density_complex=True`、`lmax_dosout=3` を指定できます。`FdmInp.write_convolution(filename, calculations, *, output, format_year=2026, header=False, energy_step=None, per_atom=False)` で複数サイトの畳み込み入力を作れます。`calculations` は生 XAS のファイル名・重み・シフト（eV）の組です。
+
 | メソッドと引数の既定値 | 引数の意味 | 戻り値 |
 | --- | --- | --- |
-| `__init__(filename='read_pdb.inp')` | filename は計算入力ファイル。 | None |
+| `__init__(filename='read_pdb.inp', *, format_year=2016)` | filename は計算入力ファイル。 | None |
 | `get_filout()` | — | str。最後の `Filout` または `File_out` の値。未指定なら空文字列。 |
 | `get_absorber()` | — | int。最後の `Absorber` で指定した1始まりの吸収原子番号。未指定なら 1。不正な番号は ValueError。 |
 | `get_ispin()` | — | int。`Spin` または `Magnetism` があれば 2、なければ 1。 |
@@ -94,9 +96,11 @@ edge = raw.get_eedge()
 
 畳み込み後の XAS を読み書きします。
 
+畳み込み出力は `FdmConv(filename, format_year=None)` で読みます。2026年11月5日版の `Header` 改訂行を検出した場合は2026、それ以外の通常形式は2016を使います。`format_year=2016` または `2026` で明示できます。2026形式では `preamble`、`parameters`、`shifts` に付加情報を保持します。
+
 | メソッドと引数の既定値 | 引数の意味 | 戻り値 |
 | --- | --- | --- |
-| `__init__(filename)` | filename は畳み込み XAS ファイル。 | None |
+| `__init__(filename, *, format_year=None)` | filename は畳み込み XAS ファイル。 | None |
 | `get_eng()` | — | ndarray。ファイルに記録されたエネルギー軸。 |
 | `get_xas(spin=0)` | spin は 0 始まりの吸収列番号。 | ndarray。吸収強度。 |
 | `write_spectrum(filename, spectrum)` (静的) | filename は保存先、spectrum は元のエネルギー基準での (energy, intensity)。 | None。二列ファイルを保存。 |
@@ -156,8 +160,8 @@ SD ファイルの形式を選択し、対応するリーダーを作ります�
 
 | メソッドと引数の既定値 | 引数の意味 | 戻り値 |
 | --- | --- | --- |
-| `__init__(filename, *, format_year, ispin=1, weight=None)` | filename は SD ファイル、format_year は 2016、2020、または列名で判定する場合は None、ispin は 2016 形式のスピン数、weight は密度・積分列の除数（None なら除算なし）。 | None |
-| `select_reader()` | — | FdmSd2016 または FdmSd2020。選んだ形式のリーダー。 |
+| `__init__(filename, *, format_year, ispin=1, weight=None)` | filename は SD ファイル、format_year は 2016、2020、2026、または列名で判定する場合は None、ispin は 2016 形式のスピン数、weight は密度・積分列の除数（None なら除算なし）。 | None |
+| `select_reader()` | — | FdmSd2016、FdmSd2020、または FdmSd2026。 |
 | `format_from_bav(filename)` (静的) | filename は同じ計算の BAV ファイル。改訂年から推定する従来のメソッド。 | int。2016 または 2020。未検証のリビジョンでは ValueError。 |
 | `write_table(filename, columns, grid, densities)` (静的) | filename は保存先、columns はエネルギー列から始まる列名、grid は一次元のエネルギー軸、densities はエネルギー列を除く二次元の値。 | None。SD 表を保存。 |
 
@@ -227,23 +231,30 @@ sd = FdmSd2020("Fe_sd0.txt")
 energy, pz_pdos = sd.get_eng(), sd.get_pdos(lm="p_z")
 ```
 
+### `FdmSd2026`
+
+複素基底または f 軌道列を含む SD を読みます。共通の入口では `FdmSd(filename, format_year=None)` で列名を判定し、`format_year=2026` でも指定できます。複素射影は `get_pdos(l=3, m=0)`、実 f 軌道は `get_pdos(lm="fxyz")`、f 軌道群は `get_ldos(l=3)` で取得します。通常の s・p・d 列は2026年版の出力でも従来のリーダーを使います。
+
 ### `FdmBav`
 
 `from fdmnes_util.fdm_bav import FdmBav`
 
 BAV のリビジョンを読み、対応するリーダーを選びます。
 
+BAV レコードは年別リーダーが解析します。`FdmBav` は改訂行からリーダーを選び、`get_edge()` などの共通13メソッドを同名のメソッドへ委譲します。入口から直接呼ぶ場合は、最初の呼び出しで選んだリーダーを再利用します。
+
 | メソッドと引数の既定値 | 引数の意味 | 戻り値 |
 | --- | --- | --- |
 | `__init__(filename)` | filename は BAV ログ。revision と year を取得。 | None |
-| `select_reader()` | — | FdmBav2016 または FdmBav2020。2016 年以前と 2017〜2021 年の振り分け。2022 年以降は ValueError。 |
+| `select_reader()` | — | 2016年以前は FdmBav2016、2017〜2021年は FdmBav2020、2026年11月5日版は FdmBav2026。その他の2022年以降の版は ValueError。 |
+| `get_scf_history()` | — | list[tuple[int, float \| None]]。2026年版のサイクル番号と全エネルギー（eV）。計算途中の未記録値は None。対応する履歴を読めない場合は空リスト。 |
 
 **使用例**
 
 ```python
 from fdmnes_util.fdm_bav import FdmBav
 bav = FdmBav("Fe_bav.txt")
-print(bav.year, bav.select_reader().get_edge())
+print(bav.year, bav.get_edge())
 ```
 
 ### `FdmBav2016`
@@ -306,6 +317,18 @@ edge, last_cycle = log.get_edge(), log.get_n_scf_loop()
 from fdmnes_util.fdm_bav_2020 import FdmBav2020
 log = FdmBav2020("Fe_bav.txt")
 symbols, positions = log.get_atoms_index_j(), log.get_position()
+```
+
+### `FdmBav2026`
+
+`from fdmnes_util.fdm_bav_2026 import FdmBav2026`
+
+2026年11月5日版の BAV を読みます。公開読み取りメソッドは `FdmBav2016`・`FdmBav2020` と同じです。サイクル別の全エネルギー履歴は共通の入口 `FdmBav` から取得します。
+
+```python
+from fdmnes_util.fdm_bav import FdmBav
+log = FdmBav("Fe_SCF_bav.txt")
+history = log.get_scf_history()
 ```
 
 ## 構造の入出力

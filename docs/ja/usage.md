@@ -12,7 +12,7 @@ python -m pip install 'fdmnes-util[plot]'
 python -m pip install '.[plot]'
 ```
 
-解析ディレクトリで `fdmnes_util install script` を実行すると、編集可能なPythonサンプル28本がコピーされます。既存ファイルはスキップされ、`--force` を指定すると上書きされます。`--directory` には作成済みのディレクトリを指定します。
+解析ディレクトリで `fdmnes_util install script` を実行すると、編集可能なPythonサンプルがコピーされます。既存ファイルはスキップされ、`--force` を指定すると上書きされます。`--directory` には作成済みのディレクトリを指定します。
 
 ```console
 mkdir -p analysis
@@ -22,6 +22,17 @@ python FDplot_XAS.py --help
 ```
 
 FDMNES本体で計算したファイルを解析ディレクトリに置きます。計算本体は別途用意してください。多くのサンプルは入力ファイルにある `Filout` を使って出力名を解決します。`FDplot_XAS.py` などでは `-i` を省略すると、作業ディレクトリの `fdmfile.txt` の先頭ジョブ、または `read_pdb.inp` を使います。
+
+## Python から計算を実行する
+
+```python
+from fdmnes_util.fdm_run import FdmRun
+
+log = FdmRun().run("read_pdb.inp")
+print(log)
+```
+
+`FdmRun()` は PATH 上の `fdmnes` を使います。実行ファイルのパスを渡すこともできます。入力を一件指定すると、その入力のフォルダで実行します。入力を省略すると `fdmfile.txt` の全ジョブを実行します。
 
 ## ドキュメントをローカルで表示する
 

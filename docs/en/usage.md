@@ -12,7 +12,7 @@ To install from a checkout, run the following at the repository root. Use `.[plo
 python -m pip install '.[plot]'
 ```
 
-Run `fdmnes_util install script` in your analysis directory to copy the 28 editable Python examples. Existing files are skipped unless you pass `--force`. The directory passed to `--directory` must already exist.
+Run `fdmnes_util install script` in your analysis directory to copy the editable Python examples. Existing files are skipped unless you pass `--force`. The directory passed to `--directory` must already exist.
 
 ```console
 mkdir -p analysis
@@ -22,6 +22,17 @@ python FDplot_XAS.py --help
 ```
 
 Place the calculation outputs in your analysis directory. Install FDMNES separately to run the calculations. Many samples resolve output names using `Filout` from the input. If you omit `-i` in scripts such as `FDplot_XAS.py`, they use the first job listed in `fdmfile.txt`, falling back to `read_pdb.inp` in the working directory.
+
+## Run a calculation from Python
+
+```python
+from fdmnes_util.fdm_run import FdmRun
+
+log = FdmRun().run("read_pdb.inp")
+print(log)
+```
+
+`FdmRun()` uses `fdmnes` on PATH. You can also pass the executable path. A single specified input runs in its own directory. When no input is specified, the runner uses all jobs in `fdmfile.txt`.
 
 ## Preview the documentation locally
 
