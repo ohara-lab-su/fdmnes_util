@@ -40,12 +40,21 @@ def test_list_script_names_and_japanese_descriptions(
     monkeypatch.chdir(tmp_path)
 
     assert main(args) == 0
-    entries = [line.split(maxsplit=1) for line in capsys.readouterr().out.splitlines()]
-    assert entries
-    for name, explanation in entries:
-        assert not name.endswith(".py")
+    heading, separator, *rows = capsys.readouterr().out.splitlines()
+    scripts = ScriptInstaller.list_scripts()
+    name_width = max(len(name) for name, _ in scripts)
+    description_column = name_width + 2
+    assert heading.split() == ["スクリプト名", "説明"]
+    assert heading.index("説明") + len("スクリプト名") == description_column
+    assert separator.split()[0] == "-" * name_width
+    assert len(rows) == len(scripts)
+    for row, (name, explanation) in zip(rows, scripts):
+        assert row[:name_width].rstrip() == name
+        assert row[name_width:description_column] == "  "
+        assert row[description_column:] == explanation
+        assert len(explanation) <= 32
         assert any("ぁ" <= character <= "ん" for character in explanation)
-    assert ["FDrun", "入力1件または既存の fdmfile.txt で FDMNES を起動する。"] in entries
+    assert ("FDrun", "入力1件または既存のジョブ一覧を実行") in scripts
     assert not list(tmp_path.iterdir())
 
 
