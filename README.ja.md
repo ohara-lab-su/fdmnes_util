@@ -105,7 +105,7 @@ python FDrun.py Cu_inp.txt
 from fdmnes_util.fdm_inp import FdmInp
 from fdmnes_util.fdm_run import FdmRun
 
-model = FdmInp.from_text("End\n")
+model = FdmInp(None, format_year=2026)
 model.set_filout("Cu_generated")
 model.set_absorber(1)
 model.set_edge("K")
@@ -122,9 +122,12 @@ input_file = model.save("Cu_generated.inp")
 FdmRun().run(input_file)
 ```
 
+`FdmInp(None, format_year=2026)` は空の入力から始めます。`save()` は終端の `End` がなければ自動で補います。FDMNES の入力本文をすでに文字列で持っている場合は `FdmInp.from_text(text)` を使います。
+
 | メソッド | 用途 |
 | --- | --- |
-| `FdmInp.from_text(text)` | Python で用意した入力本文から始めます。例では終端の `End` だけを渡しています。 |
+| `FdmInp(None, format_year=2026)` | 空の入力から計算条件を組み立てます。 |
+| `FdmInp.from_text(text)` | 文字列として用意済みの入力本文を開きます。 |
 | `FdmInp.from_poscar("POSCAR")` | `vasp_util` で POSCAR を読み、FDMNES の構造節を作ります。 |
 | `FdmInp(filename, format_year=2026)` | 保存済みの入力を編集用に開きます。 |
 | `set_structure(cell, *atoms)` | 結晶の格子定数と、原子番号・分率座標の各行を設定します。分子の構造節を作る場合は `molecule=True` を指定します。 |

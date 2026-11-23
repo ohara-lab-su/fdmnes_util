@@ -48,7 +48,9 @@ FdmRun().run("Cu_inp.txt")
 
 ## 計算入力を作成・更新する
 
-`FdmInp` は、マニュアルのキーワードとデータ行をその順序で書き出します。入力本文を Python で作った場合は `FdmInp.from_text(text)` を使います。格子定数と原子行を Python で組み立てる場合は `set_structure()` に渡します。POSCAR から始める場合は `FdmInp.from_poscar("POSCAR")` を使います。構造の読み込みを `vasp_util`、FDMNES 形式への変換を `FdmStructure` が担当します。
+新規入力を作るには `model = FdmInp(None, format_year=2026)` で空の入力から始めます。`save()` は終端の `End` がなければ自動で補います。FDMNES の入力本文をすでに文字列で持っている場合は `FdmInp.from_text(text)` を使います。
+
+格子定数と原子行を Python で組み立てる場合は `set_structure()` に渡します。POSCAR から始める場合は `FdmInp.from_poscar("POSCAR")` を使います。構造の読み込みを `vasp_util`、FDMNES 形式への変換を `FdmStructure` が担当します。以下は保存済み入力を開いて計算条件を更新する例です。
 
 ```python
 from fdmnes_util.fdm_inp import FdmInp

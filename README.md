@@ -100,7 +100,7 @@ This example uses `FdmInp` to build the structure and calculation settings for f
 from fdmnes_util.fdm_inp import FdmInp
 from fdmnes_util.fdm_run import FdmRun
 
-model = FdmInp.from_text("End\n")
+model = FdmInp(None, format_year=2026)
 model.set_filout("Cu_generated")
 model.set_absorber(1)
 model.set_edge("K")
@@ -117,9 +117,12 @@ input_file = model.save("Cu_generated.inp")
 FdmRun().run(input_file)
 ```
 
+`FdmInp(None, format_year=2026)` starts with an empty input. `save()` automatically adds the terminating `End` if it is missing. Use `FdmInp.from_text(text)` when you already have the FDMNES input text as a string.
+
 | Method | Purpose |
 | --- | --- |
-| `FdmInp.from_text(text)` | Start from input text supplied in Python. The example starts with just the `End` keyword. |
+| `FdmInp(None, format_year=2026)` | Build the calculation settings from an empty input. |
+| `FdmInp.from_text(text)` | Open input text already available as a string. |
 | `FdmInp.from_poscar("POSCAR")` | Read a POSCAR with `vasp_util` and build an FDMNES structure section. |
 | `FdmInp(filename, format_year=2026)` | Open a saved input for editing. |
 | `set_structure(cell, *atoms)` | Set the crystal cell parameters and the rows of atomic numbers and fractional coordinates. Use `molecule=True` for a molecular structure section. |
