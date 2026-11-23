@@ -1,5 +1,10 @@
 # 変更履歴
 
+## v0.1.3（2026-11-23）
+
+- `fdmnes_util install script list` で、`install list` と同じスクリプト名と日本語の説明を1行ずつ表示します。
+- `fdmnes-util` を実行コマンドとして追加しました。従来の `fdmnes_util` も使えます。
+
 ## v0.1.2（2026-11-23）
 
 ### 計算の実行
