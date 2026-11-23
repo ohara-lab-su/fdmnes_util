@@ -1,5 +1,9 @@
 # 変更履歴
 
+## v0.1.4（2026-11-23）
+
+- `install script list` と `install list` の一覧を2列に揃えました。各スクリプトは従来の名前と短い日本語の説明を1行で表示します。
+
 ## v0.1.3（2026-11-23）
 
 - `fdmnes_util install script list` で、`install list` と同じスクリプト名と日本語の説明を1行ずつ表示します。

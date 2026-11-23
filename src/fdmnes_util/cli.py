@@ -15,6 +15,43 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 
+_SCRIPT_SUMMARIES = {
+    "FDbav2xyz": "BAV のクラスタ座標を XYZ に変換",
+    "FDcif2fdm": "CIF を FDMNES の構造節に変換",
+    "FDclean": "FDMNES の計算出力を削除",
+    "FDconv_e2photoe": "畳み込み XAS を光子エネルギー軸に変換",
+    "FDconv_sites": "複数サイトを合成・畳み込みする入力を作成",
+    "FDfdm2vasp": "FDMNES の構造を POSCAR に変換",
+    "FDgetfermi": "フェルミ準位と吸収端を表示",
+    "FDmakeCconvAllsite": "全サイトの畳み込みジョブを準備",
+    "FDmanual_examples": "マニュアルの計算例の入力を作成・実行",
+    "FDmove": "FDMNES の計算出力を移動・改名",
+    "FDpbd2fdm": "PDB を FDMNES の構造節に変換",
+    "FDplot_LDOS": "LDOS を描画",
+    "FDplot_PDOS": "軌道別の PDOS を描画",
+    "FDplot_SCF": "SCF の全エネルギーの推移を描画",
+    "FDplot_SD": "SD の軌道群や軌道射影を描画",
+    "FDplot_XAS": "生 XAS と畳み込み XAS を描画",
+    "FDplot_XAS_LDOS": "XAS と LDOS を同じ図に描画",
+    "FDplot_XASs": "複数サイトの XAS を比較",
+    "FDrun": "入力1件または既存のジョブ一覧を実行",
+    "FDvasp2fdm": "POSCAR から FDMNES 入力を作成",
+    "FDvasp2fdm_BUG": "SAE の旧版（変換は停止）",
+    "FDvasp2fdm_NEW_20151125_BUGversion": "SAE の旧版（変換は停止）",
+    "FDxyz2fdm": "XYZ を FDMNES の分子構造節に変換",
+    "fdExp_comp_XAS": "計算 XAS と実験 XAS を比較",
+    "fdLDOS": "サイトを指定して LDOS を描画",
+    "fdLDOS0_specified": "指定サイトの p-LDOS を描画",
+    "fdLDOS_color": "占有領域を色分けして LDOS を描画",
+    "fdLDOSmulti": "3サイトの LDOS を並べて描画",
+    "fdMulti_2_XAS+LDOS+EXP": "計算・実験 XAS と p-LDOS を描画",
+    "fdMulti_3": "3計算をフェルミ準位で揃えて比較",
+    "fdPDOS_XAS_av": "サイト平均の PDOS と XAS を描画",
+    "fdXAS": "畳み込み XAS を描画",
+    "fdXAS_specified": "フェルミ準位基準で XAS を描画",
+}
+
+
 class ScriptInstaller:
     """配布用の Python サンプル ``scripts/*.py`` を作業フォルダへコピーする。"""
 
@@ -50,14 +87,16 @@ class ScriptInstaller:
 
     @staticmethod
     def list_scripts() -> list[tuple[str, str]]:
-        """インストール時に指定するスクリプト名と、説明の先頭行を返す。"""
+        """インストール時に指定するスクリプト名と短い日本語の説明を返す。"""
         scripts = []
         for path in ScriptInstaller._script_sources():
-            source = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-            docstring = ast.get_docstring(source)
-            summary = "説明なし"
-            if docstring:
-                summary = docstring.strip().splitlines()[0].replace("``", "")
+            summary = _SCRIPT_SUMMARIES.get(path.stem)
+            if summary is None:
+                source = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+                docstring = ast.get_docstring(source)
+                summary = "説明なし"
+                if docstring:
+                    summary = docstring.strip().splitlines()[0].replace("``", "")
             scripts.append((path.stem, summary))
         return scripts
 
@@ -162,8 +201,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             scripts = ScriptInstaller.list_scripts()
         except FileNotFoundError as error:
             install_parser.error(str(error))
+        heading = "スクリプト名"
+        # 見出しの日本語は全角、配布スクリプト名は半角。
+        heading_width = 2 * len(heading)
+        name_width = max(heading_width, *(len(name) for name, _ in scripts))
+        print(f"{heading}{' ' * (name_width - heading_width + 2)}説明")
+        print(f"{'-' * name_width}  {'-' * 34}")
         for name, summary in scripts:
-            print(f"{name} {summary}")
+            print(f"{name:<{name_width}}  {summary}")
         return 0
 
     name = None
