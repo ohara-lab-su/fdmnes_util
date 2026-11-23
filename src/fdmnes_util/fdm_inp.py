@@ -14,7 +14,16 @@ class FdmInp:
     KEYWORDS = FdmInp2016.KEYWORDS
 
     def __init__(self, filename="read_pdb.inp", *, format_year=2016):
-        """通常入力は2016、拡張入力は明示的に2026を指定する。"""
+        """指定した計算入力を開く。
+
+        Args:
+            filename: FDMNES 計算入力のパス。
+            format_year: 読み書きに使う実装の年。入力を編集するときは 2026 を指定する。
+
+        Raises:
+            ValueError: 対応していない形式年を指定した場合。
+            FileNotFoundError: 指定した入力ファイルが存在しない場合。
+        """
         self._reader = self._reader_class(format_year)(filename)
         self.format_year = format_year
         self.path = self._reader.path
@@ -36,14 +45,31 @@ class FdmInp:
 
     @classmethod
     def from_text(cls, text):
-        """テキストを編集可能な2026形式の計算入力として開く。"""
+        """入力本文を編集可能な2026形式の計算入力として開く。
+
+        Args:
+            text: FDMNES キーワードとデータ行を記述した文字列。
+                最初から組み立てる場合は終端の `End` だけでもよい。
+
+        Returns:
+            FdmInp: 編集可能な入力。ファイルにするには save() を呼ぶ。
+        """
         inp = cls(None, format_year=2026)
         inp._reader._set_text(text)
         return inp
 
     @classmethod
     def from_poscar(cls, filename, *, molecule=False):
-        """POSCAR の構造を使って2026形式の計算入力を作る。"""
+        """vasp_util で POSCAR を読み、FDMNES の構造節を作る。
+
+        Args:
+            filename: POSCAR のパス。
+            molecule: True の場合は Molecule 節、False の場合は Crystal 節を作る。
+
+        Returns:
+            FdmInp: 構造節が入った編集可能な2026形式の入力。
+                吸収端やエネルギー範囲などの計算条件は set_block() で指定する。
+        """
         inp = cls(None, format_year=2026)
         inp._reader._set_poscar(filename, molecule=molecule)
         return inp
@@ -55,7 +81,22 @@ class FdmInp:
         return self._reader
 
     def set_block(self, keyword, *rows, old_rows=None):
-        """データ行を追加または置換する。可変長の置換では old_rows を指定する。"""
+        """2026形式の入力にキーワードブロックを追加または置換する。
+
+        Args:
+            keyword: FDMNES のキーワード名。例は `Filout`、`Range`、`Crystal`。
+            *rows: キーワードに続くデータ行。文字列や数値は1行として扱い、
+                タプルなどの並びは空白区切りの1行にする。
+                `Green` のような値のないキーワードは、行を渡さずに指定する。
+            old_rows: 置換前のデータ行数。`Crystal` や `Calculation` など、
+                行数が可変の既存ブロックを置換する場合に指定する。
+
+        Returns:
+            FdmInp: 更新した入力。
+
+        Raises:
+            ValueError: 形式年が2026以外、またはブロックの指定が不正な場合。
+        """
         self._editable_reader()._set_block(keyword, *rows, old_rows=old_rows)
         return self
 
@@ -65,16 +106,44 @@ class FdmInp:
         return self
 
     def set_radius(self, radius, *changes):
-        """半径（Å）と、切替エネルギー（eV）・切替後の半径の組を指定する。"""
+        """2026形式の入力に計算クラスタの半径を設定する。
+
+        Args:
+            radius: 最初に使う半径（Å）。正の有限値を指定する。
+            *changes: 切替エネルギー（eV）と切替後の半径（Å）の組。
+                複数の組を指定する場合は、切替エネルギーを昇順に並べる。
+
+        Returns:
+            FdmInp: 更新した入力。
+
+        Raises:
+            ValueError: 形式年が2026以外、または半径や切替エネルギーが不正な場合。
+        """
         self._editable_reader()._set_radius(radius, *changes)
         return self
 
     def render_input(self):
-        """現在の入力本文を返す。"""
+        """編集中の2026形式の入力を文字列で確認する。
+
+        Returns:
+            str: 終端の `End` を含む入力本文。
+        """
         return self._editable_reader()._render_input()
 
     def save(self, filename, *, overwrite=False):
-        """編集中の入力を保存する。既存ファイルの上書きは明示指定する。"""
+        """編集中の2026形式の入力を UTF-8 で保存する。
+
+        Args:
+            filename: 保存先のパス。
+            overwrite: True の場合は既存のファイルを上書きする。
+
+        Returns:
+            pathlib.Path: 保存した入力のパス。FdmRun.run() に渡せる。
+
+        Raises:
+            FileExistsError: 保存先がすでに存在し、overwrite が False の場合。
+            OSError: 保存先に書き込めない場合。
+        """
         return self._editable_reader()._save_input(filename, overwrite=overwrite)
 
     def get_absorber(self) -> int:
