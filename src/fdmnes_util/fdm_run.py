@@ -1,17 +1,12 @@
 """計算入力 ``inp.txt``・``*.inp`` または既存の ``fdmfile.txt`` で FDMNES を起動する。
 
-計算入力を選んで起動する場合は、入力1件だけの ``fdmfile.txt`` を一時的に用意する。
-各起動の標準出力は ``fdmnes-*.log`` に保存する。
-echo=True の場合は画面にも流す。echo=False の場合は標準エラーもログに保存する。
+計算フォルダに入力1件を記載した ``fdmfile.txt`` を書き、実行後も残す。
+本体には呼び出し元の標準入出力を引き継がせる。
 """
 
-import re
 import shutil
 import subprocess
-import sys
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 from time import monotonic
 
 from .fdmfile import Fdmfile
@@ -20,14 +15,13 @@ from .fdmfile import Fdmfile
 class FdmRun:
     """計算入力 ``inp.txt``・``*.inp`` とジョブ一覧 ``fdmfile.txt`` を使って FDMNES を起動する。"""
 
-    def __init__(self, executable="fdmnes", *, echo=False):
-        """実行ファイルと標準出力の表示方法を指定する。
+    def __init__(self, executable="fdmnes", *, echo=True):
+        """実行ファイルを指定する。
 
         Args:
             executable: 実行ファイルのパスまたは PATH 上のコマンド名。
-            echo: True の場合は標準出力を画面にも流し、標準エラーは呼び出し元に渡す。
+            echo: 従来の呼び出しとの互換用。標準出力は値にかかわらず引き継ぐ。
         """
-        self._echo = echo
         candidate = Path(executable).expanduser()
         if candidate.is_file():
             self.executable = candidate.resolve()
@@ -37,25 +31,25 @@ class FdmRun:
                 raise FileNotFoundError(f"FDMNES executable not found: {executable}")
             self.executable = Path(found).resolve()
 
-    def run(self, input_file="inp.txt", *, directory=None, timeout=None):
-        """指定した計算入力だけを実行し、ログのパスを返す。
+    def run(self, input_file=None, *, directory=None, timeout=None):
+        """指定した入力1件または既存の一覧で実行し、終了結果を返す。
 
         Args:
-            input_file: 計算入力のパス。省略した場合は inp.txt。
-            directory: 計算フォルダ。省略した場合は入力の親フォルダ。
+            input_file: 計算入力のパス。省略時は既存の fdmfile.txt を使う。
+            directory: 計算フォルダ。省略した場合は呼び出し時のカレントディレクトリ。
             timeout: 実行の制限時間（秒）。
 
         Raises:
-            FileNotFoundError: 計算入力が存在しない場合。
+            FileNotFoundError: 必要なジョブ一覧または計算入力が存在しない場合。
             RuntimeError: 計算が異常終了した場合。
             subprocess.TimeoutExpired: 制限時間を超えた場合。
         """
         if input_file is None:
-            input_file = "inp.txt"
+            return self.run_fdmfile(directory=directory, timeout=timeout)
         return self._run((input_file,), directory=directory, timeout=timeout)[0]
 
     def run_fdmfile(self, *, directory=None, timeout=None):
-        """既存の fdmfile.txt を使って起動し、ログのパスを返す。
+        """既存の fdmfile.txt を使って起動し、終了結果を返す。
 
         Args:
             directory: fdmfile.txt がある計算フォルダ。省略時は現在のフォルダ。
@@ -64,7 +58,7 @@ class FdmRun:
         return self._run((), directory=directory, timeout=timeout)[0]
 
     def run_inputs(self, input_files, *, directory, timeout=None):
-        """入力を指定順に1件ずつ実行し、各実行のログのパスを順に返す。
+        """入力を指定順に1件ずつ実行し、各実行の終了結果を順に返す。
 
         Args:
             input_files: 実行順に並べた計算入力ファイル。
@@ -77,63 +71,38 @@ class FdmRun:
         return self._run(inputs, directory=directory, timeout=timeout)
 
     def _run(self, inputs, *, directory, timeout):
-        """計算フォルダを排他し、入力1件ごとの起動と既存一覧での起動を扱う。"""
+        """作業フォルダに一覧を用意し、本体を入力ごとに起動する。"""
         cwd = Path.cwd()
         if directory is not None:
             cwd = Path(directory).expanduser().resolve()
+        if not inputs:
+            self._run_validate_fdmfile(cwd / "fdmfile.txt")
+            return [self._launch(cwd, timeout)]
+
         paths = [(cwd / Path(item).expanduser()).resolve() for item in inputs]
         for path in paths:
             if not path.is_file():
                 raise FileNotFoundError(path)
-        if paths and directory is None:
-            cwd = paths[0].parent
-
         jobs = cwd / "fdmfile.txt"
-        lock = cwd / ".fdmnes-run.lock"
-        try:
-            lock.mkdir()
-        except FileExistsError as error:
-            raise RuntimeError(f"FDMNES run already locked: {lock}") from error
+        if jobs.is_symlink():
+            raise ValueError(f"Cannot replace linked job file: {jobs}")
 
-        original = None
-        replace_jobs = False
-        try:
-            if not paths:
-                self._run_validate_fdmfile(jobs)
-                return [self._launch(cwd, timeout)]
-
-            if jobs.is_symlink():
-                raise ValueError(f"Cannot replace linked job file: {jobs}")
-            if jobs.exists():
-                original = jobs.read_bytes()
-
-            logs = []
-            started = monotonic()
-            for path in paths:
-                if not path.is_file():
-                    raise FileNotFoundError(path)
-                filename = path
-                if path.is_relative_to(cwd):
-                    filename = path.relative_to(cwd)
-                remaining = timeout
-                if timeout is not None and len(paths) > 1:
-                    remaining = timeout - (monotonic() - started)
-                    if remaining <= 0:
-                        raise subprocess.TimeoutExpired([str(self.executable)], timeout)
-                replace_jobs = True
-                Fdmfile.write([filename], jobs)
-                logs.append(self._launch(cwd, remaining))
-            return logs
-        finally:
-            # タイムアウトや異常終了でも、以前の一覧を復元してからロックを解放する。
-            try:
-                if replace_jobs:
-                    if original is None:
-                        jobs.unlink(missing_ok=True)
-                    else:
-                        jobs.write_bytes(original)
-            finally:
-                lock.rmdir()
+        results = []
+        started = monotonic()
+        for path in paths:
+            if not path.is_file():
+                raise FileNotFoundError(path)
+            filename = path
+            if path.is_relative_to(cwd):
+                filename = path.relative_to(cwd)
+            remaining = timeout
+            if timeout is not None and len(paths) > 1:
+                remaining = timeout - (monotonic() - started)
+                if remaining <= 0:
+                    raise subprocess.TimeoutExpired([str(self.executable)], timeout)
+            Fdmfile.write([filename], jobs)
+            results.append(self._launch(cwd, remaining))
+        return results
 
     @staticmethod
     def _run_validate_fdmfile(jobs):
@@ -151,61 +120,13 @@ class FdmRun:
             raise FileNotFoundError(path)
 
     def _launch(self, cwd, timeout):
-        """計算フォルダの fdmfile.txt で本体を起動し、ログのパスを返す。"""
-        with NamedTemporaryFile(
-            mode="wb",
-            dir=cwd,
-            prefix="fdmnes-",
-            suffix=".log",
-            delete=False,
-        ) as stream:
-            log = Path(stream.name)
-            command = [str(self.executable)]
-            if self._echo:
-                returncode = self._launch_with_echo(command, cwd, stream, timeout)
-            else:
-                result = subprocess.run(
-                    command,
-                    cwd=cwd,
-                    stdout=stream,
-                    stderr=subprocess.STDOUT,
-                    timeout=timeout,
-                    check=False,
-                )
-                returncode = result.returncode
-        if returncode != 0:
-            raise RuntimeError(f"FDMNES exited with {returncode}: {log}")
-        # Fortran の STOP は、終了コードが0でもログに記録されることがある。
-        with log.open(encoding="utf-8", errors="replace") as stream:
-            if any(re.match(r"\s*STOP(?:\s|:|$)", line, re.I) for line in stream):
-                raise RuntimeError(f"FDMNES reported STOP: {log}")
-        return log
-
-    @staticmethod
-    def _launch_with_echo(command, cwd, log, timeout):
-        """標準出力を読み取りながら、子プロセスの終了を待つ。"""
-        with subprocess.Popen(command, cwd=cwd, stdout=subprocess.PIPE) as process:
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                output = executor.submit(
-                    FdmRun._launch_write_output,
-                    process.stdout,
-                    log,
-                )
-                try:
-                    returncode = process.wait(timeout=timeout)
-                except BaseException:
-                    process.kill()
-                    process.wait()
-                    raise
-                output.result()
-        return returncode
-
-    @staticmethod
-    def _launch_write_output(source, log):
-        """標準出力をバイト列で保存し、各行を画面にも表示する。"""
-        with source:
-            for line in source:
-                log.write(line)
-                log.flush()
-                sys.stdout.write(line.decode("utf-8", errors="replace"))
-                sys.stdout.flush()
+        """標準入出力を引き継いで、計算フォルダで FDMNES を起動する。"""
+        result = subprocess.run(
+            [str(self.executable)],
+            cwd=cwd,
+            timeout=timeout,
+            check=False,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"FDMNES exited with {result.returncode}")
+        return result
