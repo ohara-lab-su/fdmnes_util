@@ -12,7 +12,7 @@ python -m pip install 'fdmnes-util[plot]'
 python -m pip install '.[plot]'
 ```
 
-解析ディレクトリで `fdmnes_util install script` を実行すると、編集可能なPythonサンプルがコピーされます。既存ファイルはスキップされ、`--force` を指定すると上書きされます。`--directory` には作成済みのディレクトリを指定します。
+`fdmnes_util install` と `fdmnes_util install script` は、全サンプルをカレントディレクトリにコピーします。`fdmnes_util install FDplot_XAS` は `FDplot_XAS.py` だけをコピーします。`fdmnes_util install list` は、拡張子を除いたスクリプト名と説明を1行ずつ表示します。既存ファイルは `--force` を指定した場合に上書きします。`--directory` で別の作成済みディレクトリも指定できます。
 
 ```console
 mkdir -p analysis
@@ -28,11 +28,11 @@ FDMNES本体で計算したファイルを解析ディレクトリに置きま�
 ```python
 from fdmnes_util.fdm_run import FdmRun
 
-log = FdmRun().run("read_pdb.inp")
+log = FdmRun().run("Cu.inp")
 print(log)
 ```
 
-`FdmRun()` は PATH 上の `fdmnes` を使います。実行ファイルのパスを渡すこともできます。入力を一件指定すると、その入力のフォルダで実行します。入力を省略すると `fdmfile.txt` の全ジョブを実行します。
+`FdmRun()` は PATH 上の `fdmnes` を使います。実行ファイルのパスも指定できます。`run()` は既定の `inp.txt`、`run("Cu.inp")` は指定した `Cu.inp` を1件だけ実行します。入力が存在しない場合は起動前にエラーになります。実行時は入力1件の `fdmfile.txt` を一時作成し、終了後に元の状態へ戻します。既存の一覧を使う場合は `run_fdmfile()` を呼びます。コマンドでは `python FDrun.py Cu.inp` または `python FDrun.py --fdmfile` を使います。
 
 
 ## 計算入力を作成・更新する
@@ -50,13 +50,13 @@ model.set_radius(4.0, (15, 3.5), (30, 3.0))
 model.set_block("Green")
 model.set_block("Convolution")
 job = model.save("cu_radius.inp")
-log = FdmRun().run_inputs([job], directory=".", timeout=120)
+log = FdmRun().run(job, directory=".", timeout=120)
 print(log)
 ```
 
 `set_radius()` の最初の値は半径（Å）です。後続の組は切替エネルギー（eV）と切替後の半径です。任意のキーワードは `set_block()` にデータ行を順に渡せます。`Calculation` など可変長ブロックを更新する場合は、差し替える元のデータ行数を `old_rows` で指定します。例えば `model.set_block("Calculation", "Cu.txt", (1.0, 0.2), old_rows=2)` です。マニュアルのようにキーワードを単独の行に置く入力を使用します。キーワードの組み合わせや計算条件は FDMNES 本体が解釈します。`save()` は既存ファイルがあればエラーにし、`overwrite=True` で明示的に上書きできます。
 
-`run_inputs()` は Python の並びを一時ジョブ一覧として渡します。相対パスと入力から参照するデータファイルは計算フォルダ基準です。タイムアウトは一覧全体に適用されます。
+`run_inputs()` は Python で指定した順に1件ずつ本体を起動し、実行ログのパスを順に返します。各起動で一時一覧に書く入力は1件です。入力の相対パスと参照データは計算フォルダ基準です。タイムアウトは一覧全体に適用されます。
 
 ### マニュアルの計算例
 
