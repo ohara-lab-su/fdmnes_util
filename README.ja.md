@@ -106,13 +106,12 @@ from fdmnes_util.fdm_inp import FdmInp
 from fdmnes_util.fdm_run import FdmRun
 
 model = FdmInp.from_text("End\n")
-model.set_block("Filout", "Cu_generated")
-model.set_block("Absorber", 1)
-model.set_block("Edge", "K")
-model.set_block("Range", (-1.0, 0.2, 2.0))
+model.set_keyword("Filout", "Cu_generated")
+model.set_keyword("Absorber", 1)
+model.set_keyword("Edge", "K")
+model.set_keyword("Range", (-1.0, 0.2, 2.0))
 model.set_radius(3.0)
-model.set_block(
-    "Crystal",
+model.set_structure(
     (3.61, 3.61, 3.61, 90, 90, 90),
     (29, 0.0, 0.0, 0.0),
     (29, 0.5, 0.5, 0.0),
@@ -128,7 +127,8 @@ FdmRun().run(input_file)
 | `FdmInp.from_text(text)` | Python で用意した入力本文から始めます。例では終端の `End` だけを渡しています。 |
 | `FdmInp.from_poscar("POSCAR")` | `vasp_util` で POSCAR を読み、FDMNES の構造節を作ります。 |
 | `FdmInp(filename, format_year=2026)` | 保存済みの入力を編集用に開きます。 |
-| `set_block(keyword, *rows)` | キーワードとデータ行を設定します。`Crystal` には格子定数と、原子番号・分率座標の各行を渡します。 |
+| `set_structure(cell, *atoms)` | 結晶の格子定数と、原子番号・分率座標の各行を設定します。分子の構造節を作る場合は `molecule=True` を指定します。 |
+| `set_keyword(keyword, *rows)` | `Filout`、`Absorber`、`Edge`、`Range` などの計算条件を、FDMNES のキーワードとデータ行で設定します。 |
 | `set_radius(radius)` | 計算に使うクラスタ半径を Å 単位で設定します。 |
 | `render_input()` / `save(filename)` | 現在の入力本文を確認するか、ファイルに保存します。`save()` は保存先のパスを返します。 |
 | `FdmRun.run(input_file)` | 保存済みの入力ファイルを指定して FDMNES を起動します。 |
@@ -155,7 +155,7 @@ runner = FdmRun()
 for radius in (3.0, 4.0, 5.0):
     model = FdmInp("Cu_inp.txt", format_year=2026)
     prefix = f"Cu_R{radius:g}"
-    model.set_block("Filout", prefix)
+    model.set_keyword("Filout", prefix)
     model.set_radius(radius)
     input_file = model.save(f"{prefix}.inp")
     runner.run(input_file)
@@ -166,6 +166,13 @@ for radius in (3.0, 4.0, 5.0):
 ## 同梱スクリプト一覧
 
 同梱スクリプトは、このライブラリを使って構造変換、計算実行、結果の解析・描画を行う実例です。SAE の FDMNES 用スクリプトの操作を再現する例も含めています。
+
+SAE では、計算コードの接頭辞と操作名を組み合わせてツールに名前を付けていました。きっかけは、小口先生の HiLAPW に同梱されていた `LAcopy` などの支援ツールです。同じ操作には計算コードが違っても似た名前を付け、たとえば `LAcopy` を使った経験を `FDcopy` にも生かせるようにしていました。 [SAE の命名規則](https://github.com/ohara-lab-su/sae/blob/main/README.ja.md#基本ルール)
+
+- **`FD*.py`** は、ソースを編集せず、引数を指定して使う汎用コマンドです。たとえば `FDrun.py` や `FDplot_XAS.py` が該当します。
+- **`fd*.py`** は、試料、入力ファイル名、描画条件などを必要に応じて書き換えて使うスクリプトです。たとえば `fdLDOS0_specified.py` が該当します。
+
+初期の支援ツールはシェルなどで書いていました。その後 Python に移し、入出力、解析、描画の処理をクラスのメソッドとして他のコードでも使えるよう整理しました。現在は AI で同種の枠組みを短時間で作れますが、ここでは、日々の計算や解析に使ってきた道具を、今の環境でも使い続けられるよう整備しています。
 
 たとえば、サイト別 XAS の平均化は `AnalyzeFdmAverage.average()`、XAS・LDOS の複合図は `PlotFdmXas.plot_composite()` で、自分の Python コードから再利用できます。SAE 原版との対応や利用例には整備中の部分があり、今後も実際の計算や解析に使いながら見直していきます。
 

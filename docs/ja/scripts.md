@@ -4,7 +4,7 @@
 
 ## SAE での位置づけ
 
-SAE の命名では、大文字の `FD*.py` は汎用コマンド、小文字の `fd*.py` は試料や解析条件に合わせて編集する研究用の例です。本パッケージでは両方を編集可能なサンプルとして `fdmnes_util install script` で配布します。SAE 本体は実行時の依存ではありません。[SAE 日本語 README の FDMNES 節](https://github.com/ohara-lab-su/sae/blob/main/README.ja.md#for-fdmnes)
+SAE の命名では、大文字の `FD*.py` はソースを編集せず引数を指定して使う汎用コマンドです。小文字の `fd*.py` は、試料や解析条件に合わせて必要に応じて編集するスクリプトです。どちらも `fdmnes_util install script` で配布しています。SAE 本体は実行時の依存ではありません。 [SAE の命名規則](https://github.com/ohara-lab-su/sae/blob/main/README.ja.md#基本ルール)
 
 SAE 由来のスクリプトの原本は、提供された `sae_original.zip` 内の `sae/commands/<同名ファイル>` です。引数、既定値、図の見た目まで同じとは限りません。原本と共通しないオプションや検証範囲は [コマンド監査](https://github.com/ohara-lab-su/fdmnes_util/blob/main/.PROGRESS/COMMAND_AUDIT.md) を参照してください。
 

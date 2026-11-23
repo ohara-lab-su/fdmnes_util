@@ -19,7 +19,9 @@
 | `__init__(filename='read_pdb.inp', *, format_year=2016)` | filename は計算入力ファイル。 | None |
 | `from_text(text)` | Python で組み立てた入力本文。 | 編集可能な `FdmInp`。 |
 | `from_poscar(filename, *, molecule=False)` | POSCAR のパス。`molecule=True` で分子構造節を作る。読み込みには `vasp_util` が必要。 | 編集可能な `FdmInp`。 |
-| `set_block(keyword, *rows, old_rows=None)` | キーワードとデータ行。可変長ブロックを置換するときは、元のデータ行数を `old_rows` に指定。 | 更新した `FdmInp`。 |
+| `set_keyword(keyword, *rows, old_rows=None)` | キーワードとデータ行。可変長ブロックを置換するときは、元のデータ行数を `old_rows` に指定。 | 更新した `FdmInp`。 |
+| `set_structure(cell, *atoms, molecule=False, old_rows=None)` | 格子行と原子行。既定は `Crystal`、`molecule=True` で `Molecule`。同じ構造節を置換する場合は、格子行を含む元の行数を指定。 | 更新した `FdmInp`。 |
+| `set_block(keyword, *rows, old_rows=None)` | 既存の呼び出しとの互換用。引数は `set_keyword()` と同じ。 | 更新した `FdmInp`。 |
 | `remove_block(keyword, *, old_rows=None)` | 削除するキーワード。可変長ブロックでは元のデータ行数を指定。 | 更新した `FdmInp`。 |
 | `set_radius(radius, *changes)` | 半径（Å）。追加の組は切替エネルギー（eV）と切替後の半径（Å）。 | 更新した `FdmInp`。 |
 | `render_input()` | — | str。編集中の入力本文。 |

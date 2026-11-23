@@ -4,7 +4,7 @@ Run `python <filename> --help` for each example's arguments. Filenames are case-
 
 ## How SAE used these scripts
 
-SAE used uppercase `FD*.py` names for general-purpose commands and lowercase `fd*.py` names for research examples intended to be edited for individual datasets. This package distributes both as editable examples through `fdmnes_util install script`. SAE itself is unnecessary at runtime. [SAE Japanese README, FDMNES section](https://github.com/ohara-lab-su/sae/blob/main/README.ja.md#for-fdmnes)
+SAE used uppercase `FD*.py` names for general-purpose commands that can be run as supplied by passing arguments. Lowercase `fd*.py` scripts can be edited to suit individual samples or analysis settings. Both are available through `fdmnes_util install script`. SAE itself is unnecessary at runtime. [SAE naming conventions](https://github.com/ohara-lab-su/sae/blob/main/README.md#basic-conventions)
 
 For scripts derived from SAE, the supplied `sae_original.zip` contains the original at `sae/commands/<filename>`. See the [command audit](https://github.com/ohara-lab-su/fdmnes_util/blob/main/.PROGRESS/COMMAND_AUDIT.md) for option differences and the scope of behavioral verification.
 

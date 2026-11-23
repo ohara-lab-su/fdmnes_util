@@ -48,23 +48,23 @@ FdmRun().run("Cu_inp.txt")
 
 ## 計算入力を作成・更新する
 
-`FdmInp` は、マニュアルのキーワードとデータ行をその順序で書き出します。入力本文を Python で作った場合は `FdmInp.from_text(text)` を使います。POSCAR から始める場合は `FdmInp.from_poscar("POSCAR")` を使います。構造の読み込みを `vasp_util`、FDMNES 形式への変換を `FdmStructure` が担当します。
+`FdmInp` は、マニュアルのキーワードとデータ行をその順序で書き出します。入力本文を Python で作った場合は `FdmInp.from_text(text)` を使います。格子定数と原子行を Python で組み立てる場合は `set_structure()` に渡します。POSCAR から始める場合は `FdmInp.from_poscar("POSCAR")` を使います。構造の読み込みを `vasp_util`、FDMNES 形式への変換を `FdmStructure` が担当します。
 
 ```python
 from fdmnes_util.fdm_inp import FdmInp
 from fdmnes_util.fdm_run import FdmRun
 
 model = FdmInp("cu.inp", format_year=2026)
-model.set_block("Filout", "Cu_radius_scan")
-model.set_block("Range", (-2, 0.2, 5, 0.5, 10, 1, 40))
+model.set_keyword("Filout", "Cu_radius_scan")
+model.set_keyword("Range", (-2, 0.2, 5, 0.5, 10, 1, 40))
 model.set_radius(4.0, (15, 3.5), (30, 3.0))
-model.set_block("Green")
-model.set_block("Convolution")
+model.set_keyword("Green")
+model.set_keyword("Convolution")
 job = model.save("cu_radius.inp")
 FdmRun().run(job, timeout=120)
 ```
 
-`set_radius()` の最初の値は半径（Å）です。後続の組は切替エネルギー（eV）と切替後の半径です。任意のキーワードは `set_block()` にデータ行を順に渡せます。`Calculation` など可変長ブロックを更新する場合は、差し替える元のデータ行数を `old_rows` で指定します。例えば `model.set_block("Calculation", "Cu.txt", (1.0, 0.2), old_rows=2)` です。マニュアルのようにキーワードを単独の行に置く入力を使用します。キーワードの組み合わせや計算条件は FDMNES 本体が解釈します。`save()` は既存ファイルがあればエラーにし、`overwrite=True` で明示的に上書きできます。
+`set_radius()` の最初の値は半径（Å）です。後続の組は切替エネルギー（eV）と切替後の半径です。任意のキーワードは `set_keyword()` にデータ行を順に渡せます。`Calculation` など可変長ブロックを更新する場合は、差し替える元のデータ行数を `old_rows` で指定します。例えば `model.set_keyword("Calculation", "Cu.txt", (1.0, 0.2), old_rows=2)` です。マニュアルのようにキーワードを単独の行に置く入力を使用します。キーワードの組み合わせや計算条件は FDMNES 本体が解釈します。`save()` は既存ファイルがあればエラーにし、`overwrite=True` で明示的に上書きできます。
 
 `run_inputs()` は各起動の終了結果を `subprocess.CompletedProcess` のリストで返します。各起動で一覧に書く入力は1件です。入力と参照データの相対パスは計算フォルダ基準です。タイムアウトは一覧全体に適用されます。
 
