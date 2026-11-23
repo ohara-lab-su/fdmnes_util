@@ -48,7 +48,9 @@ Prepare inputs for different materials, structures, or stoichiometries and use P
 
 ## Build and update calculation inputs
 
-`FdmInp` writes the guide's keyword blocks in order. Use `FdmInp.from_text(text)` for input text assembled in Python. Pass the cell parameters and atom rows to `set_structure()` when building the structure in Python. To start from a POSCAR, call `FdmInp.from_poscar("POSCAR")`. It uses `vasp_util` to read the structure and `FdmStructure` to render the FDMNES block.
+To create an input from scratch, start with `model = FdmInp(None, format_year=2026)`. `save()` automatically adds the terminating `End` if it is missing. Use `FdmInp.from_text(text)` when you already have the FDMNES input text as a string.
+
+Pass the cell parameters and atom rows to `set_structure()` when building the structure in Python. To start from a POSCAR, call `FdmInp.from_poscar("POSCAR")`. It uses `vasp_util` to read the structure and `FdmStructure` to render the FDMNES block. The example below opens a saved input and updates its calculation settings.
 
 ```python
 from fdmnes_util.fdm_inp import FdmInp

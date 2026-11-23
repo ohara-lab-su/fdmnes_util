@@ -18,8 +18,8 @@ Use `format_year=2026` for the setters and for `get_range()`, `get_edge()`, `get
 
 | Method and parameter defaults | Parameter meanings | Return value |
 | --- | --- | --- |
-| `__init__(filename='read_pdb.inp', *, format_year=2016)` | `filename` Path to the FDMNES input file. | None. |
-| `from_text(text)` | Input text assembled in Python. | Editable `FdmInp`. |
+| `__init__(filename='read_pdb.inp', *, format_year=2016)` | `filename` is the path to the FDMNES input file. `FdmInp(None, format_year=2026)` creates an empty input. | None. |
+| `from_text(text)` | FDMNES input text already available as a string. | Editable `FdmInp`. |
 | `from_poscar(filename, *, molecule=False)` | POSCAR path. Use `molecule=True` to create a molecular structure section. Reading POSCAR requires `vasp_util`. | Editable `FdmInp`. |
 | `set_keyword(keyword, *rows, old_rows=None)` | Keyword and data rows. When replacing a variable-length block, provide the previous row count in `old_rows`. | Updated `FdmInp`. |
 | `set_structure(cell, *atoms, molecule=False, old_rows=None)` | Cell row and atom rows. The default is `Crystal`; set `molecule=True` for `Molecule`. When replacing the same section, pass the previous row count including the cell row. | Updated `FdmInp`. |
@@ -34,7 +34,7 @@ Use `format_year=2026` for the setters and for `get_range()`, `get_edge()`, `get
 | `remove_block(keyword, *, old_rows=None)` | Keyword to remove. For a variable-length block, provide the previous row count. | Updated `FdmInp`. |
 | `set_radius(radius, *changes)` / `get_radius()` | Radius in Å. Additional pairs give the transition energy in eV and the new radius in Å. | Setter returns the updated input. Getter returns the values in order, or None when absent. |
 | `render_input()` | — | str. The current input text. |
-| `save(filename, *, overwrite=False)` | Destination path. Set `overwrite=True` to replace an existing file. | Path. Pass it directly to `FdmRun.run()`. |
+| `save(filename, *, overwrite=False)` | Destination path. Adds the terminating `End` if it is missing. Set `overwrite=True` to replace an existing file. | Path. Pass it directly to `FdmRun.run()`. |
 | `get_ispin()` | — | int: Two when `Spin` or `Magnetism` is specified, otherwise one. |
 | `get_allsite()` | — | bool: True when `Allsite` is present. |
 | `get_energygpho()` | — | bool: True when `Energpho` or `Energygpho` is present. |

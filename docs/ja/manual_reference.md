@@ -18,8 +18,8 @@
 
 | メソッドと引数の既定値 | 引数の意味 | 戻り値 |
 | --- | --- | --- |
-| `__init__(filename='read_pdb.inp', *, format_year=2016)` | filename は計算入力ファイル。 | None |
-| `from_text(text)` | Python で組み立てた入力本文。 | 編集可能な `FdmInp`。 |
+| `__init__(filename='read_pdb.inp', *, format_year=2016)` | `filename` は計算入力ファイルのパス。`FdmInp(None, format_year=2026)` で空の入力を作成。 | None |
+| `from_text(text)` | 文字列として用意済みの FDMNES 入力本文。 | 編集可能な `FdmInp`。 |
 | `from_poscar(filename, *, molecule=False)` | POSCAR のパス。`molecule=True` で分子構造節を作る。読み込みには `vasp_util` が必要。 | 編集可能な `FdmInp`。 |
 | `set_keyword(keyword, *rows, old_rows=None)` | キーワードとデータ行。可変長ブロックを置換するときは、元のデータ行数を `old_rows` に指定。 | 更新した `FdmInp`。 |
 | `set_structure(cell, *atoms, molecule=False, old_rows=None)` | 格子行と原子行。既定は `Crystal`、`molecule=True` で `Molecule`。同じ構造節を置換する場合は、格子行を含む元の行数を指定。 | 更新した `FdmInp`。 |
@@ -34,7 +34,7 @@
 | `remove_block(keyword, *, old_rows=None)` | 削除するキーワード。可変長ブロックでは元のデータ行数を指定。 | 更新した `FdmInp`。 |
 | `set_radius(radius, *changes)` / `get_radius()` | 半径（Å）。追加の組は切替エネルギー（eV）と切替後の半径（Å）。 | 設定は更新した入力。取得は入力順のタプル、未指定なら None。 |
 | `render_input()` | — | str。編集中の入力本文。 |
-| `save(filename, *, overwrite=False)` | 保存先。既存ファイルを置き換える場合は `overwrite=True`。 | Path。そのまま `FdmRun.run()` に渡せる保存先。 |
+| `save(filename, *, overwrite=False)` | 保存先。終端の `End` がなければ自動で補う。既存ファイルを置き換える場合は `overwrite=True`。 | Path。そのまま `FdmRun.run()` に渡せる保存先。 |
 | `get_ispin()` | — | int。`Spin` または `Magnetism` があれば 2、なければ 1。 |
 | `get_allsite()` | — | bool。`Allsite` の有無。 |
 | `get_energygpho()` | — | bool。`Energpho` または `Energygpho` の有無。 |
