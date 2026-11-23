@@ -1,12 +1,15 @@
 """計算入力 ``inp.txt``・``*.inp`` または既存の ``fdmfile.txt`` で FDMNES を起動する。
 
 計算入力を選んで起動する場合は、入力1件だけの ``fdmfile.txt`` を一時的に用意する。
-各起動の標準出力と標準エラーは ``fdmnes-*.log`` に保存する。
+各起動の標準出力は ``fdmnes-*.log`` に保存する。
+echo=True の場合は画面にも流す。echo=False の場合は標準エラーもログに保存する。
 """
 
 import re
 import shutil
 import subprocess
+import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from time import monotonic
@@ -17,8 +20,14 @@ from .fdmfile import Fdmfile
 class FdmRun:
     """計算入力 ``inp.txt``・``*.inp`` とジョブ一覧 ``fdmfile.txt`` を使って FDMNES を起動する。"""
 
-    def __init__(self, executable="fdmnes"):
-        """実行ファイルのパス、または PATH 上のコマンド名を指定する。"""
+    def __init__(self, executable="fdmnes", *, echo=False):
+        """実行ファイルと標準出力の表示方法を指定する。
+
+        Args:
+            executable: 実行ファイルのパスまたは PATH 上のコマンド名。
+            echo: True の場合は標準出力を画面にも流し、標準エラーは呼び出し元に渡す。
+        """
+        self._echo = echo
         candidate = Path(executable).expanduser()
         if candidate.is_file():
             self.executable = candidate.resolve()
@@ -151,18 +160,52 @@ class FdmRun:
             delete=False,
         ) as stream:
             log = Path(stream.name)
-            result = subprocess.run(
-                [str(self.executable)],
-                cwd=cwd,
-                stdout=stream,
-                stderr=subprocess.STDOUT,
-                timeout=timeout,
-                check=False,
-            )
-        if result.returncode != 0:
-            raise RuntimeError(f"FDMNES exited with {result.returncode}: {log}")
+            command = [str(self.executable)]
+            if self._echo:
+                returncode = self._launch_with_echo(command, cwd, stream, timeout)
+            else:
+                result = subprocess.run(
+                    command,
+                    cwd=cwd,
+                    stdout=stream,
+                    stderr=subprocess.STDOUT,
+                    timeout=timeout,
+                    check=False,
+                )
+                returncode = result.returncode
+        if returncode != 0:
+            raise RuntimeError(f"FDMNES exited with {returncode}: {log}")
         # Fortran の STOP は、終了コードが0でもログに記録されることがある。
         with log.open(encoding="utf-8", errors="replace") as stream:
             if any(re.match(r"\s*STOP(?:\s|:|$)", line, re.I) for line in stream):
                 raise RuntimeError(f"FDMNES reported STOP: {log}")
         return log
+
+    @staticmethod
+    def _launch_with_echo(command, cwd, log, timeout):
+        """標準出力を読み取りながら、子プロセスの終了を待つ。"""
+        with subprocess.Popen(command, cwd=cwd, stdout=subprocess.PIPE) as process:
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                output = executor.submit(
+                    FdmRun._launch_write_output,
+                    process.stdout,
+                    log,
+                )
+                try:
+                    returncode = process.wait(timeout=timeout)
+                except BaseException:
+                    process.kill()
+                    process.wait()
+                    raise
+                output.result()
+        return returncode
+
+    @staticmethod
+    def _launch_write_output(source, log):
+        """標準出力をバイト列で保存し、各行を画面にも表示する。"""
+        with source:
+            for line in source:
+                log.write(line)
+                log.flush()
+                sys.stdout.write(line.decode("utf-8", errors="replace"))
+                sys.stdout.flush()

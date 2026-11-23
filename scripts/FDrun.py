@@ -33,7 +33,7 @@ def main(argv=None):
     options = parser.parse_args(argv)
     if options.fdmfile and options.input is not None:
         parser.error("--fdmfile cannot be combined with a calculation input")
-    runner = FdmRun(options.executable)
+    runner = FdmRun(options.executable, echo=True)
     if options.fdmfile:
         log = runner.run_fdmfile(
             directory=options.directory,
