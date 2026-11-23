@@ -86,6 +86,46 @@ fdmnes_util install script --force
 
 SAEの対象28本に対応する編集用サンプルを収録しています。オプションや出力の再現状況は監査表を参照してください。
 
+## 同梱スクリプト一覧
+
+全33本を `fdmnes_util install script` でコピーできます。個別にコピーする場合は、表の名前を拡張子なしで指定します。例えば `fdmnes_util install FDrun` です。端末では `fdmnes_util install script list` で名前と説明を確認できます。 [スクリプトガイド](docs/ja/scripts.md)
+
+| スクリプト名 | 用途 | 主に使うクラス |
+| --- | --- | --- |
+| [`FDbav2xyz`](scripts/FDbav2xyz.py) | BAV のクラスタ座標を XYZ に変換 | `FdmBav`, `Xyz` |
+| [`FDcif2fdm`](scripts/FDcif2fdm.py) | CIF を FDMNES の構造節に変換 | `Cif`, `FdmStructure` |
+| [`FDclean`](scripts/FDclean.py) | 指定した計算の出力を削除 | `FdmInp`, `ResultFileOperations` |
+| [`FDconv_e2photoe`](scripts/FDconv_e2photoe.py) | 畳み込み XAS を光子エネルギー軸に変換 | `AnalyzeFdmXas`, `FdmConv`, `FdmPhotoenergy` |
+| [`FDconv_sites`](scripts/FDconv_sites.py) | 重みとシフトを指定して複数サイトの畳み込み入力を作成 | `FdmInp` |
+| [`FDfdm2vasp`](scripts/FDfdm2vasp.py) | FDMNES 入力の構造を POSCAR に変換 | `FdmStructure` |
+| [`FDgetfermi`](scripts/FDgetfermi.py) | フェルミ準位と吸収端を表示 | `FdmTxt`, `FdmBav` |
+| [`FDmakeCconvAllsite`](scripts/FDmakeCconvAllsite.py) | 全サイトの畳み込みジョブと一覧を作成 | `FdmInp`, `SiteConvolutionJobPreparer` |
+| [`FDmanual_examples`](scripts/FDmanual_examples.py) | マニュアルの計算例や POSCAR から入力を作成・実行 | `FdmInp`, `FdmRun` |
+| [`FDmove`](scripts/FDmove.py) | 指定した計算の出力を移動・改名 | `FdmInp`, `ResultFileOperations` |
+| [`FDpbd2fdm`](scripts/FDpbd2fdm.py) | PDB を FDMNES の構造節に変換 | `Pdb`, `FdmStructure` |
+| [`FDplot_LDOS`](scripts/FDplot_LDOS.py) | LDOS と必要に応じて XAS を描画 | `DosPlotWorkflow`, `PlotFdmDos` |
+| [`FDplot_PDOS`](scripts/FDplot_PDOS.py) | 軌道別の PDOS と必要に応じて XAS を描画 | `DosPlotWorkflow`, `PlotFdmDos` |
+| [`FDplot_SCF`](scripts/FDplot_SCF.py) | SCF の全エネルギーの推移を描画 | `FdmBav` |
+| [`FDplot_SD`](scripts/FDplot_SD.py) | SD の軌道群や軌道射影を描画 | `FdmSd`, `PlotFdmDos` |
+| [`FDplot_XAS`](scripts/FDplot_XAS.py) | 生 XAS・畳み込み XAS を描画し、実測 XAS や LDOS も比較 | `FdmTxt`, `FdmConv`, `AnalyzeFdmAverage`, `PlotFdmXas` |
+| [`FDplot_XAS_LDOS`](scripts/FDplot_XAS_LDOS.py) | XAS と LDOS を同じ図に描画 | `FdmTxt`, `FdmConv`, `FdmSd`, `PlotFdmXasLdos` |
+| [`FDplot_XASs`](scripts/FDplot_XASs.py) | 複数サイトの XAS を比較 | `FdmTxt`, `AnalyzeFdmXas`, `PlotFdmXas` |
+| [`FDrun`](scripts/FDrun.py) | 入力1件または既存のジョブ一覧で FDMNES を起動 | `FdmRun` |
+| [`FDvasp2fdm`](scripts/FDvasp2fdm.py) | POSCAR から FDMNES の構造節と計算入力を作成 | `VaspPoscar`, `FdmStructure`, `FdmInp` |
+| [`FDvasp2fdm_BUG`](scripts/FDvasp2fdm_BUG.py) | SAE の旧版。変換は停止 | — |
+| [`FDvasp2fdm_NEW_20151125_BUGversion`](scripts/FDvasp2fdm_NEW_20151125_BUGversion.py) | SAE の旧版。変換は停止 | — |
+| [`FDxyz2fdm`](scripts/FDxyz2fdm.py) | XYZ を FDMNES の分子構造節に変換 | `Xyz`, `FdmStructure` |
+| [`fdExp_comp_XAS`](scripts/fdExp_comp_XAS.py) | 計算 XAS と Athena の実測 XAS を比較 | `FdmTxt`, `FdmConv`, `AthenaNor`, `PlotFdmXas` |
+| [`fdLDOS`](scripts/fdLDOS.py) | 指定したサイトと軌道の LDOS を描画 | `FdmSd`, `PlotFdmDos` |
+| [`fdLDOS0_specified`](scripts/fdLDOS0_specified.py) | 試料ごとの設定を使って p-LDOS を描画 | `FdmSd`, `PlotFdmDos` |
+| [`fdLDOS_color`](scripts/fdLDOS_color.py) | 占有領域を塗り分けて LDOS を描画 | `DosPlotWorkflow`, `FdmSd`, `PlotFdmDos` |
+| [`fdLDOSmulti`](scripts/fdLDOSmulti.py) | 3サイトの LDOS を並べて描画 | `FdmTxt`, `FdmSd`, `PlotFdmDos` |
+| [`fdMulti_2_XAS+LDOS+EXP`](scripts/fdMulti_2_XAS+LDOS+EXP.py) | 計算・実測 XAS と p-LDOS を二段で描画 | `FdmTxt`, `FdmConv`, `FdmSd`, `AthenaNor`, `PlotFdmXasLdos` |
+| [`fdMulti_3`](scripts/fdMulti_3.py) | 3つの計算をフェルミ準位で揃えて比較 | `FdmTxt`, `FdmSd`, `PlotFdmDos` |
+| [`fdPDOS_XAS_av`](scripts/fdPDOS_XAS_av.py) | 複数サイトの PDOS と XAS を平均して描画 | `AnalyzeFdmAverage`, `FdmSd`, `PlotFdmAverage` |
+| [`fdXAS`](scripts/fdXAS.py) | 畳み込み XAS を描画 | `FdmConv`, `PlotFdmXas` |
+| [`fdXAS_specified`](scripts/fdXAS_specified.py) | フェルミ準位を基準に XAS を描画 | `FdmTxt`, `FdmConv`, `AnalyzeFdmXas`, `PlotFdmXas` |
+
 ## FDMNES の計算を実行する
 
 まず、計算に使う入力ファイルを手作業で用意します。ここでは、カレントディレクトリに `Cu_inp.txt` を置き、FDMNES 本体を PATH 上の `fdmnes` として起動できるものとします。同じディレクトリで [FDrun.py](scripts/FDrun.py) をコピーし、入力ファイル名を渡します。

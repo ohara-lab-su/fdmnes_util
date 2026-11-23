@@ -81,6 +81,46 @@ The editable source scripts are kept in the repository's top-level `scripts/` di
 
 Editable examples corresponding to all 28 SAE scripts are included. See the command audit for the status of option and output reproduction.
 
+## Bundled scripts
+
+Run `fdmnes_util install script` to copy all 33 scripts. To copy one script, use its name from the table without the extension, for example `fdmnes_util install FDrun`. Run `fdmnes_util install script list` for a terminal listing of names and descriptions. [Script guide](docs/en/scripts.md)
+
+| Script name | Purpose | Main classes |
+| --- | --- | --- |
+| [`FDbav2xyz`](scripts/FDbav2xyz.py) | Convert BAV cluster coordinates to XYZ | `FdmBav`, `Xyz` |
+| [`FDcif2fdm`](scripts/FDcif2fdm.py) | Convert CIF to an FDMNES structure section | `Cif`, `FdmStructure` |
+| [`FDclean`](scripts/FDclean.py) | Delete the outputs of a selected calculation | `FdmInp`, `ResultFileOperations` |
+| [`FDconv_e2photoe`](scripts/FDconv_e2photoe.py) | Convert convolved XAS to a photon-energy axis | `AnalyzeFdmXas`, `FdmConv`, `FdmPhotoenergy` |
+| [`FDconv_sites`](scripts/FDconv_sites.py) | Prepare a multi-site convolution input with weights and shifts | `FdmInp` |
+| [`FDfdm2vasp`](scripts/FDfdm2vasp.py) | Convert the structure in an FDMNES input to POSCAR | `FdmStructure` |
+| [`FDgetfermi`](scripts/FDgetfermi.py) | Show the Fermi level and absorption edge | `FdmTxt`, `FdmBav` |
+| [`FDmakeCconvAllsite`](scripts/FDmakeCconvAllsite.py) | Prepare per-site convolution jobs and their job list | `FdmInp`, `SiteConvolutionJobPreparer` |
+| [`FDmanual_examples`](scripts/FDmanual_examples.py) | Build and run inputs from manual examples or POSCAR | `FdmInp`, `FdmRun` |
+| [`FDmove`](scripts/FDmove.py) | Move or rename the outputs of a selected calculation | `FdmInp`, `ResultFileOperations` |
+| [`FDpbd2fdm`](scripts/FDpbd2fdm.py) | Convert PDB to an FDMNES structure section | `Pdb`, `FdmStructure` |
+| [`FDplot_LDOS`](scripts/FDplot_LDOS.py) | Plot LDOS with optional XAS | `DosPlotWorkflow`, `PlotFdmDos` |
+| [`FDplot_PDOS`](scripts/FDplot_PDOS.py) | Plot orbital-resolved PDOS with optional XAS | `DosPlotWorkflow`, `PlotFdmDos` |
+| [`FDplot_SCF`](scripts/FDplot_SCF.py) | Plot total energy over SCF cycles | `FdmBav` |
+| [`FDplot_SD`](scripts/FDplot_SD.py) | Plot an orbital group or projection from SD output | `FdmSd`, `PlotFdmDos` |
+| [`FDplot_XAS`](scripts/FDplot_XAS.py) | Plot raw and convolved XAS with optional measured XAS or LDOS | `FdmTxt`, `FdmConv`, `AnalyzeFdmAverage`, `PlotFdmXas` |
+| [`FDplot_XAS_LDOS`](scripts/FDplot_XAS_LDOS.py) | Plot XAS and LDOS in one figure | `FdmTxt`, `FdmConv`, `FdmSd`, `PlotFdmXasLdos` |
+| [`FDplot_XASs`](scripts/FDplot_XASs.py) | Compare XAS spectra across sites | `FdmTxt`, `AnalyzeFdmXas`, `PlotFdmXas` |
+| [`FDrun`](scripts/FDrun.py) | Run FDMNES with one input or an existing job list | `FdmRun` |
+| [`FDvasp2fdm`](scripts/FDvasp2fdm.py) | Create an FDMNES structure section and input from POSCAR | `VaspPoscar`, `FdmStructure`, `FdmInp` |
+| [`FDvasp2fdm_BUG`](scripts/FDvasp2fdm_BUG.py) | Historical SAE script with conversion disabled | — |
+| [`FDvasp2fdm_NEW_20151125_BUGversion`](scripts/FDvasp2fdm_NEW_20151125_BUGversion.py) | Historical SAE script with conversion disabled | — |
+| [`FDxyz2fdm`](scripts/FDxyz2fdm.py) | Convert XYZ to an FDMNES molecular structure section | `Xyz`, `FdmStructure` |
+| [`fdExp_comp_XAS`](scripts/fdExp_comp_XAS.py) | Compare calculated XAS with measured XAS from Athena | `FdmTxt`, `FdmConv`, `AthenaNor`, `PlotFdmXas` |
+| [`fdLDOS`](scripts/fdLDOS.py) | Plot LDOS for a selected site and orbital | `FdmSd`, `PlotFdmDos` |
+| [`fdLDOS0_specified`](scripts/fdLDOS0_specified.py) | Plot p-LDOS using dataset-specific settings | `FdmSd`, `PlotFdmDos` |
+| [`fdLDOS_color`](scripts/fdLDOS_color.py) | Plot LDOS with occupied states shaded | `DosPlotWorkflow`, `FdmSd`, `PlotFdmDos` |
+| [`fdLDOSmulti`](scripts/fdLDOSmulti.py) | Plot LDOS for three sites in one figure | `FdmTxt`, `FdmSd`, `PlotFdmDos` |
+| [`fdMulti_2_XAS+LDOS+EXP`](scripts/fdMulti_2_XAS+LDOS+EXP.py) | Plot calculated and measured XAS alongside p-LDOS | `FdmTxt`, `FdmConv`, `FdmSd`, `AthenaNor`, `PlotFdmXasLdos` |
+| [`fdMulti_3`](scripts/fdMulti_3.py) | Compare three calculations aligned at the Fermi level | `FdmTxt`, `FdmSd`, `PlotFdmDos` |
+| [`fdPDOS_XAS_av`](scripts/fdPDOS_XAS_av.py) | Plot site-averaged PDOS and XAS | `AnalyzeFdmAverage`, `FdmSd`, `PlotFdmAverage` |
+| [`fdXAS`](scripts/fdXAS.py) | Plot convolved XAS | `FdmConv`, `PlotFdmXas` |
+| [`fdXAS_specified`](scripts/fdXAS_specified.py) | Plot XAS relative to the Fermi level | `FdmTxt`, `FdmConv`, `AnalyzeFdmXas`, `PlotFdmXas` |
+
 ## Running FDMNES calculations
 
 Prepare the FDMNES calculation input by hand first. This example assumes that `Cu_inp.txt` is in the current directory and that the FDMNES executable is available as `fdmnes` on PATH. Copy [FDrun.py](scripts/FDrun.py) into the same directory and pass it the input filename.
