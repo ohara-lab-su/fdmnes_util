@@ -7,8 +7,8 @@
 # 現在のディレクトリにある inp.txt を1件だけ実行する。
 # python FDrun.py
 #
-# 手元の Cu.inp を1件だけ実行する。inp.txt の代わりにこのファイルを使う。
-# python FDrun.py Cu.inp
+# 手元の Cu_inp.txt を位置引数で指定する。fdmfile.txt にはこの入力1件だけを記載する。
+# ./FDrun.py Cu_inp.txt
 #
 # cu_run/Cu.inp を指定し、cu_run を作業ディレクトリにする。
 # /path/to/fdmnes は実行ファイルの実際のパスに置き換える。制限時間は300秒。
