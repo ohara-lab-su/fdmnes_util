@@ -86,6 +86,45 @@ fdmnes_util install script --force
 
 SAEの対象28本に対応する編集用サンプルを収録しています。オプションや出力の再現状況は監査表を参照してください。
 
+## FDMNES の計算を実行する
+
+まず、計算に使う入力ファイルを手作業で用意します。ここでは、カレントディレクトリに `Cu_inp.txt` を置き、FDMNES 本体を PATH 上の `fdmnes` として起動できるものとします。同じディレクトリで [FDrun.py](scripts/FDrun.py) をコピーし、入力ファイル名を渡します。
+
+```console
+fdmnes_util install FDrun
+python FDrun.py Cu_inp.txt
+```
+
+`FDrun.py` が FDMNES に必要な `fdmfile.txt` を入力1件分で用意します。同名の一覧がある場合は書き換えます。計算はカレントディレクトリで実行し、結果ファイルの保存先と接頭辞は入力の `Filout` に従います。本体の標準出力は画面に表示され、`fdmnes-*.log` にも保存されます。
+
+複数の計算では、Python で実行する入力と順序を自由に決められます。材料、結晶構造、化学量論比の異なる入力を用意し、たとえば Cu、Cu₂O、CuO を順に計算できます。それぞれの入力には異なる `Filout` を指定します。
+
+```python
+from fdmnes_util.fdm_run import FdmRun
+
+runner = FdmRun()
+for input_file in ("Cu_inp.txt", "Cu2O_inp.txt", "CuO_inp.txt"):
+    runner.run(input_file)
+```
+
+同じ材料で計算条件だけを変える場合も、Python で入力を作れます。以下では `Cu_inp.txt` を元に計算半径を変え、入力ファイルと出力接頭辞を計算ごとに分けています。
+
+```python
+from fdmnes_util.fdm_inp import FdmInp
+from fdmnes_util.fdm_run import FdmRun
+
+runner = FdmRun()
+for radius in (3.0, 4.0, 5.0):
+    model = FdmInp("Cu_inp.txt", format_year=2026)
+    prefix = f"Cu_R{radius:g}"
+    model.set_block("Filout", prefix)
+    model.set_radius(radius)
+    input_file = model.save(f"{prefix}.inp")
+    runner.run(input_file)
+```
+
+`set_block()` には FDMNES のキーワードとデータ行を渡せます。`Crystal` や `Molecule` のデータ行も指定できるので、Python で原子種や座標を組み立てた入力も作れます。`set_radius()` の半径は Å 単位です。`save()` が返すパスをそのまま `run()` に渡せます。入力本文を Python で組み立てた場合は `FdmInp.from_text(text)`、POSCAR から構造を取り込む場合は `FdmInp.from_poscar("POSCAR")` で始められます。 [API リファレンス](docs/ja/manual_reference.md)
+
 ## スクリプトの再構築
 
 対象は、SAEにあった `FD*` / `fd*` の全28本です。コマンド名だけを残すのではなく、各スクリプトに書かれている機能をファイル読み込み・解析・描画クラスへ整理し、同じ操作を再現することを目標にしています。

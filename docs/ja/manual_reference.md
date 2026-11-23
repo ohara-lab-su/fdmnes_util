@@ -17,6 +17,13 @@
 | メソッドと引数の既定値 | 引数の意味 | 戻り値 |
 | --- | --- | --- |
 | `__init__(filename='read_pdb.inp', *, format_year=2016)` | filename は計算入力ファイル。 | None |
+| `from_text(text)` | Python で組み立てた入力本文。 | 編集可能な `FdmInp`。 |
+| `from_poscar(filename, *, molecule=False)` | POSCAR のパス。`molecule=True` で分子構造節を作る。読み込みには `vasp_util` が必要。 | 編集可能な `FdmInp`。 |
+| `set_block(keyword, *rows, old_rows=None)` | キーワードとデータ行。可変長ブロックを置換するときは、元のデータ行数を `old_rows` に指定。 | 更新した `FdmInp`。 |
+| `remove_block(keyword, *, old_rows=None)` | 削除するキーワード。可変長ブロックでは元のデータ行数を指定。 | 更新した `FdmInp`。 |
+| `set_radius(radius, *changes)` | 半径（Å）。追加の組は切替エネルギー（eV）と切替後の半径（Å）。 | 更新した `FdmInp`。 |
+| `render_input()` | — | str。編集中の入力本文。 |
+| `save(filename, *, overwrite=False)` | 保存先。既存ファイルを置き換える場合は `overwrite=True`。 | Path。そのまま `FdmRun.run()` に渡せる保存先。 |
 | `get_filout()` | — | str。最後の `Filout` または `File_out` の値。未指定なら空文字列。 |
 | `get_absorber()` | — | int。最後の `Absorber` で指定した1始まりの吸収原子番号。未指定なら 1。不正な番号は ValueError。 |
 | `get_ispin()` | — | int。`Spin` または `Magnetism` があれば 2、なければ 1。 |
@@ -61,6 +68,21 @@ from fdmnes_util.fdmfile import Fdmfile
 jobs = Fdmfile("fdmfile.txt")
 first_input = jobs.get_filout()
 ```
+
+### `FdmRun`
+
+`from fdmnes_util.fdm_run import FdmRun`
+
+作業ディレクトリの `fdmfile.txt` を使って FDMNES 本体を起動します。標準出力は画面と `fdmnes-*.log` に流し、計算結果ファイルは本体が `Filout` に従って書き出します。
+
+| メソッドと引数の既定値 | 引数の意味 | 戻り値 |
+| --- | --- | --- |
+| `__init__(executable='fdmnes', *, echo=True)` | 実行ファイルのパスまたはコマンド名。`echo` は既存の呼び出しとの互換用。 | None |
+| `run(input_file=None, *, directory=None, timeout=None)` | 入力を指定すると一覧に1件だけ登録して実行。省略時は既存一覧を使う。作業ディレクトリの既定はカレント。制限時間は秒。 | subprocess.CompletedProcess |
+| `run_fdmfile(*, directory=None, timeout=None)` | 指定先またはカレントの `fdmfile.txt` をそのまま使う。制限時間は秒。 | subprocess.CompletedProcess |
+| `run_inputs(input_files, *, directory, timeout=None)` | Python で並べた入力を1件ずつ実行。制限時間は全件に適用。 | list[subprocess.CompletedProcess]。指定順の終了結果。 |
+
+入力の準備から計算までの例は[使い方](usage.md)を参照してください。
 
 ## XAS・実験スペクトル
 

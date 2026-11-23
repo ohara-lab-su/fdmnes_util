@@ -25,19 +25,30 @@ Place the calculation outputs in your analysis directory. Install FDMNES separat
 
 ## Run a calculation from Python
 
+Place your manually prepared `Cu_inp.txt` in the current directory and run these commands there. Install the FDMNES executable separately and make it available as `fdmnes`.
+
+```console
+fdmnes_util install FDrun
+python FDrun.py Cu_inp.txt
+```
+
+You can run the same input from Python.
+
 ```python
 from fdmnes_util.fdm_run import FdmRun
 
-log = FdmRun().run("Cu.inp")
-print(log)
+FdmRun().run("Cu_inp.txt")
 ```
 
-`FdmRun()` uses `fdmnes` on PATH or an explicit executable path. `run()` runs the default `inp.txt` and `run("Cu.inp")` runs the specified input. A missing input raises an error before launch. The runner writes a temporary one-entry `fdmfile.txt` and restores its prior state afterward. Call `run_fdmfile()` to use the existing job list as written. The command-line equivalents are `python FDrun.py Cu.inp` and `python FDrun.py --fdmfile`.
+`FdmRun()` uses `fdmnes`. Pass an executable path to use a different binary. If you specify an input, the runner creates or replaces `fdmfile.txt` in the working directory with that single entry and leaves the file in place after execution. With no input argument, both `FDrun.py` and `run()` use the existing `fdmfile.txt` as written. A missing input or required job list raises an error before launch.
 
+The working directory defaults to the current directory. FDMNES writes calculation outputs according to `Filout`. Standard output appears on screen during execution and is also saved to `fdmnes-*.log` in the working directory.
+
+Prepare inputs for different materials, structures, or stoichiometries and use Python to choose which ones to run and in what order. For example, `FdmRun().run_inputs(["Cu_inp.txt", "Cu2O_inp.txt", "CuO_inp.txt"], directory=".")` launches FDMNES once for each input. Give each input a distinct `Filout` to keep its results separate.
 
 ## Build and update calculation inputs
 
-`FdmInp` writes the guide's keyword blocks in order. To start from a POSCAR, call `FdmInp.from_poscar("POSCAR")`. It uses `vasp_util` to read the structure and `FdmStructure` to render the FDMNES block. Set calculation options in Python.
+`FdmInp` writes the guide's keyword blocks in order. Use `FdmInp.from_text(text)` for input text assembled in Python. To start from a POSCAR, call `FdmInp.from_poscar("POSCAR")`. It uses `vasp_util` to read the structure and `FdmStructure` to render the FDMNES block.
 
 ```python
 from fdmnes_util.fdm_inp import FdmInp
@@ -50,13 +61,12 @@ model.set_radius(4.0, (15, 3.5), (30, 3.0))
 model.set_block("Green")
 model.set_block("Convolution")
 job = model.save("cu_radius.inp")
-log = FdmRun().run(job, directory=".", timeout=120)
-print(log)
+FdmRun().run(job, timeout=120)
 ```
 
 The first value passed to `set_radius()` is the radius in Å. Additional pairs specify a transition energy in eV and the radius above that energy. Pass data rows in order to `set_block()`. When changing a variable-length block such as `Calculation`, specify the number of old data rows with `old_rows`. For example, use `model.set_block("Calculation", "Cu.txt", (1.0, 0.2), old_rows=2)`. Use the guide's layout with each keyword on its own line. FDMNES interprets the keyword combinations and calculation settings. Pass `overwrite=True` to replace a file explicitly.
 
-`run_inputs()` launches FDMNES once per input in Python order and returns the log paths in the same order. Each launch uses a one-entry job list. Relative input and resource paths are resolved from the calculation directory. The timeout applies to the batch.
+`run_inputs()` returns a list of `subprocess.CompletedProcess` results in execution order. Each launch uses a one-entry job list. Resolve relative input and resource paths from the calculation directory. The timeout applies to the batch.
 
 ### Guide examples
 

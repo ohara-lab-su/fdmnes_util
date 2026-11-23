@@ -17,6 +17,13 @@ Input files have no revision line. Use `FdmInp(filename, format_year=2026)` for 
 | Method and parameter defaults | Parameter meanings | Return value |
 | --- | --- | --- |
 | `__init__(filename='read_pdb.inp', *, format_year=2016)` | `filename` Path to the FDMNES input file. | None. |
+| `from_text(text)` | Input text assembled in Python. | Editable `FdmInp`. |
+| `from_poscar(filename, *, molecule=False)` | POSCAR path. Use `molecule=True` to create a molecular structure section. Reading POSCAR requires `vasp_util`. | Editable `FdmInp`. |
+| `set_block(keyword, *rows, old_rows=None)` | Keyword and data rows. When replacing a variable-length block, provide the previous row count in `old_rows`. | Updated `FdmInp`. |
+| `remove_block(keyword, *, old_rows=None)` | Keyword to remove. For a variable-length block, provide the previous row count. | Updated `FdmInp`. |
+| `set_radius(radius, *changes)` | Radius in Å. Additional pairs give the transition energy in eV and the new radius in Å. | Updated `FdmInp`. |
+| `render_input()` | — | str. The current input text. |
+| `save(filename, *, overwrite=False)` | Destination path. Set `overwrite=True` to replace an existing file. | Path. Pass it directly to `FdmRun.run()`. |
 | `get_filout()` | — | str: Last `Filout` or `File_out` value, or an empty string when absent. |
 | `get_absorber()` | — | int. One-based absorber index from the last `Absorber` record. Defaults to 1 when absent. An invalid index raises ValueError. |
 | `get_ispin()` | — | int: Two when `Spin` or `Magnetism` is specified, otherwise one. |
@@ -61,6 +68,21 @@ from fdmnes_util.fdmfile import Fdmfile
 jobs = Fdmfile("fdmfile.txt")
 first_input = jobs.get_filout()
 ```
+
+### `FdmRun`
+
+`from fdmnes_util.fdm_run import FdmRun`
+
+Launch FDMNES using `fdmfile.txt` in the working directory. Standard output goes to the screen and to `fdmnes-*.log`. FDMNES writes calculation results according to `Filout`.
+
+| Method and parameter defaults | Parameter meanings | Return value |
+| --- | --- | --- |
+| `__init__(executable='fdmnes', *, echo=True)` | Executable path or command name. `echo` is accepted for compatibility with existing callers. | None. |
+| `run(input_file=None, *, directory=None, timeout=None)` | When an input is specified, register and run that single input. Otherwise use the existing job list. The working directory defaults to the current directory. The timeout is in seconds. | subprocess.CompletedProcess. |
+| `run_fdmfile(*, directory=None, timeout=None)` | Use the existing `fdmfile.txt` in the specified or current directory. The timeout is in seconds. | subprocess.CompletedProcess. |
+| `run_inputs(input_files, *, directory, timeout=None)` | Run the inputs one at a time in the supplied order. The timeout applies to the entire sequence. | list[subprocess.CompletedProcess]. One result per input, in order. |
+
+See the [usage guide](usage.md) for examples of preparing and running inputs.
 
 ## XAS and experimental spectra
 
