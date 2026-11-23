@@ -80,6 +80,46 @@ fdmnes_util install script --force
 The editable source scripts are kept in the repository's top-level `scripts/` directory. The `pyproject.toml` configuration includes them in the wheel for installation; `setup.py` is not used. Analysis and plotting algorithms belong in the library itself, while each script provides a concrete usage example.
 
 Editable examples corresponding to all 28 SAE scripts are included. See the command audit for the status of option and output reproduction.
+
+## Running FDMNES calculations
+
+Prepare the FDMNES calculation input by hand first. This example assumes that `Cu_inp.txt` is in the current directory and that the FDMNES executable is available as `fdmnes` on PATH. Copy [FDrun.py](scripts/FDrun.py) into the same directory and pass it the input filename.
+
+```console
+fdmnes_util install FDrun
+python FDrun.py Cu_inp.txt
+```
+
+`FDrun.py` prepares the `fdmfile.txt` that FDMNES needs for a single input. It replaces any existing file with that name. The calculation runs in the current directory, and the input's `Filout` sets the output location and prefix. FDMNES standard output appears on screen and is also saved to `fdmnes-*.log`.
+
+Use Python to choose which inputs to run and in what order. Prepare separate inputs for different materials, crystal structures, or stoichiometries. For example, run Cu, Cu₂O, and CuO in sequence, with a distinct `Filout` in each input.
+
+```python
+from fdmnes_util.fdm_run import FdmRun
+
+runner = FdmRun()
+for input_file in ("Cu_inp.txt", "Cu2O_inp.txt", "CuO_inp.txt"):
+    runner.run(input_file)
+```
+
+Python can also generate inputs with different settings for the same material. This example starts from `Cu_inp.txt`, varies the cluster radius, and gives each calculation its own input file and output prefix.
+
+```python
+from fdmnes_util.fdm_inp import FdmInp
+from fdmnes_util.fdm_run import FdmRun
+
+runner = FdmRun()
+for radius in (3.0, 4.0, 5.0):
+    model = FdmInp("Cu_inp.txt", format_year=2026)
+    prefix = f"Cu_R{radius:g}"
+    model.set_block("Filout", prefix)
+    model.set_radius(radius)
+    input_file = model.save(f"{prefix}.inp")
+    runner.run(input_file)
+```
+
+Pass an FDMNES keyword and its data lines to `set_block()`. This also works for `Crystal` and `Molecule`, so you can assemble inputs from atomic species and coordinates in Python. Specify radii in ångströms with `set_radius()` and pass the path returned by `save()` directly to `run()`. Use `FdmInp.from_text(text)` to start from input text assembled in Python, or `FdmInp.from_poscar("POSCAR")` to start from a POSCAR structure. [API reference](docs/en/manual_reference.md)
+
 ## Rebuilding the original scripts
 
 The target is all 28 `FD*` / `fd*` scripts from SAE. Rather than preserving only their command names, the goal is to reorganize their functionality into file-reading, analysis, and plotting classes and reproduce the same operations.

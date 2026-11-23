@@ -25,19 +25,30 @@ FDMNES本体で計算したファイルを解析ディレクトリに置きま�
 
 ## Python から計算を実行する
 
+手作業で作成した `Cu_inp.txt` をカレントディレクトリに置いたら、同じ場所で次を実行します。FDMNES 本体は別途用意し、`fdmnes` として起動できるようにします。
+
+```console
+fdmnes_util install FDrun
+python FDrun.py Cu_inp.txt
+```
+
+Python からも同じ入力を実行できます。
+
 ```python
 from fdmnes_util.fdm_run import FdmRun
 
-log = FdmRun().run("Cu.inp")
-print(log)
+FdmRun().run("Cu_inp.txt")
 ```
 
-`FdmRun()` は PATH 上の `fdmnes` を使います。実行ファイルのパスも指定できます。`run()` は既定の `inp.txt`、`run("Cu.inp")` は指定した `Cu.inp` を1件だけ実行します。入力が存在しない場合は起動前にエラーになります。実行時は入力1件の `fdmfile.txt` を一時作成し、終了後に元の状態へ戻します。既存の一覧を使う場合は `run_fdmfile()` を呼びます。コマンドでは `python FDrun.py Cu.inp` または `python FDrun.py --fdmfile` を使います。
+`FdmRun()` は `fdmnes` を使います。別の実行ファイルを使う場合は、そのパスを渡します。入力を指定すると、作業ディレクトリの `fdmfile.txt` をその入力1件で作成または書き換えます。一覧は実行後も残ります。引数なしの `FDrun.py` と `run()` は、既存の `fdmfile.txt` をそのまま使います。指定した入力や必要な一覧がなければ起動前にエラーになります。
 
+作業場所の既定はカレントディレクトリです。本体は入力の `Filout` に従って計算結果を書き出します。標準出力は実行中に画面に表示され、同じ内容を作業ディレクトリの `fdmnes-*.log` にも保存します。
+
+材料、構造、化学量論比が異なる入力を用意すれば、Python で選択や実行順を決められます。例えば `FdmRun().run_inputs(["Cu_inp.txt", "Cu2O_inp.txt", "CuO_inp.txt"], directory=".")` は各入力について本体を1回ずつ起動します。結果を分けるには、各入力で異なる `Filout` を指定します。
 
 ## 計算入力を作成・更新する
 
-`FdmInp` は、マニュアルのキーワードとデータ行をその順序で書き出します。POSCAR から始める場合は `FdmInp.from_poscar("POSCAR")` を使います。構造の読み込みを `vasp_util`、FDMNES 形式への変換を `FdmStructure` が担当します。入力の作成時に選ぶ計算オプションは Python 側に記述できます。
+`FdmInp` は、マニュアルのキーワードとデータ行をその順序で書き出します。入力本文を Python で作った場合は `FdmInp.from_text(text)` を使います。POSCAR から始める場合は `FdmInp.from_poscar("POSCAR")` を使います。構造の読み込みを `vasp_util`、FDMNES 形式への変換を `FdmStructure` が担当します。
 
 ```python
 from fdmnes_util.fdm_inp import FdmInp
@@ -50,13 +61,12 @@ model.set_radius(4.0, (15, 3.5), (30, 3.0))
 model.set_block("Green")
 model.set_block("Convolution")
 job = model.save("cu_radius.inp")
-log = FdmRun().run(job, directory=".", timeout=120)
-print(log)
+FdmRun().run(job, timeout=120)
 ```
 
 `set_radius()` の最初の値は半径（Å）です。後続の組は切替エネルギー（eV）と切替後の半径です。任意のキーワードは `set_block()` にデータ行を順に渡せます。`Calculation` など可変長ブロックを更新する場合は、差し替える元のデータ行数を `old_rows` で指定します。例えば `model.set_block("Calculation", "Cu.txt", (1.0, 0.2), old_rows=2)` です。マニュアルのようにキーワードを単独の行に置く入力を使用します。キーワードの組み合わせや計算条件は FDMNES 本体が解釈します。`save()` は既存ファイルがあればエラーにし、`overwrite=True` で明示的に上書きできます。
 
-`run_inputs()` は Python で指定した順に1件ずつ本体を起動し、実行ログのパスを順に返します。各起動で一時一覧に書く入力は1件です。入力の相対パスと参照データは計算フォルダ基準です。タイムアウトは一覧全体に適用されます。
+`run_inputs()` は各起動の終了結果を `subprocess.CompletedProcess` のリストで返します。各起動で一覧に書く入力は1件です。入力と参照データの相対パスは計算フォルダ基準です。タイムアウトは一覧全体に適用されます。
 
 ### マニュアルの計算例
 
