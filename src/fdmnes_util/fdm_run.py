@@ -1,12 +1,15 @@
 """計算入力 ``inp.txt``・``*.inp`` または既存の ``fdmfile.txt`` で FDMNES を起動する。
 
 計算フォルダに入力1件を記載した ``fdmfile.txt`` を書き、実行後も残す。
-本体には呼び出し元の標準入出力を引き継がせる。
+本体の標準出力を画面に流すと同時に、計算フォルダの ``fdmnes-*.log`` に保存する。
 """
 
 import shutil
 import subprocess
+import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from time import monotonic
 
 from .fdmfile import Fdmfile
@@ -20,7 +23,7 @@ class FdmRun:
 
         Args:
             executable: 実行ファイルのパスまたは PATH 上のコマンド名。
-            echo: 従来の呼び出しとの互換用。標準出力は値にかかわらず引き継ぐ。
+            echo: 従来の呼び出しとの互換用。標準出力は値にかかわらず表示・保存する。
         """
         candidate = Path(executable).expanduser()
         if candidate.is_file():
@@ -120,13 +123,46 @@ class FdmRun:
             raise FileNotFoundError(path)
 
     def _launch(self, cwd, timeout):
-        """標準入出力を引き継いで、計算フォルダで FDMNES を起動する。"""
-        result = subprocess.run(
-            [str(self.executable)],
-            cwd=cwd,
-            timeout=timeout,
-            check=False,
-        )
-        if result.returncode != 0:
-            raise RuntimeError(f"FDMNES exited with {result.returncode}")
-        return result
+        """FDMNES を起動し、標準出力を画面と実行ログに流す。"""
+        command = [str(self.executable)]
+        with NamedTemporaryFile(
+            mode="wb",
+            dir=cwd,
+            prefix="fdmnes-",
+            suffix=".log",
+            delete=False,
+        ) as log:
+            with subprocess.Popen(command, cwd=cwd, stdout=subprocess.PIPE) as process:
+                # 標準出力を読み続けながら、起動側でタイムアウトを扱う。
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    output = executor.submit(
+                        self._launch_copy_stdout,
+                        process.stdout,
+                        log,
+                    )
+                    try:
+                        returncode = process.wait(timeout=timeout)
+                    except BaseException:
+                        process.kill()
+                        process.wait()
+                        raise
+                    output.result()
+        if returncode != 0:
+            raise RuntimeError(f"FDMNES exited with {returncode}: {log.name}")
+        return subprocess.CompletedProcess(command, returncode)
+
+    @staticmethod
+    def _launch_copy_stdout(source, log):
+        """本体が出した行をそのままログに書き、標準出力にも送る。"""
+        screen = sys.stdout
+        buffer = getattr(screen, "buffer", None)
+        with source:
+            for line in source:
+                log.write(line)
+                log.flush()
+                if buffer is None:
+                    screen.write(line.decode("utf-8", errors="replace"))
+                    screen.flush()
+                else:
+                    buffer.write(line)
+                    buffer.flush()
