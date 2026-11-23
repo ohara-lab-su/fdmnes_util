@@ -68,7 +68,7 @@ class FdmInp:
 
         Returns:
             FdmInp: 構造節が入った編集可能な2026形式の入力。
-                吸収端やエネルギー範囲などの計算条件は set_block() で指定する。
+                吸収端やエネルギー範囲などの計算条件は set_keyword() で指定する。
         """
         inp = cls(None, format_year=2026)
         inp._reader._set_poscar(filename, molecule=molecule)
@@ -80,16 +80,16 @@ class FdmInp:
             raise ValueError("Editing the input requires format_year=2026")
         return self._reader
 
-    def set_block(self, keyword, *rows, old_rows=None):
+    def set_keyword(self, keyword, *rows, old_rows=None):
         """2026形式の入力にキーワードブロックを追加または置換する。
 
         Args:
-            keyword: FDMNES のキーワード名。例は `Filout`、`Range`、`Crystal`。
+            keyword: FDMNES のキーワード名。例は `Filout`、`Range`、`Calculation`。
             *rows: キーワードに続くデータ行。文字列や数値は1行として扱い、
                 タプルなどの並びは空白区切りの1行にする。
                 `Green` のような値のないキーワードは、行を渡さずに指定する。
-            old_rows: 置換前のデータ行数。`Crystal` や `Calculation` など、
-                行数が可変の既存ブロックを置換する場合に指定する。
+            old_rows: 置換前のデータ行数。`Calculation` など、行数が可変の
+                既存キーワードの値を置換する場合に指定する。
 
         Returns:
             FdmInp: 更新した入力。
@@ -98,6 +98,34 @@ class FdmInp:
             ValueError: 形式年が2026以外、またはブロックの指定が不正な場合。
         """
         self._editable_reader()._set_block(keyword, *rows, old_rows=old_rows)
+        return self
+
+    def set_block(self, keyword, *rows, old_rows=None):
+        """既存の呼び出しとの互換用。引数と戻り値は set_keyword() と同じ。"""
+        return self.set_keyword(keyword, *rows, old_rows=old_rows)
+
+    def set_structure(self, cell, *atoms, molecule=False, old_rows=None):
+        """2026形式の入力に Crystal または Molecule の構造節を設定する。
+
+        Args:
+            cell: FDMNES の構造節の先頭に書く格子長と格子角などのデータ行。
+            *atoms: FDMNES の書式で指定した原子行。
+                Crystal では各行に原子番号と分率座標を渡す。
+            molecule: True で Molecule 節を指定する。既定は Crystal 節。
+            old_rows: 同じ構造節を置換するときの、格子行を含む元のデータ行数。
+
+        Returns:
+            FdmInp: 更新した入力。
+
+        Raises:
+            ValueError: 形式年が2026以外、または構造節の行指定が不正な場合。
+        """
+        self._editable_reader()._set_structure(
+            cell,
+            *atoms,
+            molecule=molecule,
+            old_rows=old_rows,
+        )
         return self
 
     def remove_block(self, keyword, *, old_rows=None):

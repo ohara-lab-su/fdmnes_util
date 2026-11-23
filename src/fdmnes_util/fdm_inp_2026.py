@@ -362,6 +362,13 @@ class FdmInp2026:
         self._index_input()
         return self
 
+    def _set_structure(self, cell, *atoms, molecule=False, old_rows=None):
+        """格子行と原子行を、指定された種類の構造節に書く。"""
+        keyword = "Crystal"
+        if molecule:
+            keyword = "Molecule"
+        self._set_block(keyword, cell, *atoms, old_rows=old_rows)
+
     def _remove_block(self, keyword, *, old_rows=None):
         """指定のブロックを取り除く。行数の規則は set_block と同じ。"""
         self._edit_block(keyword, None, old_rows)

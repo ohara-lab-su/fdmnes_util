@@ -101,13 +101,12 @@ from fdmnes_util.fdm_inp import FdmInp
 from fdmnes_util.fdm_run import FdmRun
 
 model = FdmInp.from_text("End\n")
-model.set_block("Filout", "Cu_generated")
-model.set_block("Absorber", 1)
-model.set_block("Edge", "K")
-model.set_block("Range", (-1.0, 0.2, 2.0))
+model.set_keyword("Filout", "Cu_generated")
+model.set_keyword("Absorber", 1)
+model.set_keyword("Edge", "K")
+model.set_keyword("Range", (-1.0, 0.2, 2.0))
 model.set_radius(3.0)
-model.set_block(
-    "Crystal",
+model.set_structure(
     (3.61, 3.61, 3.61, 90, 90, 90),
     (29, 0.0, 0.0, 0.0),
     (29, 0.5, 0.5, 0.0),
@@ -123,7 +122,8 @@ FdmRun().run(input_file)
 | `FdmInp.from_text(text)` | Start from input text supplied in Python. The example starts with just the `End` keyword. |
 | `FdmInp.from_poscar("POSCAR")` | Read a POSCAR with `vasp_util` and build an FDMNES structure section. |
 | `FdmInp(filename, format_year=2026)` | Open a saved input for editing. |
-| `set_block(keyword, *rows)` | Set a keyword and its data rows. For `Crystal`, pass the cell parameters followed by rows of atomic numbers and fractional coordinates. |
+| `set_structure(cell, *atoms)` | Set the crystal cell parameters and the rows of atomic numbers and fractional coordinates. Use `molecule=True` for a molecular structure section. |
+| `set_keyword(keyword, *rows)` | Set FDMNES keywords and data rows for calculation settings such as `Filout`, `Absorber`, `Edge`, and `Range`. |
 | `set_radius(radius)` | Set the cluster radius in ångströms. |
 | `render_input()` / `save(filename)` | Inspect the current input text or save it to a file. `save()` returns the saved path. |
 | `FdmRun.run(input_file)` | Launch FDMNES with the saved input file. |
@@ -150,7 +150,7 @@ runner = FdmRun()
 for radius in (3.0, 4.0, 5.0):
     model = FdmInp("Cu_inp.txt", format_year=2026)
     prefix = f"Cu_R{radius:g}"
-    model.set_block("Filout", prefix)
+    model.set_keyword("Filout", prefix)
     model.set_radius(radius)
     input_file = model.save(f"{prefix}.inp")
     runner.run(input_file)
@@ -161,6 +161,13 @@ For argument details, units, return values, and rules for editing existing input
 ## Bundled scripts
 
 The bundled scripts show how to use the library for structure conversion, running calculations, analysis, and plotting. They include examples that reproduce operations from SAE's FDMNES scripts.
+
+SAE named its tools by combining a calculation-code prefix with the operation name. The convention was inspired by utilities such as `LAcopy`, distributed with Professor Oguchi's HiLAPW. Similar names across codes made it possible to apply the same habits to different programs, for example when moving from `LAcopy` to `FDcopy`. [SAE naming conventions](https://github.com/ohara-lab-su/sae/blob/main/README.md#basic-conventions)
+
+- **`FD*.py`** are general-purpose commands that can be run as supplied by passing arguments. Examples include `FDrun.py` and `FDplot_XAS.py`.
+- **`fd*.py`** are scripts that you can edit to suit your samples, input filenames, or plotting settings. One example is `fdLDOS0_specified.py`.
+
+The earlier utilities were written as shell scripts and similar tools. I moved them to Python and organized input and output, analysis, and plotting as class methods that other programs can reuse. AI can now build this kind of framework quickly. I am maintaining these tools because they are part of the day-to-day calculations and analyses I want to keep using.
 
 You can reuse the underlying methods in your own Python programs. For example, `AnalyzeFdmAverage.average()` averages site-resolved XAS and `PlotFdmXas.plot_composite()` can draw a combined XAS and LDOS figure. Some SAE operations and usage examples are still being refined, and I plan to improve them as I use the library in calculations and analysis.
 

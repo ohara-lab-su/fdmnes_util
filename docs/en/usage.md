@@ -48,23 +48,23 @@ Prepare inputs for different materials, structures, or stoichiometries and use P
 
 ## Build and update calculation inputs
 
-`FdmInp` writes the guide's keyword blocks in order. Use `FdmInp.from_text(text)` for input text assembled in Python. To start from a POSCAR, call `FdmInp.from_poscar("POSCAR")`. It uses `vasp_util` to read the structure and `FdmStructure` to render the FDMNES block.
+`FdmInp` writes the guide's keyword blocks in order. Use `FdmInp.from_text(text)` for input text assembled in Python. Pass the cell parameters and atom rows to `set_structure()` when building the structure in Python. To start from a POSCAR, call `FdmInp.from_poscar("POSCAR")`. It uses `vasp_util` to read the structure and `FdmStructure` to render the FDMNES block.
 
 ```python
 from fdmnes_util.fdm_inp import FdmInp
 from fdmnes_util.fdm_run import FdmRun
 
 model = FdmInp("cu.inp", format_year=2026)
-model.set_block("Filout", "Cu_radius_scan")
-model.set_block("Range", (-2, 0.2, 5, 0.5, 10, 1, 40))
+model.set_keyword("Filout", "Cu_radius_scan")
+model.set_keyword("Range", (-2, 0.2, 5, 0.5, 10, 1, 40))
 model.set_radius(4.0, (15, 3.5), (30, 3.0))
-model.set_block("Green")
-model.set_block("Convolution")
+model.set_keyword("Green")
+model.set_keyword("Convolution")
 job = model.save("cu_radius.inp")
 FdmRun().run(job, timeout=120)
 ```
 
-The first value passed to `set_radius()` is the radius in Å. Additional pairs specify a transition energy in eV and the radius above that energy. Pass data rows in order to `set_block()`. When changing a variable-length block such as `Calculation`, specify the number of old data rows with `old_rows`. For example, use `model.set_block("Calculation", "Cu.txt", (1.0, 0.2), old_rows=2)`. Use the guide's layout with each keyword on its own line. FDMNES interprets the keyword combinations and calculation settings. Pass `overwrite=True` to replace a file explicitly.
+The first value passed to `set_radius()` is the radius in Å. Additional pairs specify a transition energy in eV and the radius above that energy. Pass data rows in order to `set_keyword()`. When changing a variable-length block such as `Calculation`, specify the number of old data rows with `old_rows`. For example, use `model.set_keyword("Calculation", "Cu.txt", (1.0, 0.2), old_rows=2)`. Use the guide's layout with each keyword on its own line. FDMNES interprets the keyword combinations and calculation settings. Pass `overwrite=True` to replace a file explicitly.
 
 `run_inputs()` returns a list of `subprocess.CompletedProcess` results in execution order. Each launch uses a one-entry job list. Resolve relative input and resource paths from the calculation directory. The timeout applies to the batch.
 
