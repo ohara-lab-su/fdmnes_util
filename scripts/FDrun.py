@@ -4,8 +4,8 @@
 # 実行例（このスクリプトがあるディレクトリで実行）
 # --executable を省略する場合は PATH に fdmnes が必要。
 #
-# 現在のディレクトリにある inp.txt を1件だけ実行する。
-# python FDrun.py
+# カレントディレクトリにある fdmfile.txt をそのまま使う。
+# ./FDrun.py
 #
 # 手元の Cu_inp.txt を位置引数で指定する。fdmfile.txt にはこの入力1件だけを記載する。
 # ./FDrun.py Cu_inp.txt
@@ -25,7 +25,11 @@ from fdmnes_util.fdm_run import FdmRun
 def main(argv=None):
     """計算入力または作業フォルダのジョブ一覧を実行する。"""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("input", nargs="?", help="Calculation input (default: inp.txt)")
+    parser.add_argument(
+        "input",
+        nargs="?",
+        help="Calculation input (omitted: use the existing fdmfile.txt)",
+    )
     parser.add_argument("--fdmfile", action="store_true", help="Use the existing fdmfile.txt")
     parser.add_argument("--executable", default="fdmnes")
     parser.add_argument("--directory")

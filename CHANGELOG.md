@@ -1,22 +1,39 @@
 # 変更履歴
 
+## v0.1.7（2026-11-23）
+
+### バグ修正
+
+- 引数なしの `./FDrun.py` は、カレントディレクトリにある `fdmfile.txt` をそのまま使います。一覧がなければ、起動前にエラーを返します。
+- `./FDrun.py Cu_inp.txt` のように入力名を指定した場合だけ、カレントの `fdmfile.txt` にその入力を1件登録して FDMNES を起動します。一覧があれば書き換え、なければ作成します。`fdmfile.txt` は実行後も残ります。
+- FDMNES 本体の標準出力と標準エラーを呼び出し元に直接流します。計算結果ファイルは本体が `Filout` に従って書き出し、相対パスは `fdmfile.txt` のある作業ディレクトリを基準とします。`FdmRun` が実行時に書くファイルは `fdmfile.txt` だけです。
+- `FdmRun.run()` と `run_fdmfile()` は本体の終了結果を `subprocess.CompletedProcess` で返します。`run_inputs()` は各実行の終了結果を入力順に返します。
+
 ## v0.1.6（2026-11-23）
 
-- `FDrun.py` が FDMNES 本体の標準出力を実行中に画面へ表示し、同じ内容を `fdmnes-*.log` に保存します。
+### バグ修正
+
+- `FDrun.py` で計算中の標準出力が表示されない問題を修正しました。本体の標準出力を実行中に画面に表示し、同じ内容を `fdmnes-*.log` に保存します。
 
 ## v0.1.5（2026-11-23）
 
-- Linux で `fdmnes_util install` がコピーしたスクリプトに、所有者の実行権限を付けます。
-- `FDrun.py` の冒頭に `./FDrun.py Cu_inp.txt` の例を追加しました。位置引数で渡したファイルを、実行時の `fdmfile.txt` に1件だけ記載します。
+### バグ修正
+
+- Linux でコピーしたスクリプトを直接実行できるよう、`fdmnes_util install` が所有者の実行権限を付けるようにしました。
+- `FDrun.py` の使用例を `./FDrun.py Cu_inp.txt` に修正し、位置引数で指定した入力を実行時の `fdmfile.txt` に1件だけ登録することを明記しました。
 
 ## v0.1.4（2026-11-23）
 
-- `install script list` と `install list` の一覧を2列に揃えました。各スクリプトは従来の名前と短い日本語の説明を1行で表示します。
+### バグ修正
+
+- `install script list` と `install list` で説明の開始位置が揃わない問題を修正しました。スクリプト名と短い日本語の説明を2列に揃え、1本につき1行で表示します。
 
 ## v0.1.3（2026-11-23）
 
-- `fdmnes_util install script list` で、`install list` と同じスクリプト名と日本語の説明を1行ずつ表示します。
-- `fdmnes-util` を実行コマンドとして追加しました。従来の `fdmnes_util` も使えます。
+### バグ修正
+
+- `fdmnes_util install script list` が引数エラーになる問題を修正しました。`install list` と同じ一覧を表示します。
+- ハイフン付きの `fdmnes-util` でも実行できるようにコマンド登録を修正しました。`fdmnes_util` と同じ操作を使えます。
 
 ## v0.1.2（2026-11-23）
 
