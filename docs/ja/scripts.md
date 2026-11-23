@@ -6,12 +6,21 @@
 
 SAE の命名では、大文字の `FD*.py` は汎用コマンド、小文字の `fd*.py` は試料や解析条件に合わせて編集する研究用の例です。本パッケージでは両方を編集可能なサンプルとして `fdmnes_util install script` で配布します。SAE 本体は実行時の依存ではありません。[SAE 日本語 README の FDMNES 節](https://github.com/ohara-lab-su/sae/blob/main/README.ja.md#for-fdmnes)
 
-下表の原本は提供された `sae_original.zip` 内の `sae/commands/<同名ファイル>` です。引数、既定値、図の見た目まで同じとは限りません。原本と共通しないオプションや検証範囲は [コマンド監査](https://github.com/ohara-lab-su/fdmnes_util/blob/main/.PROGRESS/COMMAND_AUDIT.md) を参照してください。
+SAE 由来のスクリプトの原本は、提供された `sae_original.zip` 内の `sae/commands/<同名ファイル>` です。引数、既定値、図の見た目まで同じとは限りません。原本と共通しないオプションや検証範囲は [コマンド監査](https://github.com/ohara-lab-su/fdmnes_util/blob/main/.PROGRESS/COMMAND_AUDIT.md) を参照してください。
 
 ## 2026年版の出力と計算の実行
 
+| スクリプト | 用途 | 主に使うクラス |
+| --- | --- | --- |
+| `FDrun.py` | 手作業で用意した入力1件または既存のジョブ一覧で FDMNES を起動 | `FdmRun` |
+| `FDmanual_examples.py` | マニュアルの計算例や POSCAR から入力を作成・実行 | `FdmInp`、`FdmRun` |
+| `FDplot_SD.py` | SD の軌道群や軌道射影を描画 | `FdmSd`、`PlotFdmDos` |
+| `FDplot_SCF.py` | BAV から SCF の全エネルギーの推移を描画 | `FdmBav` |
+| `FDconv_sites.py` | 重みとシフトを指定して複数サイトの畳み込み入力を作成 | `FdmInp` |
+
 ```console
-python FDrun.py read_pdb.inp --executable /path/to/fdmnes
+python FDrun.py Cu_inp.txt
+python FDmanual_examples.py cu --write-only
 python FDplot_SD.py Au_sd0.txt --orbital '(3,0)' --nw -o Au_f.pdf
 python FDplot_SCF.py Fe_bav.txt --nw -o Fe_scf.pdf
 python FDconv_sites.py --site Fe_1.txt 1 0.2 --site Fe_2.txt 1 -0.2 --header --energy-step 0.25 --per-atom
@@ -31,7 +40,7 @@ SAE の `FDvasp2fdm.py` は ASE で POSCAR を読み、`AseInputOperations` で 
 
 ## スクリプト別リファレンス
 
-実行例は、`fdmnes_util install script` でサンプルを展開し、入力データを置いた作業ディレクトリで実行します。例の `Fe` は計算結果の接頭辞、`--year 2020` は SD ファイルの形式年です。各スクリプトの原本は `sae_original.zip` の `sae/commands/` に同名で収録されています。描画には Matplotlib、CIF・PDB の読み込みと POSCAR の書き出しには ASE、POSCAR の読み込みには `vasp_util` が必要です。[インストール方法](usage.md)
+実行例は、`fdmnes_util install script` でサンプルを展開し、入力データを置いた作業ディレクトリで実行します。例の `Fe` は計算結果の接頭辞、`--year 2020` は SD ファイルの形式年です。下記の SAE 原本は `sae_original.zip` の `sae/commands/` に同名で収録されています。描画には Matplotlib、CIF・PDB の読み込みと POSCAR の書き出しには ASE、POSCAR の読み込みには `vasp_util` が必要です。[インストール方法](usage.md)
 
 ### `FDbav2xyz.py`
 

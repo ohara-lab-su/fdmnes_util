@@ -6,12 +6,21 @@ Run `python <filename> --help` for each example's arguments. Filenames are case-
 
 SAE used uppercase `FD*.py` names for general-purpose commands and lowercase `fd*.py` names for research examples intended to be edited for individual datasets. This package distributes both as editable examples through `fdmnes_util install script`. SAE itself is unnecessary at runtime. [SAE Japanese README, FDMNES section](https://github.com/ohara-lab-su/sae/blob/main/README.ja.md#for-fdmnes)
 
-Each original below is the matching `sae/commands/<filename>` in the supplied `sae_original.zip`. See the [command audit](https://github.com/ohara-lab-su/fdmnes_util/blob/main/.PROGRESS/COMMAND_AUDIT.md) for option differences and the scope of behavioral verification.
+For scripts derived from SAE, the supplied `sae_original.zip` contains the original at `sae/commands/<filename>`. See the [command audit](https://github.com/ohara-lab-su/fdmnes_util/blob/main/.PROGRESS/COMMAND_AUDIT.md) for option differences and the scope of behavioral verification.
 
 ## 2026 output and calculation runner
 
+| Script | Purpose | Main classes |
+| --- | --- | --- |
+| `FDrun.py` | Run FDMNES with one manually prepared input or an existing job list | `FdmRun` |
+| `FDmanual_examples.py` | Build and run inputs from manual examples or POSCAR | `FdmInp`, `FdmRun` |
+| `FDplot_SD.py` | Plot an orbital group or projection from SD output | `FdmSd`, `PlotFdmDos` |
+| `FDplot_SCF.py` | Plot total energy over SCF cycles from BAV output | `FdmBav` |
+| `FDconv_sites.py` | Prepare a multi-site convolution input with weights and shifts | `FdmInp` |
+
 ```console
-python FDrun.py read_pdb.inp --executable /path/to/fdmnes
+python FDrun.py Cu_inp.txt
+python FDmanual_examples.py cu --write-only
 python FDplot_SD.py Au_sd0.txt --orbital '(3,0)' --nw -o Au_f.pdf
 python FDplot_SCF.py Fe_bav.txt --nw -o Fe_scf.pdf
 python FDconv_sites.py --site Fe_1.txt 1 0.2 --site Fe_2.txt 1 -0.2 --header --energy-step 0.25 --per-atom
@@ -31,7 +40,7 @@ The SAE `FDvasp2fdm.py` read POSCAR through ASE and used `AseInputOperations` fo
 
 ## Script reference
 
-Run these examples in a working directory containing the scripts from `fdmnes_util install script` and your input data. In the examples, `Fe` is the calculation prefix and `--year 2020` selects the SD layout. Each original is in `sae/commands/` in `sae_original.zip` under the same name. Plotting requires Matplotlib. Reading CIF or PDB and writing POSCAR require ASE. Reading POSCAR requires `vasp_util`. [Installation](usage.md)
+Run these examples in a working directory containing the scripts from `fdmnes_util install script` and your input data. In the examples, `Fe` is the calculation prefix and `--year 2020` selects the SD layout. The SAE originals in this section are in `sae/commands/` in `sae_original.zip` under the same names. Plotting requires Matplotlib. Reading CIF or PDB and writing POSCAR require ASE. Reading POSCAR requires `vasp_util`. [Installation](usage.md)
 
 ### `FDbav2xyz.py`
 
