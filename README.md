@@ -101,10 +101,10 @@ from fdmnes_util.fdm_inp import FdmInp
 from fdmnes_util.fdm_run import FdmRun
 
 model = FdmInp.from_text("End\n")
-model.set_keyword("Filout", "Cu_generated")
-model.set_keyword("Absorber", 1)
-model.set_keyword("Edge", "K")
-model.set_keyword("Range", (-1.0, 0.2, 2.0))
+model.set_filout("Cu_generated")
+model.set_absorber(1)
+model.set_edge("K")
+model.set_range(-1.0, 0.2, 2.0)
 model.set_radius(3.0)
 model.set_structure(
     (3.61, 3.61, 3.61, 90, 90, 90),
@@ -123,10 +123,15 @@ FdmRun().run(input_file)
 | `FdmInp.from_poscar("POSCAR")` | Read a POSCAR with `vasp_util` and build an FDMNES structure section. |
 | `FdmInp(filename, format_year=2026)` | Open a saved input for editing. |
 | `set_structure(cell, *atoms)` | Set the crystal cell parameters and the rows of atomic numbers and fractional coordinates. Use `molecule=True` for a molecular structure section. |
-| `set_keyword(keyword, *rows)` | Set FDMNES keywords and data rows for calculation settings such as `Filout`, `Absorber`, `Edge`, and `Range`. |
+| `set_filout(prefix)` / `get_filout()` | Set or read the prefix used for calculation output files. |
+| `set_absorber(index)` / `get_absorber()` | Select an absorbing site by its one-based atom row in the structure. Use `get_absorbers()` to read multiple sites. |
+| `set_edge(edge)` / `get_edge()` | Set or read the absorption edge, such as K, L₃, or L₂ and L₃ together. |
+| `set_range(emin, step, emax)` / `get_range()` | Set or read the photoelectron energy limits and step in eV relative to the Fermi level. |
 | `set_radius(radius)` | Set the cluster radius in ångströms. |
 | `render_input()` / `save(filename)` | Inspect the current input text or save it to a file. `save()` returns the saved path. |
 | `FdmRun.run(input_file)` | Launch FDMNES with the saved input file. |
+
+Use `set_structure()` to build a `Crystal` or `Molecule` section. Set the calculation range and absorption edge with `set_range()` and `set_edge()`. For options without a dedicated method, pass the keyword and its data rows to `set_keyword()` in the format described in the FDMNES manual.
 
 ### Run multiple inputs in order
 
@@ -150,7 +155,7 @@ runner = FdmRun()
 for radius in (3.0, 4.0, 5.0):
     model = FdmInp("Cu_inp.txt", format_year=2026)
     prefix = f"Cu_R{radius:g}"
-    model.set_keyword("Filout", prefix)
+    model.set_filout(prefix)
     model.set_radius(radius)
     input_file = model.save(f"{prefix}.inp")
     runner.run(input_file)

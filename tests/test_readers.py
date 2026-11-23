@@ -176,6 +176,46 @@ def test_read_multi_absorber_last_record(tmp_path):
         FdmInp(path).get_absorber()
 
 
+def test_named_input_settings_round_trip(tmp_path):
+    """公式キーワードを設定し、保存した入力から値と単位を再取得する。"""
+    model = FdmInp.from_text("End\n")
+    model.set_range(-5, 0.2, 10, 0.5, 60)
+    model.set_edge("l23")
+    model.set_absorber([1, 5])
+    model.set_filout("results/Cu")
+    model.set_radius(4, (15, 3.5))
+    model.set_green()
+    model.set_convolution()
+    model.set_spgroup("Fd-3m:1")
+
+    parsed = FdmInp(model.save(tmp_path / "model.inp"), format_year=2026)
+    assert parsed.get_range() == (-5, 0.2, 10, 0.5, 60)
+    assert parsed.get_edge() == "L23"
+    assert parsed.get_absorber() == 1
+    assert parsed.get_absorbers() == [1, 5]
+    assert parsed.get_filout() == "results/Cu"
+    assert parsed.get_radius() == (4, 15, 3.5)
+    assert parsed.get_green()
+    assert parsed.get_convolution()
+    assert parsed.get_spgroup() == "Fd-3m:1"
+
+    parsed.set_green(False)
+    parsed.set_convolution(False)
+    assert not parsed.get_green()
+    assert not parsed.get_convolution()
+
+
+@pytest.mark.parametrize(
+    "grid",
+    [(-5, 1), (-5, 0, 10), (10, 0.5, 0), (-5, float("inf"), 10)],
+)
+def test_input_range_rejects_invalid_grid(grid):
+    model = FdmInp.from_text("Range\n-5 5D-1 60\nEnd\n")
+    with pytest.raises(ValueError, match="Range"):
+        model.set_range(*grid)
+    assert model.get_range() == (-5, 0.5, 60)
+
+
 def test_input_missing_crystal(tmp_path):
     """test_input_missing_crystalの処理を実行する。
 

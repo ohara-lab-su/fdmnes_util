@@ -12,7 +12,11 @@ from .fdm_structure import FdmStructure
 
 
 class FdmInp2026:
-    """FDMNES の計算入力 `*.inp` の2026年形式を読み書きし、入力ブロックを編集する。"""
+    """FDMNES の計算・畳み込み入力ファイル（`*.inp`）の2026年形式を扱う。
+
+    `FdmInp` から委譲された設定値をキーワードとデータ行に変換し、入力を編集する。
+    読み取り時はキーワードの大文字・小文字を区別せず、行末のコメントを除いて解釈する。
+    """
     KEYWORDS = FdmInp2016.KEYWORDS | {
         "density",
         "density_all",
@@ -368,6 +372,54 @@ class FdmInp2026:
         if molecule:
             keyword = "Molecule"
         self._set_block(keyword, cell, *atoms, old_rows=old_rows)
+
+    def _get_keyword_value(self, keyword, *, default):
+        """指定したキーワードの最後の定義から先頭のデータ行を読む。"""
+        values = self._reader._last_record(keyword)
+        if values:
+            return values[0]
+        return default
+
+    def _get_numeric_row(self, keyword):
+        """数値行を入力順に読み、Fortran の D 指数も解釈する。"""
+        row = self._get_keyword_value(keyword, default=None)
+        if row is None:
+            return None
+        return tuple(float(word.lower().replace("d", "e")) for word in row.split())
+
+    def _set_range(self, grid):
+        """Range のエネルギーと刻み幅を検査し、1行に保存する。"""
+        if len(grid) < 3 or len(grid) % 2 == 0:
+            raise ValueError("Range requires an initial energy followed by step/end pairs")
+        values = tuple(float(value) for value in grid)
+        if not all(isfinite(value) for value in values):
+            raise ValueError("Range values must be finite")
+        energies = values[::2]
+        steps = values[1::2]
+        if any(step <= 0 for step in steps):
+            raise ValueError("Range steps must be positive")
+        if any(end <= start for start, end in zip(energies, energies[1:])):
+            raise ValueError("Range energies must increase")
+        # 偶数位置がエネルギー、奇数位置が次の区間の刻み幅。
+        self._set_block("Range", grid)
+
+    def _set_edge(self, edge):
+        """FDMNES に渡す吸収端を単独のラベルとして書く。"""
+        label = edge.strip().upper()
+        if not re.fullmatch(r"[A-Z][0-9]*", label):
+            raise ValueError("Edge requires one absorption-edge label")
+        self._set_block("Edge", label)
+
+    def _set_absorber(self, absorber):
+        """複数指定も既存のテンプレートと同じ1行の表記で書く。"""
+        self._set_block("Absorber", self._render_absorbers(absorber))
+
+    def _set_flag(self, keyword, enabled):
+        """値のない FDMNES キーワードを追加または削除する。"""
+        if enabled:
+            self._set_block(keyword)
+        else:
+            self._remove_block(keyword)
 
     def _remove_block(self, keyword, *, old_rows=None):
         """指定のブロックを取り除く。行数の規則は set_block と同じ。"""

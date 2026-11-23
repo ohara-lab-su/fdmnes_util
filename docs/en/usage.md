@@ -55,16 +55,16 @@ from fdmnes_util.fdm_inp import FdmInp
 from fdmnes_util.fdm_run import FdmRun
 
 model = FdmInp("cu.inp", format_year=2026)
-model.set_keyword("Filout", "Cu_radius_scan")
-model.set_keyword("Range", (-2, 0.2, 5, 0.5, 10, 1, 40))
+model.set_filout("Cu_radius_scan")
+model.set_range(-2, 0.2, 5, 0.5, 10, 1, 40)
 model.set_radius(4.0, (15, 3.5), (30, 3.0))
-model.set_keyword("Green")
-model.set_keyword("Convolution")
+model.set_green()
+model.set_convolution()
 job = model.save("cu_radius.inp")
 FdmRun().run(job, timeout=120)
 ```
 
-The first value passed to `set_radius()` is the radius in Å. Additional pairs specify a transition energy in eV and the radius above that energy. Pass data rows in order to `set_keyword()`. When changing a variable-length block such as `Calculation`, specify the number of old data rows with `old_rows`. For example, use `model.set_keyword("Calculation", "Cu.txt", (1.0, 0.2), old_rows=2)`. Use the guide's layout with each keyword on its own line. FDMNES interprets the keyword combinations and calculation settings. Pass `overwrite=True` to replace a file explicitly.
+For variable energy spacing, pass the starting energy to `set_range()`, followed by successive step and interval-end pairs. The first argument to `set_radius()` is the radius in Å. Additional pairs specify a transition energy in eV and the radius above that energy. FDMNES interprets the calculation settings. Pass `overwrite=True` to replace an existing file.
 
 `run_inputs()` returns a list of `subprocess.CompletedProcess` results in execution order. Each launch uses a one-entry job list. Resolve relative input and resource paths from the calculation directory. The timeout applies to the batch.
 
