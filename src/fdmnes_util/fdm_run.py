@@ -37,10 +37,16 @@ class FdmRun:
     def run(self, input_file=None, *, directory=None, timeout=None):
         """指定した入力1件または既存の一覧で実行し、終了結果を返す。
 
+        入力を指定した場合は、作業フォルダの fdmfile.txt をその入力1件で
+        作成または書き換え、実行後も残す。標準出力は画面と実行ログに流す。
+
         Args:
             input_file: 計算入力のパス。省略時は既存の fdmfile.txt を使う。
             directory: 計算フォルダ。省略した場合は呼び出し時のカレントディレクトリ。
             timeout: 実行の制限時間（秒）。
+
+        Returns:
+            subprocess.CompletedProcess: FDMNES 本体の終了結果。
 
         Raises:
             FileNotFoundError: 必要なジョブ一覧または計算入力が存在しない場合。

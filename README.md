@@ -81,7 +81,88 @@ The editable source scripts are kept in the repository's top-level `scripts/` di
 
 Editable examples corresponding to all 28 SAE scripts are included. See the command audit for the status of option and output reproduction.
 
+## Running FDMNES calculations
+
+Prepare the FDMNES calculation input by hand first. This example assumes that `Cu_inp.txt` is in the current directory and that the FDMNES executable is available as `fdmnes` on PATH. Copy [FDrun.py](scripts/FDrun.py) into the same directory and pass it the input filename.
+
+```console
+fdmnes_util install FDrun
+python FDrun.py Cu_inp.txt
+```
+
+`FDrun.py` prepares the `fdmfile.txt` that FDMNES needs for a single input. It replaces any existing file with that name. The calculation runs in the current directory, and the input's `Filout` sets the output location and prefix. FDMNES standard output appears on screen and is also saved to `fdmnes-*.log`.
+
+## Generate and run a calculation input from Python
+
+This example uses `FdmInp` to build the structure and calculation settings for face-centered cubic copper and saves them as `Cu_generated.inp`. Pass the saved file to `FdmRun` to launch FDMNES in the same way as for a manually prepared input.
+
+```python
+from fdmnes_util.fdm_inp import FdmInp
+from fdmnes_util.fdm_run import FdmRun
+
+model = FdmInp.from_text("End\n")
+model.set_block("Filout", "Cu_generated")
+model.set_block("Absorber", 1)
+model.set_block("Edge", "K")
+model.set_block("Range", (-1.0, 0.2, 2.0))
+model.set_radius(3.0)
+model.set_block(
+    "Crystal",
+    (3.61, 3.61, 3.61, 90, 90, 90),
+    (29, 0.0, 0.0, 0.0),
+    (29, 0.5, 0.5, 0.0),
+    (29, 0.5, 0.0, 0.5),
+    (29, 0.0, 0.5, 0.5),
+)
+input_file = model.save("Cu_generated.inp")
+FdmRun().run(input_file)
+```
+
+| Method | Purpose |
+| --- | --- |
+| `FdmInp.from_text(text)` | Start from input text supplied in Python. The example starts with just the `End` keyword. |
+| `FdmInp.from_poscar("POSCAR")` | Read a POSCAR with `vasp_util` and build an FDMNES structure section. |
+| `FdmInp(filename, format_year=2026)` | Open a saved input for editing. |
+| `set_block(keyword, *rows)` | Set a keyword and its data rows. For `Crystal`, pass the cell parameters followed by rows of atomic numbers and fractional coordinates. |
+| `set_radius(radius)` | Set the cluster radius in ångströms. |
+| `render_input()` / `save(filename)` | Inspect the current input text or save it to a file. `save()` returns the saved path. |
+| `FdmRun.run(input_file)` | Launch FDMNES with the saved input file. |
+
+### Run multiple inputs in order
+
+Use Python to choose which inputs to run and in what order. Prepare separate inputs for different materials, crystal structures, or stoichiometries. For example, run Cu, Cu₂O, and CuO in sequence, with a distinct `Filout` in each input.
+
+```python
+from fdmnes_util.fdm_run import FdmRun
+
+runner = FdmRun()
+for input_file in ("Cu_inp.txt", "Cu2O_inp.txt", "CuO_inp.txt"):
+    runner.run(input_file)
+```
+
+Python can also generate inputs with different settings for the same material. This example starts from `Cu_inp.txt`, varies the cluster radius, and gives each calculation its own input file and output prefix.
+
+```python
+from fdmnes_util.fdm_inp import FdmInp
+from fdmnes_util.fdm_run import FdmRun
+
+runner = FdmRun()
+for radius in (3.0, 4.0, 5.0):
+    model = FdmInp("Cu_inp.txt", format_year=2026)
+    prefix = f"Cu_R{radius:g}"
+    model.set_block("Filout", prefix)
+    model.set_radius(radius)
+    input_file = model.save(f"{prefix}.inp")
+    runner.run(input_file)
+```
+
+For argument details, units, return values, and rules for editing existing inputs, see the API documentation generated from the method docstrings. [Sphinx-generated API](docs/en/api/index.md) · [API reference](docs/en/manual_reference.md)
+
 ## Bundled scripts
+
+The bundled scripts show how to use the library for structure conversion, running calculations, analysis, and plotting. They include examples that reproduce operations from SAE's FDMNES scripts.
+
+You can reuse the underlying methods in your own Python programs. For example, `AnalyzeFdmAverage.average()` averages site-resolved XAS and `PlotFdmXas.plot_composite()` can draw a combined XAS and LDOS figure. Some SAE operations and usage examples are still being refined, and I plan to improve them as I use the library in calculations and analysis.
 
 Run `fdmnes_util install script` to copy all 33 scripts. To copy one script, use its name from the table without the extension, for example `fdmnes_util install FDrun`. Run `fdmnes_util install script list` for a terminal listing of names and descriptions. [Script guide](docs/en/scripts.md)
 
@@ -120,45 +201,6 @@ Run `fdmnes_util install script` to copy all 33 scripts. To copy one script, use
 | [`fdPDOS_XAS_av`](scripts/fdPDOS_XAS_av.py) | Plot site-averaged PDOS and XAS | `AnalyzeFdmAverage`, `FdmSd`, `PlotFdmAverage` |
 | [`fdXAS`](scripts/fdXAS.py) | Plot convolved XAS | `FdmConv`, `PlotFdmXas` |
 | [`fdXAS_specified`](scripts/fdXAS_specified.py) | Plot XAS relative to the Fermi level | `FdmTxt`, `FdmConv`, `AnalyzeFdmXas`, `PlotFdmXas` |
-
-## Running FDMNES calculations
-
-Prepare the FDMNES calculation input by hand first. This example assumes that `Cu_inp.txt` is in the current directory and that the FDMNES executable is available as `fdmnes` on PATH. Copy [FDrun.py](scripts/FDrun.py) into the same directory and pass it the input filename.
-
-```console
-fdmnes_util install FDrun
-python FDrun.py Cu_inp.txt
-```
-
-`FDrun.py` prepares the `fdmfile.txt` that FDMNES needs for a single input. It replaces any existing file with that name. The calculation runs in the current directory, and the input's `Filout` sets the output location and prefix. FDMNES standard output appears on screen and is also saved to `fdmnes-*.log`.
-
-Use Python to choose which inputs to run and in what order. Prepare separate inputs for different materials, crystal structures, or stoichiometries. For example, run Cu, Cu₂O, and CuO in sequence, with a distinct `Filout` in each input.
-
-```python
-from fdmnes_util.fdm_run import FdmRun
-
-runner = FdmRun()
-for input_file in ("Cu_inp.txt", "Cu2O_inp.txt", "CuO_inp.txt"):
-    runner.run(input_file)
-```
-
-Python can also generate inputs with different settings for the same material. This example starts from `Cu_inp.txt`, varies the cluster radius, and gives each calculation its own input file and output prefix.
-
-```python
-from fdmnes_util.fdm_inp import FdmInp
-from fdmnes_util.fdm_run import FdmRun
-
-runner = FdmRun()
-for radius in (3.0, 4.0, 5.0):
-    model = FdmInp("Cu_inp.txt", format_year=2026)
-    prefix = f"Cu_R{radius:g}"
-    model.set_block("Filout", prefix)
-    model.set_radius(radius)
-    input_file = model.save(f"{prefix}.inp")
-    runner.run(input_file)
-```
-
-Pass an FDMNES keyword and its data lines to `set_block()`. This also works for `Crystal` and `Molecule`, so you can assemble inputs from atomic species and coordinates in Python. Specify radii in ångströms with `set_radius()` and pass the path returned by `save()` directly to `run()`. Use `FdmInp.from_text(text)` to start from input text assembled in Python, or `FdmInp.from_poscar("POSCAR")` to start from a POSCAR structure. [API reference](docs/en/manual_reference.md)
 
 ## Rebuilding the original scripts
 
