@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """配布サンプルとインストールコマンドを検証する。"""
 
+import stat
+
 import pytest
 
 from fdmnes_util.cli import ScriptInstaller, install_scripts, main
@@ -27,6 +29,23 @@ def test_install_script_by_name(tmp_path, monkeypatch):
 
     assert main(["install", "FDplot_XAS"]) == 0
     assert [path.name for path in tmp_path.iterdir()] == ["FDplot_XAS.py"]
+
+
+def test_install_grants_owner_execute_permission_on_linux(tmp_path, monkeypatch):
+    """Linux ではコピー元に実行権限がなくても、コピー先で直接起動できる。"""
+    source = tmp_path / "FDrun.py"
+    source.write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+    source.chmod(0o644)
+    destination = tmp_path / "work"
+    destination.mkdir()
+    monkeypatch.setattr("fdmnes_util.cli.platform.system", lambda: "Linux")
+    monkeypatch.setattr(ScriptInstaller, "_script_sources", lambda: [source])
+
+    installed, _ = install_scripts(destination, name="FDrun")
+
+    assert len(installed) == 1
+    assert installed[0].stat().st_mode & stat.S_IXUSR
+    assert not source.stat().st_mode & stat.S_IXUSR
 
 
 @pytest.mark.parametrize("args", [["install", "list"], ["install", "script", "list"]])

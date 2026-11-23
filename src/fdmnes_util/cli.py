@@ -8,7 +8,9 @@ ScriptInstaller が配布先または開発ツリーからサンプルを探す�
 
 import argparse
 import ast
+import platform
 import shutil
+import stat
 import sysconfig
 from importlib.metadata import PackageNotFoundError, distribution
 from pathlib import Path
@@ -110,6 +112,7 @@ class ScriptInstaller:
         """同梱サンプルを指定フォルダへコピーする。
 
         overwrite を明示した場合にだけ既存ファイルを上書きする。サンプルは通常の Python ソースとして保存する。
+        Linux ではコピーしたファイルに所有者の実行権限も付ける。
 
         Args:
             directory: 対象ディレクトリ。通常は作業ディレクトリ。
@@ -135,6 +138,7 @@ class ScriptInstaller:
 
         copied = []
         skipped = []
+        linux = platform.system() == "Linux"
 
         for source in source_files:
             target = destination / source.name
@@ -143,6 +147,8 @@ class ScriptInstaller:
                 continue
 
             shutil.copy2(source, target)
+            if linux:
+                target.chmod(target.stat().st_mode | stat.S_IXUSR)
             copied.append(target)
 
         return copied, skipped
