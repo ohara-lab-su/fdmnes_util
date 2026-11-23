@@ -14,6 +14,8 @@
 
 入力には改訂行がないため、`FdmInp(filename, format_year=2026)` で拡張形式を選びます。既定は2016です。`get_absorbers()` はサイト番号のリスト、`get_calculations()` は（ファイル名、重み、シフト、カットオフ）のリストを返します。`FdmInp.write(..., format_year=2026)` では `absorber=[1, 2]`、`density_complex=True`、`lmax_dosout=3` を指定できます。`FdmInp.write_convolution(filename, calculations, *, output, format_year=2026, header=False, energy_step=None, per_atom=False)` で複数サイトの畳み込み入力を作れます。`calculations` は生 XAS のファイル名・重み・シフト（eV）の組です。
 
+設定メソッドと `get_range()`、`get_edge()`、`get_radius()`、`get_green()`、`get_spgroup()` を使うときは `format_year=2026` を選びます。
+
 | メソッドと引数の既定値 | 引数の意味 | 戻り値 |
 | --- | --- | --- |
 | `__init__(filename='read_pdb.inp', *, format_year=2016)` | filename は計算入力ファイル。 | None |
@@ -21,18 +23,22 @@
 | `from_poscar(filename, *, molecule=False)` | POSCAR のパス。`molecule=True` で分子構造節を作る。読み込みには `vasp_util` が必要。 | 編集可能な `FdmInp`。 |
 | `set_keyword(keyword, *rows, old_rows=None)` | キーワードとデータ行。可変長ブロックを置換するときは、元のデータ行数を `old_rows` に指定。 | 更新した `FdmInp`。 |
 | `set_structure(cell, *atoms, molecule=False, old_rows=None)` | 格子行と原子行。既定は `Crystal`、`molecule=True` で `Molecule`。同じ構造節を置換する場合は、格子行を含む元の行数を指定。 | 更新した `FdmInp`。 |
+| `set_range(*grid)` / `get_range()` | 光電子エネルギーの下限、刻み幅、上限（eV）。可変刻みは上限の前に切替エネルギーと次の刻み幅を指定。基準はフェルミ準位。 | 設定は更新した入力。取得は入力順のタプル、未指定なら None。 |
+| `set_edge(edge)` / `get_edge()` | 吸収端のラベル。例は `K`、`L3`、`L23`。 | 設定は更新した入力。取得は吸収端、未指定なら `K`。 |
+| `set_absorber(absorber)` / `get_absorber()` / `get_absorbers()` | 構造節の1始まりの原子行番号、または番号の並び。 | 設定は更新した入力。取得は先頭の番号、または全番号のリスト。 |
+| `set_filout(prefix)` / `get_filout()` | 出力ファイルの接頭辞。相対パスは実行時の作業ディレクトリを基準とする。 | 設定は更新した入力。取得は指定された接頭辞、未指定なら空文字列。 |
+| `set_green(enabled=True)` / `get_green()` | マフィンティンポテンシャルによる多重散乱法。 | 設定は更新した入力。取得は指定の有無。 |
+| `set_convolution(enabled=True)` / `get_convolution()` | アークタンジェントモデルによるスペクトルの幅付け。 | 設定は更新した入力。取得は指定の有無。 |
+| `set_spgroup(space_group)` / `get_spgroup()` | 非等価原子行を展開する空間群の完全な記号または番号。 | 設定は更新した入力。取得は入力表記、未指定なら空文字列。 |
 | `set_block(keyword, *rows, old_rows=None)` | 既存の呼び出しとの互換用。引数は `set_keyword()` と同じ。 | 更新した `FdmInp`。 |
 | `remove_block(keyword, *, old_rows=None)` | 削除するキーワード。可変長ブロックでは元のデータ行数を指定。 | 更新した `FdmInp`。 |
-| `set_radius(radius, *changes)` | 半径（Å）。追加の組は切替エネルギー（eV）と切替後の半径（Å）。 | 更新した `FdmInp`。 |
+| `set_radius(radius, *changes)` / `get_radius()` | 半径（Å）。追加の組は切替エネルギー（eV）と切替後の半径（Å）。 | 設定は更新した入力。取得は入力順のタプル、未指定なら None。 |
 | `render_input()` | — | str。編集中の入力本文。 |
 | `save(filename, *, overwrite=False)` | 保存先。既存ファイルを置き換える場合は `overwrite=True`。 | Path。そのまま `FdmRun.run()` に渡せる保存先。 |
-| `get_filout()` | — | str。最後の `Filout` または `File_out` の値。未指定なら空文字列。 |
-| `get_absorber()` | — | int。最後の `Absorber` で指定した1始まりの吸収原子番号。未指定なら 1。不正な番号は ValueError。 |
 | `get_ispin()` | — | int。`Spin` または `Magnetism` があれば 2、なければ 1。 |
 | `get_allsite()` | — | bool。`Allsite` の有無。 |
 | `get_energygpho()` | — | bool。`Energpho` または `Energygpho` の有無。 |
 | `get_nonexc()` | — | bool。`Nonexc` の有無。 |
-| `get_convolution()` | — | bool。`Convolution` の有無。 |
 | `get_conv_out()` | — | str。`Conv_out` の値。未指定なら空文字列。 |
 | `get_calculation()` | — | str。最後の `Calculation` ブロックの先頭ファイル名。未指定なら空文字列。 |
 | `get_cellparam()` | — | list[float] または None。結晶の格子長 3 個と角度 3 個。 |

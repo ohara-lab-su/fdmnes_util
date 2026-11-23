@@ -14,6 +14,8 @@ Read, inspect, and generate FDMNES calculation inputs.
 
 Input files have no revision line. Use `FdmInp(filename, format_year=2026)` for extended input. The default is 2016. `get_absorbers()` returns site indices, and `get_calculations()` returns (filename, weight, shift, cutoff) records. `FdmInp.write(..., format_year=2026)` accepts `absorber=[1, 2]`, `density_complex=True`, and `lmax_dosout=3`. `FdmInp.write_convolution(filename, calculations, *, output, format_year=2026, header=False, energy_step=None, per_atom=False)` writes a combined convolution input. Each calculation is a (raw XAS path, weight, shift in eV) tuple.
 
+Use `format_year=2026` for the setters and for `get_range()`, `get_edge()`, `get_radius()`, `get_green()`, and `get_spgroup()`.
+
 | Method and parameter defaults | Parameter meanings | Return value |
 | --- | --- | --- |
 | `__init__(filename='read_pdb.inp', *, format_year=2016)` | `filename` Path to the FDMNES input file. | None. |
@@ -21,18 +23,22 @@ Input files have no revision line. Use `FdmInp(filename, format_year=2026)` for 
 | `from_poscar(filename, *, molecule=False)` | POSCAR path. Use `molecule=True` to create a molecular structure section. Reading POSCAR requires `vasp_util`. | Editable `FdmInp`. |
 | `set_keyword(keyword, *rows, old_rows=None)` | Keyword and data rows. When replacing a variable-length block, provide the previous row count in `old_rows`. | Updated `FdmInp`. |
 | `set_structure(cell, *atoms, molecule=False, old_rows=None)` | Cell row and atom rows. The default is `Crystal`; set `molecule=True` for `Molecule`. When replacing the same section, pass the previous row count including the cell row. | Updated `FdmInp`. |
+| `set_range(*grid)` / `get_range()` | Photoelectron energy minimum, step, and maximum in eV relative to the Fermi level. Insert transition energies and new steps before the maximum for variable spacing. | Setter returns the updated input. Getter returns the values in order, or None when absent. |
+| `set_edge(edge)` / `get_edge()` | Absorption-edge label, such as `K`, `L3`, or `L23`. | Setter returns the updated input. Getter returns the label, or `K` when absent. |
+| `set_absorber(absorber)` / `get_absorber()` / `get_absorbers()` | One-based atom row from the structure, or a sequence of row numbers. | Setter returns the updated input. Getters return the first index or the list of indices. |
+| `set_filout(prefix)` / `get_filout()` | Output filename prefix. Relative paths are resolved from the working directory. | Setter returns the updated input. Getter returns the specified prefix or an empty string. |
+| `set_green(enabled=True)` / `get_green()` | Multiple-scattering calculation with a muffin-tin potential. | Setter returns the updated input. Getter reports whether the keyword is present. |
+| `set_convolution(enabled=True)` / `get_convolution()` | Broadening with the arctangent model. | Setter returns the updated input. Getter reports whether the keyword is present. |
+| `set_spgroup(space_group)` / `get_spgroup()` | Full space-group symbol or number used to expand inequivalent atom rows. | Setter returns the updated input. Getter returns the input notation or an empty string. |
 | `set_block(keyword, *rows, old_rows=None)` | Compatible entry point for existing callers. Takes the same arguments as `set_keyword()`. | Updated `FdmInp`. |
 | `remove_block(keyword, *, old_rows=None)` | Keyword to remove. For a variable-length block, provide the previous row count. | Updated `FdmInp`. |
-| `set_radius(radius, *changes)` | Radius in Å. Additional pairs give the transition energy in eV and the new radius in Å. | Updated `FdmInp`. |
+| `set_radius(radius, *changes)` / `get_radius()` | Radius in Å. Additional pairs give the transition energy in eV and the new radius in Å. | Setter returns the updated input. Getter returns the values in order, or None when absent. |
 | `render_input()` | — | str. The current input text. |
 | `save(filename, *, overwrite=False)` | Destination path. Set `overwrite=True` to replace an existing file. | Path. Pass it directly to `FdmRun.run()`. |
-| `get_filout()` | — | str: Last `Filout` or `File_out` value, or an empty string when absent. |
-| `get_absorber()` | — | int. One-based absorber index from the last `Absorber` record. Defaults to 1 when absent. An invalid index raises ValueError. |
 | `get_ispin()` | — | int: Two when `Spin` or `Magnetism` is specified, otherwise one. |
 | `get_allsite()` | — | bool: True when `Allsite` is present. |
 | `get_energygpho()` | — | bool: True when `Energpho` or `Energygpho` is present. |
 | `get_nonexc()` | — | bool: True when the keyword is present. |
-| `get_convolution()` | — | bool: True when `Convolution` is present. |
 | `get_conv_out()` | — | str: Convolution-output value, or an empty string. |
 | `get_calculation()` | — | str: First filename in the last `Calculation` block, or an empty string. |
 | `get_cellparam()` | — | list[float] \| None: The six cell parameters, or None when absent. |

@@ -106,10 +106,10 @@ from fdmnes_util.fdm_inp import FdmInp
 from fdmnes_util.fdm_run import FdmRun
 
 model = FdmInp.from_text("End\n")
-model.set_keyword("Filout", "Cu_generated")
-model.set_keyword("Absorber", 1)
-model.set_keyword("Edge", "K")
-model.set_keyword("Range", (-1.0, 0.2, 2.0))
+model.set_filout("Cu_generated")
+model.set_absorber(1)
+model.set_edge("K")
+model.set_range(-1.0, 0.2, 2.0)
 model.set_radius(3.0)
 model.set_structure(
     (3.61, 3.61, 3.61, 90, 90, 90),
@@ -128,10 +128,15 @@ FdmRun().run(input_file)
 | `FdmInp.from_poscar("POSCAR")` | `vasp_util` で POSCAR を読み、FDMNES の構造節を作ります。 |
 | `FdmInp(filename, format_year=2026)` | 保存済みの入力を編集用に開きます。 |
 | `set_structure(cell, *atoms)` | 結晶の格子定数と、原子番号・分率座標の各行を設定します。分子の構造節を作る場合は `molecule=True` を指定します。 |
-| `set_keyword(keyword, *rows)` | `Filout`、`Absorber`、`Edge`、`Range` などの計算条件を、FDMNES のキーワードとデータ行で設定します。 |
+| `set_filout(prefix)` / `get_filout()` | 計算結果のファイル名に使う接頭辞を設定・取得します。 |
+| `set_absorber(index)` / `get_absorber()` | 構造節の1始まりの原子行番号で吸収サイトを指定します。複数サイトの取得には `get_absorbers()` を使います。 |
+| `set_edge(edge)` / `get_edge()` | K、L₃、L₂・L₃ などの吸収端を指定・取得します。 |
+| `set_range(emin, step, emax)` / `get_range()` | フェルミ準位を基準とする光電子エネルギーの範囲と刻み幅を eV 単位で設定・取得します。 |
 | `set_radius(radius)` | 計算に使うクラスタ半径を Å 単位で設定します。 |
 | `render_input()` / `save(filename)` | 現在の入力本文を確認するか、ファイルに保存します。`save()` は保存先のパスを返します。 |
 | `FdmRun.run(input_file)` | 保存済みの入力ファイルを指定して FDMNES を起動します。 |
+
+結晶や分子の構造節（`Crystal`、`Molecule`）を作るときは `set_structure()` を使います。計算範囲や吸収端は `set_range()` や `set_edge()` で指定します。専用メソッドが用意されていない項目を追加・編集するときは、FDMNES マニュアルの書式に沿ってキーワードとデータ行を `set_keyword()` に渡します。
 
 ### 複数の入力を順に実行する
 
@@ -155,7 +160,7 @@ runner = FdmRun()
 for radius in (3.0, 4.0, 5.0):
     model = FdmInp("Cu_inp.txt", format_year=2026)
     prefix = f"Cu_R{radius:g}"
-    model.set_keyword("Filout", prefix)
+    model.set_filout(prefix)
     model.set_radius(radius)
     input_file = model.save(f"{prefix}.inp")
     runner.run(input_file)

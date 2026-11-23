@@ -10,7 +10,13 @@ from .fdm_inp_2026 import FdmInp2026
 
 
 class FdmInp:
-    """FDMNES の計算入力 `*.inp` を読み書きし、指定された形式の実装へ委譲する。"""
+    """FDMNES の計算・畳み込み入力ファイル（`*.inp`）を読み書きする。
+
+    入力の読み取りは既定で2016年形式を使う。設定を編集する場合は
+    `format_year=2026` を選び、`set_structure()` で構造節を、
+    `set_absorber()` と `set_edge()` で吸収サイトと吸収端を指定する。
+    `set_range()` は計算するエネルギー格子、`set_filout()` は出力の接頭辞を設定する。
+    """
     KEYWORDS = FdmInp2016.KEYWORDS
 
     def __init__(self, filename="read_pdb.inp", *, format_year=2016):
@@ -68,7 +74,7 @@ class FdmInp:
 
         Returns:
             FdmInp: 構造節が入った編集可能な2026形式の入力。
-                吸収端やエネルギー範囲などの計算条件は set_keyword() で指定する。
+                吸収端やエネルギー範囲は set_edge() や set_range() で指定する。
         """
         inp = cls(None, format_year=2026)
         inp._reader._set_poscar(filename, molecule=molecule)
@@ -128,6 +134,111 @@ class FdmInp:
         )
         return self
 
+    def set_range(self, *grid):
+        """フェルミ準位を基準とする光電子エネルギーの計算格子を設定する。
+
+        Args:
+            *grid: 下限、刻み幅、上限の順の値（eV）。刻み幅を途中で変える場合は、
+                上限の前に切替エネルギーと次の刻み幅の組を挿入する。
+                例えば `set_range(-5, 0.2, 10, 0.5, 60)` は 10 eV で刻み幅を変える。
+
+        Returns:
+            FdmInp: 更新した入力。
+
+        Raises:
+            ValueError: 形式年が2026以外、値の数が不正、エネルギーが昇順でない、
+                刻み幅が正でない、または値が有限でない場合。
+        """
+        self._editable_reader()._set_range(grid)
+        return self
+
+    def get_range(self):
+        """2026形式の Range の値を入力順のタプル（eV）で返す。
+
+        Range が省略されていれば None を返す。Rangel は別のキーワード。
+        出力軸を光子エネルギーに変える Energpho も、指定された Range の値は変えない。
+        """
+        return self._editable_reader()._get_numeric_row("range")
+
+    def set_edge(self, edge):
+        """吸収端を設定する。例は K、L3、L23（L2 と L3 の同時計算）。
+
+        Args:
+            edge: FDMNES が解釈する吸収端のラベル。
+
+        Returns:
+            FdmInp: 更新した入力。
+        """
+        self._editable_reader()._set_edge(edge)
+        return self
+
+    def get_edge(self):
+        """2026形式で指定された吸収端を返す。未指定時は既定値 K。"""
+        return self._editable_reader()._get_keyword_value("edge", default="K").upper()
+
+    def set_absorber(self, absorber):
+        """Crystal または Molecule の原子行から吸収サイトを選ぶ。
+
+        Args:
+            absorber: 1始まりの原子行番号、または複数サイトの番号の並び。
+                元素の原子番号による指定は FDMNES の Z_absorber を使う。
+
+        Returns:
+            FdmInp: 更新した入力。
+        """
+        self._editable_reader()._set_absorber(absorber)
+        return self
+
+    def set_filout(self, prefix):
+        """計算結果の出力接頭辞を拡張子なしで設定する。
+
+        Args:
+            prefix: 出力ファイルの接頭辞。ディレクトリを含められる。
+                相対パスは FDMNES の作業ディレクトリを基準とする。
+
+        Returns:
+            FdmInp: 更新した入力。
+        """
+        self._editable_reader()._set_block("Filout", prefix)
+        return self
+
+    def set_green(self, enabled=True):
+        """Green を設定し、マフィンティンポテンシャルの多重散乱法を選ぶ。
+
+        False を指定すると Green を取り除く。更新した入力を返す。
+        """
+        self._editable_reader()._set_flag("Green", enabled)
+        return self
+
+    def get_green(self):
+        """2026形式の入力に Green が指定されているかを返す。"""
+        return "green" in self._editable_reader().tags
+
+    def set_convolution(self, enabled=True):
+        """アークタンジェントモデルによるスペクトルの幅付けを指定する。
+
+        False を指定すると Convolution を取り除く。更新した入力を返す。
+        """
+        self._editable_reader()._set_flag("Convolution", enabled)
+        return self
+
+    def set_spgroup(self, space_group):
+        """非磁性計算で、非等価原子行から構造を展開するための空間群を指定する。
+
+        Args:
+            space_group: 空間群記号または番号。原点の選択も指定できる。
+                例えば Fd-3m:1 または 227:1。
+
+        Returns:
+            FdmInp: 更新した入力。
+        """
+        self._editable_reader()._set_block("Spgroup", space_group)
+        return self
+
+    def get_spgroup(self):
+        """2026形式で指定された空間群を入力表記のまま返す。未指定なら空文字列。"""
+        return self._editable_reader()._get_keyword_value("spgroup", default="")
+
     def remove_block(self, keyword, *, old_rows=None):
         """指定した入力ブロックを取り除く。"""
         self._editable_reader()._remove_block(keyword, old_rows=old_rows)
@@ -149,6 +260,13 @@ class FdmInp:
         """
         self._editable_reader()._set_radius(radius, *changes)
         return self
+
+    def get_radius(self):
+        """2026形式の Radius の値を入力順で返す。未指定なら None。
+
+        最初の値は半径（Å）。後続は切替エネルギー（eV）、切替後の半径（Å）の順。
+        """
+        return self._editable_reader()._get_numeric_row("radius")
 
     def render_input(self):
         """編集中の2026形式の入力を文字列で確認する。
@@ -175,11 +293,15 @@ class FdmInp:
         return self._editable_reader()._save_input(filename, overwrite=overwrite)
 
     def get_absorber(self) -> int:
-        """先頭の吸収サイトを返す。"""
+        """Absorber の先頭の1始まりの原子行番号を返す。
+
+        未指定時の返り値は1。本体は既定で構造節の先頭原子と同じ原子番号の
+        全原子の寄与を計算する。
+        """
         return self._reader.get_absorber()
 
     def get_absorbers(self) -> list[int]:
-        """吸収サイトを入力順に返す。"""
+        """Absorber の1始まりの原子行番号を入力順に返す。未指定時の返り値は [1]。"""
         read_absorbers = getattr(self._reader, "_get_absorbers", None)
         if read_absorbers is None:
             return [self.get_absorber()]
@@ -196,7 +318,10 @@ class FdmInp:
         return []
 
     def get_filout(self):
-        """出力の接頭辞を返す。"""
+        """指定された出力接頭辞を返す。
+
+        未指定時の返り値は空文字列。本体は既定の接頭辞 fdmnes_out を使う。
+        """
         return self._reader.get_filout()
 
     def get_ispin(self):

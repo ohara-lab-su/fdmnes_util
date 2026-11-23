@@ -55,16 +55,16 @@ from fdmnes_util.fdm_inp import FdmInp
 from fdmnes_util.fdm_run import FdmRun
 
 model = FdmInp("cu.inp", format_year=2026)
-model.set_keyword("Filout", "Cu_radius_scan")
-model.set_keyword("Range", (-2, 0.2, 5, 0.5, 10, 1, 40))
+model.set_filout("Cu_radius_scan")
+model.set_range(-2, 0.2, 5, 0.5, 10, 1, 40)
 model.set_radius(4.0, (15, 3.5), (30, 3.0))
-model.set_keyword("Green")
-model.set_keyword("Convolution")
+model.set_green()
+model.set_convolution()
 job = model.save("cu_radius.inp")
 FdmRun().run(job, timeout=120)
 ```
 
-`set_radius()` の最初の値は半径（Å）です。後続の組は切替エネルギー（eV）と切替後の半径です。任意のキーワードは `set_keyword()` にデータ行を順に渡せます。`Calculation` など可変長ブロックを更新する場合は、差し替える元のデータ行数を `old_rows` で指定します。例えば `model.set_keyword("Calculation", "Cu.txt", (1.0, 0.2), old_rows=2)` です。マニュアルのようにキーワードを単独の行に置く入力を使用します。キーワードの組み合わせや計算条件は FDMNES 本体が解釈します。`save()` は既存ファイルがあればエラーにし、`overwrite=True` で明示的に上書きできます。
+`set_range()` で刻み幅を途中で変える場合は、下限の次に刻み幅と区間の上限を順に指定します。`set_radius()` の最初の値は半径（Å）です。後続の組は切替エネルギー（eV）と切替後の半径です。計算条件の解釈は FDMNES 本体が行います。`save()` は既存ファイルがあればエラーにし、`overwrite=True` で明示的に上書きできます。
 
 `run_inputs()` は各起動の終了結果を `subprocess.CompletedProcess` のリストで返します。各起動で一覧に書く入力は1件です。入力と参照データの相対パスは計算フォルダ基準です。タイムアウトは一覧全体に適用されます。
 
