@@ -29,11 +29,17 @@ def test_install_script_by_name(tmp_path, monkeypatch):
     assert [path.name for path in tmp_path.iterdir()] == ["FDplot_XAS.py"]
 
 
-def test_list_script_names_and_japanese_descriptions(tmp_path, monkeypatch, capsys):
+@pytest.mark.parametrize("args", [["install", "list"], ["install", "script", "list"]])
+def test_list_script_names_and_japanese_descriptions(
+    tmp_path,
+    monkeypatch,
+    capsys,
+    args,
+):
     """名前と日本語の説明を1行ずつ表示し、ファイルを作らない。"""
     monkeypatch.chdir(tmp_path)
 
-    assert main(["install", "list"]) == 0
+    assert main(args) == 0
     entries = [line.split(maxsplit=1) for line in capsys.readouterr().out.splitlines()]
     assert entries
     for name, explanation in entries:

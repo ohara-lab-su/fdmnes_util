@@ -135,6 +135,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Copy all scripts (default), list scripts, or give a name without .py",
     )
     install_parser.add_argument(
+        "action",
+        nargs="?",
+        choices=["list"],
+        help="Use 'script list' as another way to list scripts",
+    )
+    install_parser.add_argument(
         "--directory",
         "-d",
         type=Path,
@@ -148,7 +154,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    if args.resource == "list":
+    if args.action == "list" and args.resource != "script":
+        install_parser.error("The second argument 'list' requires 'script'")
+
+    if args.resource == "list" or args.action == "list":
         try:
             scripts = ScriptInstaller.list_scripts()
         except FileNotFoundError as error:
