@@ -60,10 +60,15 @@ VASP POSCAR files are handled by importing the separate `vasp_util` package as a
 The scripts in this library are editable examples intended for users to adapt locally. After installing the Python package, run the following command in the directory where you want to perform your analysis.
 
 ```console
+fdmnes_util install
 fdmnes_util install script
+fdmnes_util install FDplot_XAS
+fdmnes_util install list
 ```
 
-This copies the packaged example scripts to the current directory. For example, opening `FDplot_XAS.py` lets you inspect actual Python code for reading XAS files and generating plots with the class library. You can freely modify the copied scripts to suit your calculation conditions and plotting needs.
+`install` and `install script` both copy all scripts to the current directory. `install FDplot_XAS` copies only `FDplot_XAS.py`. `install list` displays one script name and description per line. Use these names without the `.py` extension.
+
+Open `FDplot_XAS.py` for an example of reading XAS files and generating plots with the class library. You can modify the copied scripts to suit your calculation conditions and plotting needs.
 
 Existing scripts with the same names are not overwritten. Specify `--force` only when overwriting them, or `--directory` to change the destination.
 

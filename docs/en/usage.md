@@ -12,7 +12,7 @@ To install from a checkout, run the following at the repository root. Use `.[plo
 python -m pip install '.[plot]'
 ```
 
-Run `fdmnes_util install script` in your analysis directory to copy the editable Python examples. Existing files are skipped unless you pass `--force`. The directory passed to `--directory` must already exist.
+`fdmnes_util install` and `fdmnes_util install script` both copy all scripts to the current directory. `fdmnes_util install FDplot_XAS` copies only `FDplot_XAS.py`. `fdmnes_util install list` prints one script name and description per line. Use the script name without `.py`. Existing files are skipped unless you pass `--force`. `--directory` allows an existing alternate destination.
 
 ```console
 mkdir -p analysis
@@ -28,11 +28,11 @@ Place the calculation outputs in your analysis directory. Install FDMNES separat
 ```python
 from fdmnes_util.fdm_run import FdmRun
 
-log = FdmRun().run("read_pdb.inp")
+log = FdmRun().run("Cu.inp")
 print(log)
 ```
 
-`FdmRun()` uses `fdmnes` on PATH. You can also pass the executable path. A single specified input runs in its own directory. When no input is specified, the runner uses all jobs in `fdmfile.txt`.
+`FdmRun()` uses `fdmnes` on PATH or an explicit executable path. `run()` runs the default `inp.txt` and `run("Cu.inp")` runs the specified input. A missing input raises an error before launch. The runner writes a temporary one-entry `fdmfile.txt` and restores its prior state afterward. Call `run_fdmfile()` to use the existing job list as written. The command-line equivalents are `python FDrun.py Cu.inp` and `python FDrun.py --fdmfile`.
 
 
 ## Build and update calculation inputs
@@ -50,13 +50,13 @@ model.set_radius(4.0, (15, 3.5), (30, 3.0))
 model.set_block("Green")
 model.set_block("Convolution")
 job = model.save("cu_radius.inp")
-log = FdmRun().run_inputs([job], directory=".", timeout=120)
+log = FdmRun().run(job, directory=".", timeout=120)
 print(log)
 ```
 
 The first value passed to `set_radius()` is the radius in Å. Additional pairs specify a transition energy in eV and the radius above that energy. Pass data rows in order to `set_block()`. When changing a variable-length block such as `Calculation`, specify the number of old data rows with `old_rows`. For example, use `model.set_block("Calculation", "Cu.txt", (1.0, 0.2), old_rows=2)`. Use the guide's layout with each keyword on its own line. FDMNES interprets the keyword combinations and calculation settings. Pass `overwrite=True` to replace a file explicitly.
 
-`run_inputs()` writes the Python sequence as a temporary job list. Relative paths and resources referenced by the input are relative to the calculation directory. The timeout applies to the batch.
+`run_inputs()` launches FDMNES once per input in Python order and returns the log paths in the same order. Each launch uses a one-entry job list. Relative input and resource paths are resolved from the calculation directory. The timeout applies to the batch.
 
 ### Guide examples
 

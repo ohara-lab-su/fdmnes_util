@@ -3,6 +3,25 @@
 
 実行時は入力を指定順で FDMNES に渡し、``fdmnes-*.log`` にログを残す。スペクトルなどの計算出力は FDMNES 本体が書く。
 """
+
+# 実行例（このスクリプトがあるディレクトリで実行）
+# --executable を省略する場合は PATH に fdmnes が必要。
+#
+# FCC 銅の入力を作って実行する。作業先は既定の manual_calculations。
+# python FDmanual_examples.py cu
+#
+# FCC 銅の入力を cu_run/cu.inp に保存する。ここでは FDMNES を起動しない。
+# python FDmanual_examples.py cu --directory cu_run --write-only
+# 保存内容を確認してから、スクリプトのあるディレクトリで次を実行する。
+# python FDrun.py cu.inp --directory cu_run
+#
+# FCC 銅・磁鉄鉱・FeO₆ を1件ずつ順に実行する。900秒は3件全体の制限時間。
+# python FDmanual_examples.py all --directory manual_run --timeout 900
+#
+# 手元の POSCAR から poscar_run/poscar.inp を作り、半径を4 Åにして実行する。
+# POSCAR の読み込みには vasp_util が必要。/path/to/fdmnes は実際のパスに置き換える。
+# python FDmanual_examples.py poscar --poscar POSCAR --directory poscar_run --radius 4 --executable /path/to/fdmnes
+
 import argparse
 from pathlib import Path
 
@@ -103,12 +122,13 @@ def main(argv=None):
         inputs.append(model.save(options.directory / f"{name}.inp").resolve())
         print(inputs[-1])
     if not options.write_only:
-        log = FdmRun(options.executable).run_inputs(
+        logs = FdmRun(options.executable).run_inputs(
             inputs,
             directory=options.directory,
             timeout=options.timeout,
         )
-        print(log)
+        for log in logs:
+            print(log)
 
 
 if __name__ == "__main__":

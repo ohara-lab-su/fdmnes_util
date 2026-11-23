@@ -65,10 +65,15 @@ VASPのPOSCARは、別パッケージの `vasp_util` をPythonモジュールと
 このライブラリのスクリプトは、利用者が手元で編集して使うためのサンプルプログラムです。Pythonパッケージをインストールした後、解析を行いたいディレクトリで次のコマンドを実行してください。
 
 ```console
+fdmnes_util install
 fdmnes_util install script
+fdmnes_util install FDplot_XAS
+fdmnes_util install list
 ```
 
-パッケージに収録されたサンプルスクリプトが、カレントディレクトリへコピーされます。例えば `FDplot_XAS.py` を開くと、XASファイルの読み込みからグラフの生成まで、クラスライブラリの使い方を実際のPythonコードとして確認できます。計算条件や描画方法は、コピーしたスクリプトを自由に書き換えてください。
+`install` と `install script` は全スクリプトをカレントディレクトリにコピーします。`install FDplot_XAS` は `FDplot_XAS.py` だけをコピーします。`install list` は、個別指定に使う名前と日本語の説明を1行ずつ表示します。
+
+`FDplot_XAS.py` を開くと、XASファイルの読み込みからグラフの生成まで、クラスライブラリの使い方を確認できます。計算条件や描画方法は、コピーしたスクリプトを自由に書き換えてください。
 
 既存の同名スクリプトは上書きしません。上書きする場合に限り `--force` を指定します。コピー先を変える場合は `--directory` を使用できます。
 
